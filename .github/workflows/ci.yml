@@ -28,10 +28,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Play-test – single player, 60 checks, no console errors
         run: node tests/playtest/playtest.mjs client/dist playtest-result.json
+      - name: Controls test – Minecraft controls and tricks, real keyboard and mouse
+        run: node tests/playtest/controls.mjs client/dist controls-result.json
       - name: Multiplayer test – server + 2 browsers
         run: node tests/playtest/multiplayer.mjs
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playtest
-          path: playtest-result.*
+          path: |
+            playtest-result.*
+            controls-result.json
