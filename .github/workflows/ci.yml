@@ -1,0 +1,37 @@
+# Každý pull request: sestavení, testy a automatické zahrání hry v prohlížeči.
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build (Vite)
+        run: npm run build
+      - name: Unit + server tests (node:test)
+        run: npm test
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Play-test – single player, 60 checks, no console errors
+        run: node tests/playtest/playtest.mjs client/dist playtest-result.json
+      - name: Multiplayer test – server + 2 browsers
+        run: node tests/playtest/multiplayer.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playtest
+          path: playtest-result.*
