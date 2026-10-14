@@ -28,6 +28,15 @@
     #compass .ruin { color: #e070ff; font-size: 17px; }
 
     #clock { position: fixed; top: 16px; left: 18px; padding: 8px 12px; background: var(--panel); border-radius: 4px; font: 700 13px 'Cinzel', serif; color: var(--gold); pointer-events: none; }
+    #effects { position: fixed; top: 52px; left: 18px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; font: 15px 'Pixelify Sans', monospace; text-shadow: 2px 2px 0 #222; }
+    #effects div { padding: 3px 8px; background: rgba(16, 2, 16, 0.75); border: 2px solid #25084f; }
+    #guide { position: fixed; inset: 0; display: none; place-items: center; background: rgba(0, 0, 0, 0.55); font-family: 'Pixelify Sans', monospace; z-index: 5; }
+    .guide-panel { width: min(680px, 92vw); max-height: 86vh; overflow: auto; color: #e6e6e6; }
+    .guide-body { font-size: 15px; line-height: 1.45; }
+    .guide-body h4 { margin: 14px 0 4px; color: #f0c8ff; font-size: 17px; font-weight: 600; text-shadow: 2px 2px 0 #18181b; }
+    .guide-body ol { margin: 4px 0; padding-left: 22px; }
+    .guide-body li { margin-bottom: 4px; }
+    .guide-body code { background: #24242a; padding: 0 4px; }
     #tip { position: fixed; top: 16px; right: 18px; max-width: 290px; padding: 10px 14px; background: var(--panel); border-left: 2px solid var(--gold); border-radius: 4px; pointer-events: none; }
     #tip .title { font: 700 12px 'Cinzel', serif; color: var(--gold); letter-spacing: 0.1em; }
     #tip .text { margin-top: 4px; font-size: 14px; line-height: 1.4; }
@@ -125,7 +134,7 @@
     #tooltip { position: fixed; z-index: 20; display: none; pointer-events: none; padding: 5px 8px 6px; max-width: 260px; font: 15px 'Pixelify Sans', monospace; color: #fff;
       background: rgba(16, 2, 16, 0.94); border: 2px solid #25084f; outline: 2px solid rgba(16, 2, 16, 0.94); text-shadow: 2px 2px 0 #3a3a3a; }
     #tooltip .sub { font-size: 13px; color: #a8a8b0; text-shadow: none; }
-    #tooltip .t1 { color: #d9b07a; } #tooltip .t2 { color: #c8c8c8; } #tooltip .t3 { color: #ffffff; } #tooltip .t4 { color: #7ff3ff; } #tooltip .t5 { color: #f08aff; }
+    #tooltip .t1 { color: #d9b07a; } #tooltip .t2 { color: #c8c8c8; } #tooltip .t3 { color: #ffffff; } #tooltip .t4 { color: #7ff3ff; } #tooltip .t5 { color: #f08aff; } #tooltip .tshadow { color: #b49ad0; } #tooltip .tsky { color: #ffe9a0; }
     @media (max-width: 800px) { .mc-window { flex-direction: column; overflow: auto; } }
     #error { position: fixed; inset: 0; display: none; place-items: center; padding: 16px; background: #223; text-align: center; }
   </style>
@@ -141,6 +150,32 @@
 <body>
   <div id="compass"></div>
   <div id="clock"></div>
+  <div id="effects"></div>
+  <div id="guide">
+    <div class="mc-panel guide-panel">
+      <div class="mc-title">Návod <span style="float:right;font-size:13px;color:#a9a9b2">H = zavřít</span></div>
+      <div class="guide-body">
+        <h4>☠ Farma na Markomany</h4>
+        <ol>
+          <li>Najdi <b>spawner</b> – klec s fialovým jádrem. Je v <b>Markomanské pevnosti</b> (⛫) a v <b>kobkách</b> (☠) v Markově dimenzi. Kompas ukazuje nejbližší stavbu.</li>
+          <li>Vyrob <b>hroty</b> (u stolu: <code>I&nbsp;I / III</code> ze železa = 4 hroty) a polož je na zem <b>do 2 bloků kolem spawneru</b> – tam se Markomani rodí.</li>
+          <li>Kolem hrotů postav <b>zeď 2 bloky vysokou</b>, ať Markomani neutečou. Hroty je postupně zabijí.</li>
+          <li>Do <b>5 bloků od hrotů</b> polož <b>truhlu</b> – kořist z Markomanů zabitých hroty padá rovnou do ní.</li>
+          <li>Zůstaň <b>do 24 bloků od spawneru</b> (jinak se nic nerodí), nejlépe za zdí nebo nad farmou. Spawner udrží max. 4 Markomany naráz.</li>
+          <li>Sbírej: <b>Markové jablko</b> (10 s létání), železo, železnou zbroj, markwood a surový markorit.</li>
+        </ol>
+        <p>Spawner nerozbíjej – jde to jen železným krumpáčem a nic z něj nepadá. Stejně funguje farma na stínožrouty se spawnerem z kobky v normálním světě (padá z nich esence na stínové brnění).</p>
+        <h4>🛡 Speciální brnění</h4>
+        <p><b>Stínové</b> (z esence, tvar jako ostatní brnění): rychlejší běh a stínožrouti tě nechají být. <b>Nebeské</b> (jen v truhlách kobek, věží a pevností): dvojitý skok, pomalý pád a léčení. Bonus platí jen za celou sadu (4 kusy).</p>
+        <h4>🗺 Stavby</h4>
+        <p>♜ Strážní věž (schody uvnitř, truhla nahoře) · ⛺ Opuštěný tábor · ☠ Kobka pod zemí (vchod pod cihlovým obloukem, schody dolů) · ▣ Ruiny · ⛫ Markomanská pevnost.</p>
+        <h4>🐾 Tvorové</h4>
+        <p>Ovce, kanec, <b>jelen</b> (plachý) a <b>vlk</b> (v noci v lesích loví) · stínožrout (noc) · Markoman a <b>krystalový golem</b> (pomalý, ale silný; padají z něj úlomky a markorit).</p>
+        <h4>⌨ Ovládání</h4>
+        <p>E inventář · C kreativní režim (2× Mezerník = létání) · H návod · pravé tlačítko na zem při skoku = stavění pod sebe.</p>
+      </div>
+    </div>
+  </div>
   <div id="tip"><div class="title">Rada</div><div class="text" id="tipText"></div></div>
   <div id="crosshair"></div>
   <div id="progress"></div>
@@ -162,7 +197,7 @@
   </div>
   <div id="vignette"></div>
   <div id="fade">Padl jsi…</div>
-  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · C kreativní · 1–9 výběr</div>
+  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · H návod · C kreativní · 1–9 výběr</div>
   <div id="inventory">
     <div class="mc-window">
       <div class="mc-panel mc-book">
@@ -176,7 +211,7 @@
         <div class="mc-title">Batoh</div>
         <div class="grid" id="invGrid"></div>
         <div class="grid hot" id="invHot"></div>
-        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="guideBtn">Návod (H)</button> <button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
       </div>
     </div>
   </div>
@@ -234,6 +269,8 @@ const ITEMS = {
   markdirt: { name: 'Markdirt', icon: '🟦', block: 'markdirt' },
   markorite_raw: { name: 'Surový markorit', icon: '🟪' },
   markorite: { name: 'Markoritový ingot', icon: '🟪' },
+  markapple: { name: 'Markové jablko', icon: '🍎', food: 20, heal: 8, fly: 10 },
+  spikes: { name: 'Hroty', icon: '⚔', block: 'spikes' },
 };
 const TIERS = [
   [1, 'wood', 'Dřevěn'], [2, 'stone', 'Kamenn'], [3, 'iron', 'Železn'], [4, 'crystal', 'Krystalov'], [5, 'markorite', 'Markoritov'],
@@ -251,6 +288,15 @@ const ARMOR_PTS = { 3: [2, 6, 5, 2], 4: [3, 7, 6, 3], 5: [4, 8, 7, 4] };
 for (const [t, key, mat] of TIERS.slice(2)) {
   const names = [`${mat}á helma`, `${mat}é brnění`, `${mat}é kalhoty`, `${mat}é boty`];
   ARMOR_SLOTS.forEach((s, i) => { ITEMS[`${key}_${s}`] = { name: names[i], armor: { slot: i, pts: ARMOR_PTS[t][i] }, tier: t, stack: 1 }; });
+}
+// Speciální sady brnění s bonusem za celou sadu (všechny 4 kusy).
+const ARMOR_SETS = {
+  shadow: { name: 'Stínov', pts: [2, 5, 4, 2], bonus: 'rychlejší běh, stínožrouti tě nechají být' },
+  sky: { name: 'Nebesk', pts: [3, 7, 6, 3], bonus: 'dvojitý skok, pomalý pád, léčení' },
+};
+for (const [set, def] of Object.entries(ARMOR_SETS)) {
+  const names = [`${def.name}á helma`, `${def.name}é brnění`, `${def.name}é kalhoty`, `${def.name}é boty`];
+  ARMOR_SLOTS.forEach((sl, i) => { ITEMS[`${set}_${sl}`] = { name: names[i], armor: { slot: i, pts: def.pts[i], set }, tier: set, stack: 1 }; });
 }
 for (const it of Object.values(ITEMS)) it.stack ??= 64;
 
@@ -293,6 +339,14 @@ for (const [, key] of TIERS.slice(2)) {
     { out: `${key}_boots`, n: 1, shape: ['M M', 'M M'], key: k },
   );
 }
+// Stínové brnění z esence stínožroutů; hroty na farmy.
+RECIPES.push(
+  { out: 'shadow_helmet', n: 1, shape: ['MMM', 'M M'], key: { M: 'essence' } },
+  { out: 'shadow_chestplate', n: 1, shape: ['M M', 'MMM', 'MMM'], key: { M: 'essence' } },
+  { out: 'shadow_leggings', n: 1, shape: ['MMM', 'M M', 'M M'], key: { M: 'essence' } },
+  { out: 'shadow_boots', n: 1, shape: ['M M', 'M M'], key: { M: 'essence' } },
+  { out: 'spikes', n: 4, shape: ['I I', 'III'], key: { I: 'iron' } },
+);
 for (const r of RECIPES) {
   const w = Math.max(...r.shape.map((l) => l.length));
   r.pat = r.shape.map((l) => [...l.padEnd(w)].map((ch) => (ch === ' ' ? null : r.key[ch])));
@@ -315,6 +369,8 @@ const BLOCKS = {
   chest: { name: 'Truhla', solid: true, hard: 1.2, tool: 'axe', drop: 'chest', special: true },
   campfire: { name: 'Táborák', solid: false, hard: 0.8, tool: 'axe', drop: 'campfire', special: true, light: 20 },
   torch: { name: 'Pochodeň', solid: false, hard: 0.1, drop: 'torch', special: true, light: 8 },
+  spikes: { name: 'Hroty', solid: false, hard: 1.5, tool: 'pick', drop: 'spikes', special: true },
+  spawner: { name: 'Spawner', solid: true, hard: 6, tool: 'pick', req: 3, drop: null, special: true, light: 6 },
 };
 
 // ============================================================ pomocné funkce
@@ -642,6 +698,8 @@ const ICONS = (() => {
     3: { L: '#ffffff', M: '#d6dbe2', D: '#7f8790' },
     4: { L: '#eaffff', M: '#7ff3ff', D: '#2593b8' },
     5: { L: '#ffd2ff', M: '#d24ee8', D: '#5e1680' },
+    shadow: { L: '#8a76a0', M: '#3c2c4e', D: '#120a1a' },
+    sky: { L: '#ffffff', M: '#ffe7a0', D: '#c0902e' },
   };
   const HELMET = ['................', '................', '................', '....DDDDDDDD....', '...DLLLMMMMMD...', '..DLMMMMMMMMMD..',
     '..DLMMMMMMMMMD..', '..DMMDDDDDDMMD..', '..DMD......DMD..', '..DMD......DMD..', '...D........D...'];
@@ -797,6 +855,14 @@ const ICONS = (() => {
     mark_planks: iso(markPlanks16, markPlanks16),
     markwood: iso(markRings, markBark),
     chest: iso(chestTop, chestFront),
+    markapple: pixel([
+      '................', '.......Gg.......', '......gG........', '....DDDgDDD.....', '...DPPPDPPPD....', '..DPLWPPPPPPD...',
+      '..DPLPPPPPPPD...', '..DPPPPPPPPPD...', '..DPPPPPPPPdD...', '...DPPPPPPdD....', '....DPPPPdD.....', '.....DDDDD......',
+    ], { D: '#1a0a3a', P: '#5a4aff', L: '#a8a0ff', W: '#ffffff', d: '#3020a0', G: '#3ad0ff', g: '#1a8ab0' }),
+    spikes: pixel([
+      '................', '................', '................', '..L....L....L...', '..L....L....L...', '.LMD..LMD..LMD..',
+      '.LMD..LMD..LMD..', 'LMMMDLMMMDLMMMD.', 'LMMMDLMMMDLMMMD.', 'DDDDDDDDDDDDDDD.', 'MMMMMMMMMMMMMMM.', 'DDDDDDDDDDDDDDD.',
+    ], { L: '#ffffff', M: '#b8bec8', D: '#5a606a' }),
     markorite_raw: pixel([
       '................', '................', '.....DDDDD......', '....DSSPSSDD....', '...DSPpSSSSSD...', '..DSSpSSSPPSSD..',
       '..DSSSSSSPpSSD..', '..DLSSPSSSSSSD..', '..DSSPpSSSSPSD..', '...DSSSSSPpSD...', '....DSSSSSSD....', '.....DDDDDD.....',
@@ -1498,6 +1564,41 @@ function buildSpecial(type) {
     }
     flame(0.9, 0.35);
     flame(0.6, 0.55);
+  } else if (type === 'spikes') {
+    const metal = new THREE.MeshStandardMaterial({ color: 0xc0c6d0, metalness: 0.9, roughness: 0.3 });
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.06, 0.96), metal);
+    plate.position.y = 0.03;
+    g.add(plate);
+    const spike = new THREE.ConeGeometry(0.07, 0.42, 6);
+    for (let i = 0; i < 9; i++) {
+      const c = new THREE.Mesh(spike, metal);
+      c.position.set(((i % 3) - 1) * 0.3, 0.27, (Math.floor(i / 3) - 1) * 0.3);
+      g.add(c);
+    }
+  } else if (type === 'spawner') {
+    // Klec s fialovým jádrem – z ní se rodí tvorové.
+    const bars = new THREE.MeshStandardMaterial({ color: 0x2a2a34, metalness: 0.9, roughness: 0.4 });
+    const bar = new THREE.BoxGeometry(0.06, 0.96, 0.06), barH = new THREE.BoxGeometry(0.96, 0.06, 0.06);
+    for (const [x, z] of [[-0.45, -0.45], [0.45, -0.45], [-0.45, 0.45], [0.45, 0.45], [0, -0.45], [0, 0.45], [-0.45, 0], [0.45, 0]]) {
+      const b = new THREE.Mesh(bar, bars);
+      b.position.set(x, 0.48, z);
+      g.add(b);
+    }
+    for (const y of [0.03, 0.93]) for (const [rz, x, z] of [[0, 0, -0.45], [0, 0, 0.45], [Math.PI / 2, -0.45, 0], [Math.PI / 2, 0.45, 0]]) {
+      const b = new THREE.Mesh(barH, bars);
+      b.position.set(x, y, z);
+      b.rotation.y = rz;
+      g.add(b);
+    }
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), new THREE.MeshStandardMaterial({ color: 0x3a0a4a, emissive: 0xc040ff, emissiveIntensity: 2 }));
+    core.position.y = 0.48;
+    g.add(core);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xb040ff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    s.scale.setScalar(1.2);
+    s.position.y = 0.48;
+    s.userData.base = 1.2;
+    g.add(s);
+    flames.push(s);
   } else if (type === 'chest') {
     const wood = blockMats.planks, dark = new THREE.MeshStandardMaterial({ color: 0x3a2814, roughness: 0.9 });
     const metal = new THREE.MeshStandardMaterial({ color: 0xc8c8d0, metalness: 0.9, roughness: 0.35 });
@@ -1565,7 +1666,7 @@ function updateLights(time) {
   });
   for (const s of list) for (const f of s.flames) f.scale.setScalar(f.userData.base * (0.85 + 0.2 * Math.sin(time * 17 + s.x + f.position.y * 9)));
 }
-const nearLight = (x, z, r) => { for (const s of specials.values()) if (BLOCKS[s.type].light && (s.x + 0.5 - x) ** 2 + (s.z + 0.5 - z) ** 2 < r * r) return true; return false; };
+const nearLight = (x, z, r) => { for (const s of specials.values()) if (BLOCKS[s.type].light && s.type !== 'spawner' && (s.x + 0.5 - x) ** 2 + (s.z + 0.5 - z) ** 2 < r * r) return true; return false; };
 
 // ============================================================ podzemí – vykreslení
 // Atlas textur podzemních bloků: hlína, kámen, uhlí, železo, krystal, podloží.
@@ -1853,6 +1954,7 @@ const Sound = {
   portal() { [220, 277, 330, 440, 554, 660].forEach((f, i) => this.tone(f, 2.2, 0.07, 'triangle', i * 0.1)); this.burst({ dur: 1.6, f0: 200, f1: 4000, q: 2, vol: 0.18 }); },
   growl() { this.tone(70 + Math.random() * 30, 0.5, 0.12, 'sawtooth', 0, 45); },
   baa() { this.tone(420, 0.45, 0.05, 'sawtooth', 0, 360); this.tone(424, 0.45, 0.04, 'sawtooth', 0.02, 362); },
+  howl() { this.tone(380, 1.4, 0.06, 'sine', 0, 520); this.tone(390, 1.4, 0.04, 'triangle', 0.05, 530); },
   grunt() { this.tone(110, 0.25, 0.12, 'sawtooth', 0, 70); },
   chirp() { const f = 4200 + Math.random() * 600; for (let i = 0; i < 3; i++) this.tone(f, 0.035, 0.015, 'sine', i * 0.06); },
 };
@@ -1935,6 +2037,8 @@ let invOpen = false;
 const ui = { mode: 'inv', size: 2, craft: Array(9).fill(null), fireKey: null, ghost: null };
 const armor = save?.armor || [null, null, null, null]; // helma, brnění, kalhoty, boty
 const armorPoints = () => armor.reduce((n, s) => n + (s ? ITEMS[s.id].armor.pts : 0), 0);
+// Celá sada speciálního brnění (všechny 4 kusy stejné sady) dává bonus.
+const fullSet = () => { const s0 = armor[0] && ITEMS[armor[0].id].armor.set; return s0 && armor.every((a) => a && ITEMS[a.id].armor.set === s0) ? s0 : null; };
 const chests = new Map(Object.entries(save?.chests || {})); // klíč bloku -> 27 políček
 const chestOf = (k) => { if (!chests.has(k)) chests.set(k, Array(27).fill(null)); return chests.get(k); };
 const fires = new Map(Object.entries(save?.fires || {})); // klíč bloku -> { slots: [vstup, výstup], t }
@@ -2040,7 +2144,9 @@ function itemInfo(id, el) {
   const lines = [];
   const TIER_N = ['', 'Dřevo', 'Kámen', 'Železo', 'Krystal', 'Markorit'];
   if (d.tool) lines.push(`${TIER_N[d.tier]} · poškození ${d.dmg}`);
-  if (d.armor) lines.push(`${TIER_N[d.tier]} · ochrana +${d.armor.pts} (${ARMOR_SLOT_NAMES[d.armor.slot]})`);
+  if (d.armor && d.armor.set) lines.push(`Sada ${ARMOR_SETS[d.armor.set].name}á · ochrana +${d.armor.pts}`, `Bonus za celou sadu: ${ARMOR_SETS[d.armor.set].bonus}`);
+  else if (d.armor) lines.push(`${TIER_N[d.tier]} · ochrana +${d.armor.pts} (${ARMOR_SLOT_NAMES[d.armor.slot]})`);
+  if (d.fly) lines.push(`Po snězení ${d.fly} s létání`);
   if (d.food) lines.push(`Jídlo +${d.food}${d.heal ? ` · zdraví +${d.heal}` : ''} (pravé tl.)`);
   if (d.block) lines.push('Lze položit (pravé tl.)');
   if (el?.dataset.r !== undefined) {
@@ -2253,7 +2359,17 @@ let resetting = false;
 // Kreativní režim: létání, okamžité ničení, nekonečné bloky, všechny předměty, žádné zranění.
 let creative = !!save?.creative;
 player.flying = creative && !!save?.flying;
+player.flyT = save?.flyT || 0;
 let lastSpace = 0;
+// Návod (klávesa H)
+let guideOpen = false;
+function toggleGuide() {
+  guideOpen = !guideOpen;
+  if (guideOpen && invOpen) closeInventory();
+  $('guide').style.display = guideOpen ? 'grid' : 'none';
+  if (guideOpen) document.exitPointerLock?.(); else canvas.requestPointerLock?.()?.catch?.(() => {});
+}
+$('guideBtn').addEventListener('click', toggleGuide);
 $('modeBtn').textContent = `Režim: ${creative ? 'Kreativní' : 'Přežití'}`;
 function setCreative(on) {
   creative = on;
@@ -2267,7 +2383,13 @@ function setCreative(on) {
 addEventListener('keydown', (e) => {
   if (e.code === 'KeyE' && !e.repeat) { invOpen ? closeInventory() : (isLocked() || game.testMode) && openInventory(); return; }
   if (e.code === 'Escape' && invOpen) { closeInventory(); return; }
+  if (e.code === 'KeyH' && !e.repeat) { toggleGuide(); return; }
+  if (guideOpen) return;
   if (e.code === 'KeyC' && !e.repeat && !invOpen) { setCreative(!creative); return; }
+  // Nebeská sada: dvojitý skok
+  if (e.code === 'Space' && !e.repeat && !creative && fullSet() === 'sky' && !player.onGround && !player.doubleUsed && !(player.flyT > 0)) {
+    player.vel.y = JUMP; player.doubleUsed = true; sparks.emit(player.pos.x, player.pos.y, player.pos.z, [1, 0.9, 0.6], 20, 2, 0);
+  }
   if (e.code === 'Space' && !e.repeat && creative) {
     const now = performance.now();
     if (now - lastSpace < 300) { player.flying = !player.flying; player.vel.y = 0; toast(player.flying ? 'Létání zapnuto' : 'Létání vypnuto'); }
@@ -2328,10 +2450,12 @@ function updatePlayer(dt) {
   if (keys.has('KeyD') || keys.has('ArrowRight')) s += 1;
   if (keys.has('KeyA') || keys.has('ArrowLeft')) s -= 1;
   const len = Math.hypot(f, s) || 1;
-  const flying = creative && player.flying;
+  if (player.flyT > 0) player.flyT = Math.max(0, player.flyT - dt);
+  const set = fullSet();
+  const flying = (creative && player.flying) || player.flyT > 0;
   const shift = keys.has('ShiftLeft') || keys.has('ShiftRight');
   const sprint = flying ? keys.has('ControlLeft') : shift && player.hunger > 5;
-  const speed = flying ? (sprint ? 24 : 12) : sprint ? RUN : WALK;
+  const speed = (flying ? (sprint ? 24 : 12) : sprint ? RUN : WALK) * (set === 'shadow' && !flying ? 1.25 : 1);
   const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
   const tx = ((s * cos - f * sin) / len) * speed, tz = ((-s * sin - f * cos) / len) * speed;
   const v = player.vel, p = player.pos;
@@ -2343,7 +2467,7 @@ function updatePlayer(dt) {
     v.y += (up * 10 - v.y) * Math.min(1, 10 * dt);
   } else {
     if (player.onGround && keys.has('Space')) { v.y = JUMP; player.onGround = false; }
-    v.y = Math.max(-40, v.y - GRAVITY * dt);
+    v.y = Math.max(set === 'sky' ? -7 : -40, v.y - GRAVITY * dt); // nebeská sada: pomalý pád
   }
 
   // Pojistka: hráč uvízlý uvnitř bloků vyskočí nahoru.
@@ -2352,6 +2476,9 @@ function updatePlayer(dt) {
   let landed = false;
   // Povrch platí jen pro hráče u povrchu – v jeskyni pod ním chodí po blocích.
   const surface = (prevY) => {
+    // Ve vykopaném tunelu nebo jeskyni těsně pod povrchem (např. schody do kobky) povrch hráče nevytlačí nahoru.
+    const fx = Math.floor(p.x), fz = Math.floor(p.z), fy = Math.floor(p.y);
+    if (fy < topY(fx, fz) && getVox(fx, fy, fz) === V.AIR && getVox(fx, fy + 1, fz) === V.AIR) return;
     const g = groundHeight(p.x, p.z);
     if (p.y < g && prevY >= g - 1.05) { p.y = g; if (v.y < 0) v.y = 0; landed = true; }
   };
@@ -2375,6 +2502,7 @@ function updatePlayer(dt) {
   const g = groundHeight(p.x, p.z);
   if (!landed && wasGround && v.y <= 0 && p.y > g && p.y - g < 0.45 && !collidesBlocks({ x: p.x, y: g, z: p.z })) { p.y = g; v.y = 0; landed = true; }
   player.onGround = landed;
+  if (landed) player.doubleUsed = false;
   if (flying && landed && shift) player.flying = false; // přistání ukončí let
   if (p.y < VMIN - 5) { p.set(shrineOf(p.x).x, 0.45, 14); v.set(0, 0, 0); }
 
@@ -2718,7 +2846,8 @@ function breakTarget(t) {
   } else if (t.kind === 'block') {
     const k = bkey(...t.cell);
     blocks.delete(k);
-    addItem(BLOCKS[t.type].drop, 1);
+    if (BLOCKS[t.type].drop) addItem(BLOCKS[t.type].drop, 1);
+    spawners.delete(k);
     for (const store of [fires.get(k)?.slots, chests.get(k)]) if (store) for (const s of store) if (s) addItem(s.id, s.n);
     fires.delete(k);
     chests.delete(k);
@@ -2747,7 +2876,7 @@ function useItem() {
   const STATION_UI = { workbench: 'bench', campfire: 'fire', chest: 'chest' };
   if (target?.kind === 'block' && STATION_UI[target.type]) {
     openInventory(STATION_UI[target.type], bkey(...target.cell));
-    if (target.type === 'chest') { Sound.place(); for (const r of ruinsNear(target.cell[0], target.cell[2], 3)) ruinsOpened.add(r.key); }
+    if (target.type === 'chest') { Sound.place(); for (const r of structuresNear(target.cell[0], target.cell[2], 14)) ruinsOpened.add(r.key); }
     return;
   }
   if (target?.kind === 'portal') return usePortal(target.shrine);
@@ -2755,7 +2884,8 @@ function useItem() {
   if (!s) return;
   const d = ITEMS[s.id];
   if (d.food) {
-    if (player.hunger >= 100 && !(d.heal && player.hp < 100)) { toast('Nemáš hlad'); return; }
+    if (player.hunger >= 100 && !(d.heal && player.hp < 100) && !d.fly) { toast('Nemáš hlad'); return; }
+    if (d.fly) { player.flyT = d.fly; toast('Markové jablko: 10 s létání! Mezerník = nahoru, Shift = dolů'); sparks.emit(player.pos.x, player.pos.y + 1, player.pos.z, [0.5, 0.5, 1], 40, 3, 2); }
     player.hunger = Math.min(100, player.hunger + d.food);
     if (d.heal) player.hp = Math.min(100, player.hp + d.heal);
     consumeSelected();
@@ -2790,28 +2920,45 @@ function pillarPlace() {
 }
 
 // ============================================================ tvorové: ovce, kanci, stínožrouti
+// Kořist z tvorů: [předmět, min, max, šance]
 const MOBS = {
   sheep: { name: 'Ovce', hp: 5, radius: 0.75, cy: 0.75, drops: [['raw_meat', 1, 2], ['wool', 1, 2]] },
   boar: { name: 'Kanec', hp: 12, radius: 0.8, cy: 0.7, dmg: 10, drops: [['raw_meat', 2, 3]] },
+  deer: { name: 'Jelen', hp: 8, radius: 0.8, cy: 1.0, drops: [['raw_meat', 2, 3]] },
+  wolf: { name: 'Vlk', hp: 14, radius: 0.7, cy: 0.6, dmg: 8, drops: [['raw_meat', 1, 2]] },
   crawler: { name: 'Stínožrout', hp: 10, radius: 0.7, cy: 0.5, dmg: 14, drops: [['essence', 1, 2]] },
-  // Markomani: nepřátelští bojovníci Markovy dimenze s dřevěnými meči. [předmět, min, max, šance]
-  markoman: { name: 'Markoman', hp: 24, radius: 0.75, cy: 1.1, dmg: 11, drops: [['markwood', 1, 2], ['markorite_raw', 1, 1, 0.35], ['wood_sword', 1, 1, 0.15], ['essence', 1, 1, 0.3]] },
+  // Markomani: nepřátelští bojovníci Markovy dimenze v železné zbroji se železným mečem.
+  markoman: {
+    name: 'Markoman', hp: 26, radius: 0.75, cy: 1.1, dmg: 12, tall: true,
+    drops: [['markapple', 1, 1, 0.3], ['iron', 1, 2, 0.4], ['markwood', 1, 2, 0.5], ['markorite_raw', 1, 1, 0.3], ['iron_sword', 1, 1, 0.08],
+      ['iron_helmet', 1, 1, 0.04], ['iron_chestplate', 1, 1, 0.03], ['iron_leggings', 1, 1, 0.03], ['iron_boots', 1, 1, 0.04]],
+  },
+  golem: { name: 'Krystalový golem', hp: 60, radius: 1.2, cy: 1.5, dmg: 22, tall: true, drops: [['shard', 1, 3], ['markorite', 1, 1, 0.5], ['markapple', 1, 1, 0.25]] },
 };
+const HOSTILE_SPEED = { boar: 5.2, crawler: 4.7, markoman: 4.4, wolf: 6.2, golem: 2.4 };
 const mobs = [];
 const shadowGeo = new THREE.CircleGeometry(0.75, 20).rotateX(-Math.PI / 2);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
 const eyeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 0.22, 0.04), fog: false });
 
 function buildMob(type) {
-  const g = new THREE.Group(), legs = [];
+  const g = new THREE.Group(), legs = [], arms = [];
   const mat = (o) => new THREE.MeshStandardMaterial({ roughness: 0.9, ...o });
   const mesh = (geo, m, x, y, z, parent = g) => { const me = new THREE.Mesh(geo, m); me.position.set(x, y, z); parent.add(me); return me; };
-  const leg = (m, x, y, z, len) => {
+  const leg = (m, x, y, z, len, w = 0.13) => {
     const pivot = new THREE.Group();
     pivot.position.set(x, y, z);
-    mesh(new THREE.BoxGeometry(0.13, len, 0.13).translate(0, -len / 2, 0), m, 0, 0, 0, pivot);
+    mesh(new THREE.BoxGeometry(w, len, w).translate(0, -len / 2, 0), m, 0, 0, 0, pivot);
     g.add(pivot);
     legs.push(pivot);
+    return pivot;
+  };
+  const limb = (m, x, y, w, len) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, y, 0);
+    mesh(new THREE.BoxGeometry(w, len, w).translate(0, -len / 2, 0), m, 0, 0, 0, pivot);
+    g.add(pivot);
+    return pivot;
   };
   let body;
   if (type === 'sheep') {
@@ -2830,30 +2977,71 @@ function buildMob(type) {
     for (const x of [-0.11, 0.11]) mesh(new THREE.ConeGeometry(0.03, 0.16, 5), tusk, x, 0.66, -1.12).rotation.x = -0.4;
     for (const x of [-0.13, 0.13]) mesh(new THREE.SphereGeometry(0.035, 6, 4), eyeMat.clone(), x, 0.84, -1.09).material.color.setRGB(0.05, 0.03, 0.02);
     for (const [x, z] of [[-0.22, -0.5], [0.22, -0.5], [-0.22, 0.5], [0.22, 0.5]]) leg(dark, x, 0.45, z, 0.45);
+  } else if (type === 'deer') {
+    // Jelen: dlouhé nohy, krk, parohy; plachý, utíká.
+    const fur = mat({ color: 0x8a5a32, flatShading: true }), dark = mat({ color: 0x3a2616 }), light = mat({ color: 0xe8dcc8 }), antler = mat({ color: 0xd8c8a0 });
+    body = mesh(lumpy(new THREE.IcosahedronGeometry(1, 2), 0.08, 7), fur, 0, 1.05, 0);
+    body.scale.set(0.36, 0.38, 0.78);
+    const neck = mesh(new THREE.BoxGeometry(0.2, 0.55, 0.2), fur, 0, 1.4, -0.65);
+    neck.rotation.x = 0.5;
+    mesh(new THREE.BoxGeometry(0.24, 0.24, 0.42), fur, 0, 1.65, -0.9);
+    mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), light, 0, 0.98, 0.78);
+    for (const s of [-1, 1]) {
+      const a = mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.45, 5), antler, s * 0.1, 1.95, -0.85);
+      a.rotation.z = -s * 0.5;
+      const b = mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.22, 5), antler, s * 0.22, 2.08, -0.8);
+      b.rotation.set(0.6, 0, -s * 0.2);
+    }
+    for (const [x, z] of [[-0.18, -0.48], [0.18, -0.48], [-0.18, 0.48], [0.18, 0.48]]) leg(dark, x, 0.82, z, 0.82, 0.1);
+  } else if (type === 'wolf') {
+    // Vlk: šedý, štíhlý, žluté oči, v noci loví.
+    const fur = mat({ color: 0x6a6a72, flatShading: true }), dark = mat({ color: 0x3a3a40 });
+    const yellow = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2, 0.3), fog: false });
+    body = mesh(lumpy(new THREE.IcosahedronGeometry(1, 2), 0.08, 9), fur, 0, 0.66, 0);
+    body.scale.set(0.3, 0.3, 0.66);
+    const head = mesh(new THREE.BoxGeometry(0.3, 0.28, 0.34), fur, 0, 0.8, -0.72);
+    mesh(new THREE.BoxGeometry(0.16, 0.13, 0.2), dark, 0, -0.06, -0.24, head);
+    for (const s of [-1, 1]) {
+      mesh(new THREE.ConeGeometry(0.06, 0.14, 4), fur, s * 0.09, 0.2, 0.04, head);
+      mesh(new THREE.BoxGeometry(0.05, 0.03, 0.02), yellow, s * 0.07, 0.04, -0.175, head);
+    }
+    const tail = mesh(new THREE.CylinderGeometry(0.04, 0.07, 0.45, 6), fur, 0, 0.7, 0.75);
+    tail.rotation.x = 1.0;
+    for (const [x, z] of [[-0.14, -0.4], [0.14, -0.4], [-0.14, 0.4], [0.14, 0.4]]) leg(dark, x, 0.55, z, 0.55, 0.1);
   } else if (type === 'markoman') {
-    // Humanoid: nohy a ruce na kloubech, aby šly animovat; v pravé ruce dřevěný meč.
-    const cloth = mat({ color: 0x23285a }), plate = mat({ color: 0x5a3fa0, roughness: 0.5, metalness: 0.4 }), skin = mat({ color: 0x6f86b8 });
+    // Humanoid v železné zbroji se železným mečem; nohy a ruce na kloubech kvůli animaci.
+    const iron = mat({ color: 0xc4cad4, roughness: 0.35, metalness: 0.85 }), ironDark = mat({ color: 0x8a909a, roughness: 0.45, metalness: 0.8 });
+    const skin = mat({ color: 0x6f86b8 });
     const glowEye = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.4, 2.4, 3), fog: false });
-    const limb = (m, x, y, w, len) => {
-      const pivot = new THREE.Group();
-      pivot.position.set(x, y, 0);
-      mesh(new THREE.BoxGeometry(w, len, w).translate(0, -len / 2, 0), m, 0, 0, 0, pivot);
-      g.add(pivot);
-      return pivot;
-    };
-    legs.push(limb(cloth, -0.14, 0.9, 0.22, 0.9), limb(cloth, 0.14, 0.9, 0.22, 0.9));
-    body = mesh(new THREE.BoxGeometry(0.58, 0.72, 0.32), plate, 0, 1.26, 0);
+    legs.push(limb(ironDark, -0.14, 0.9, 0.22, 0.9), limb(ironDark, 0.14, 0.9, 0.22, 0.9));
+    body = mesh(new THREE.BoxGeometry(0.6, 0.74, 0.34), iron, 0, 1.26, 0);
+    mesh(new THREE.BoxGeometry(0.64, 0.08, 0.38), ironDark, 0, -0.32, 0, body); // opasek
     const head = mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), skin, 0, 1.86, 0);
     for (const ex of [-0.1, 0.1]) mesh(new THREE.BoxGeometry(0.08, 0.05, 0.02), glowEye, ex, 0.03, -0.215, head);
-    mesh(new THREE.BoxGeometry(0.46, 0.12, 0.46), plate, 0, 0.2, 0, head); // přilba
-    const arms = [limb(plate, -0.4, 1.58, 0.17, 0.72), limb(plate, 0.4, 1.58, 0.17, 0.72)];
+    mesh(new THREE.BoxGeometry(0.47, 0.16, 0.47), iron, 0, 0.18, 0, head); // železná helma
+    mesh(new THREE.BoxGeometry(0.06, 0.2, 0.06), iron, 0, 0.0, -0.23, head); // nosník helmy
+    arms.push(limb(iron, -0.41, 1.58, 0.18, 0.72), limb(iron, 0.41, 1.58, 0.18, 0.72));
     const sword = new THREE.Group();
     sword.position.set(0, -0.68, -0.05);
     sword.rotation.x = -Math.PI / 2;
-    mesh(new THREE.BoxGeometry(0.07, 0.7, 0.025).translate(0, 0.42, 0), TIER_MAT[1], 0, 0, 0, sword);
-    mesh(new THREE.BoxGeometry(0.22, 0.04, 0.06), handleMat, 0, 0.06, 0, sword);
+    mesh(new THREE.BoxGeometry(0.07, 0.75, 0.02).translate(0, 0.45, 0), TIER_MAT[3], 0, 0, 0, sword);
+    mesh(new THREE.BoxGeometry(0.24, 0.04, 0.06), goldMat, 0, 0.06, 0, sword);
     arms[1].add(sword);
-    g.userData.arms = arms;
+  } else if (type === 'golem') {
+    // Krystalový golem: obří kamenný strážce Markovy dimenze se svítícími krystaly na zádech.
+    const stone = mat({ map: rockTex, color: 0x8a86a8, flatShading: true });
+    const crystal = mat({ color: 0xbff8ff, emissive: 0x3fdcff, emissiveIntensity: 1.6, roughness: 0.2 });
+    crystal.userData.glow = true;
+    const glow = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 2.6, 3), fog: false });
+    legs.push(limb(stone, -0.32, 0.9, 0.42, 0.9), limb(stone, 0.32, 0.9, 0.42, 0.9));
+    body = mesh(new THREE.BoxGeometry(1.25, 1.2, 0.8), stone, 0, 1.55, 0);
+    const head = mesh(new THREE.BoxGeometry(0.6, 0.55, 0.55), stone, 0, 2.4, -0.05);
+    for (const ex of [-0.14, 0.14]) mesh(new THREE.BoxGeometry(0.12, 0.07, 0.02), glow, ex, 0.04, -0.28, head);
+    for (let i = 0; i < 5; i++) {
+      const c = mesh(new THREE.OctahedronGeometry(0.18).scale(1, 1.8, 1), crystal, (i - 2) * 0.24, 0.45 + Math.abs(i - 2) * -0.08, 0.42, body);
+      c.rotation.x = -0.4;
+    }
+    arms.push(limb(stone, -0.82, 2.05, 0.38, 1.3), limb(stone, 0.82, 2.05, 0.38, 1.3));
   } else {
     body = mesh(new THREE.SphereGeometry(0.6, 22, 16), mat({ color: 0x0e0a12, roughness: 0.35, metalness: 0.2 }), 0, 0.48, 0);
     body.scale.set(1, 0.8, 1.15);
@@ -2864,16 +3052,23 @@ function buildMob(type) {
       sp.rotation.set(-0.5, 0, (i - 2) * -0.35);
     }
   }
+  if (type === 'golem') g.scale.setScalar(1.1);
   const mats = [];
   g.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial && !mats.includes(o.material)) mats.push(o.material); });
-  return { group: g, body, legs, mats, arms: g.userData.arms || [] };
+  return { group: g, body, legs, mats, arms, bodyY: body.position.y };
 }
-function spawnMob(type, x, z) {
+// y: výška (jen u tvorů ze spawneru v podzemí); jinak stojí na povrchu.
+function spawnMob(type, x, z, y) {
   const m = buildMob(type);
   const shadow = new THREE.Mesh(shadowGeo, shadowMat);
   scene.add(m.group, shadow);
   const def = MOBS[type];
-  mobs.push({ type, def, ...m, shadow, pos: new THREE.Vector3(x, terrainH(x, z), z), vel: new THREE.Vector3(), hp: def.hp, phase: Math.random() * 6, flash: 0, cd: 0, dead: false, deathT: 0, wander: Math.random() * 6.28, moving: false, idleT: Math.random() * 3, fleeT: 0, aggro: false, soundT: 3 + Math.random() * 8 });
+  const under = y !== undefined && y < terrainH(x, z) - 2;
+  mobs.push({
+    type, def, ...m, shadow, under, vy: 0, pos: new THREE.Vector3(x, y ?? terrainH(x, z), z), vel: new THREE.Vector3(), hp: def.hp,
+    phase: Math.random() * 6, flash: 0, cd: 0, dead: false, deathT: 0, wander: Math.random() * 6.28, moving: false, idleT: Math.random() * 3,
+    fleeT: 0, aggro: false, soundT: 3 + Math.random() * 8,
+  });
 }
 function removeMob(m) {
   scene.remove(m.group, m.shadow);
@@ -2883,24 +3078,50 @@ function hitMob(m, dmg) {
   const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
   m.hp -= dmg;
   m.flash = 1;
-  m.vel.x += fx * 8;
-  m.vel.z += fz * 8;
-  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : [1, 0.25, 0.2], 18, 3.5, 1.5);
+  const kb = m.type === 'golem' ? 2 : 8;
+  m.vel.x += fx * kb;
+  m.vel.z += fz * kb;
+  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : m.type === 'golem' ? [0.4, 0.9, 1] : [1, 0.25, 0.2], 18, 3.5, 1.5);
   Sound.hit();
   player.shake = 0.1;
-  if (m.type === 'sheep') { m.fleeT = 5; Sound.baa(); }
-  if (m.type === 'boar') { m.aggro = true; Sound.grunt(); }
+  if (m.type === 'sheep' || m.type === 'deer') { m.fleeT = 5; if (m.type === 'sheep') Sound.baa(); }
+  if (m.type === 'boar' || m.type === 'wolf') { m.aggro = true; Sound.grunt(); }
   if (m.hp <= 0) killMob(m, true);
 }
-function killMob(m, drops) {
+// Kořist: ze zabití hráčem jde do batohu; z pasti (hroty) do nejbližší truhly do 5 bloků – základ farmy.
+function killMob(m, drops, trap = false) {
   m.dead = true;
   sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 50, 5, 2);
-  if (drops) for (const [id, a, b, chance] of m.def.drops) if (chance === undefined || Math.random() < chance) addItem(id, randInt(a, b));
-  if (m.type === 'crawler') Sound.kill();
+  if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') Sound.kill();
+  if (!drops) return;
+  let chest = null;
+  if (trap) {
+    let best = 26;
+    for (const [k, arr] of chests) {
+      const [x, y, z] = k.split(',').map(Number);
+      const d2 = (x + 0.5 - m.pos.x) ** 2 + (y - m.pos.y) ** 2 + (z + 0.5 - m.pos.z) ** 2;
+      if (d2 < best && blocks.get(k) === 'chest') { best = d2; chest = arr; }
+    }
+  }
+  const nearPlayer = Math.hypot(m.pos.x - player.pos.x, m.pos.y - player.pos.y, m.pos.z - player.pos.z) < 24;
+  for (const [id, a, b, chance] of m.def.drops) {
+    if (chance !== undefined && Math.random() >= chance) continue;
+    const n = randInt(a, b);
+    if (chest) insertStack(chest, { id, n });
+    else if (nearPlayer) addItem(id, n);
+  }
+  if (chest && invOpen && ui.mode === 'chest') renderInventory();
 }
 const playerSafe = () => shrineDist(player.pos.x, player.pos.z) < 11 || nearLight(player.pos.x, player.pos.z, 5);
+// Podlaha pod tvorem v podzemí: nejvyšší pevný blok do 1 bloku nad jeho nohama.
+function voxFloor(x, y, z) {
+  const fx = Math.floor(x), fz = Math.floor(z);
+  for (let cy = Math.floor(y + 1.05) - 1; cy >= Math.floor(y) - 12; cy--) if (solidAny(fx, cy, fz)) return cy + 1;
+  return VMIN;
+}
 
 function updateMobs(dt, day) {
+  const set = fullSet();
   for (const m of [...mobs]) {
     if (m.dead) {
       m.deathT += dt;
@@ -2910,85 +3131,116 @@ function updateMobs(dt, day) {
       continue;
     }
     const dx = player.pos.x - m.pos.x, dz = player.pos.z - m.pos.z, dist = Math.hypot(dx, dz) || 0.01;
+    const dyP = player.pos.y - m.pos.y;
     if (dist > 120) { removeMob(m); continue; }
     let dirX = 0, dirZ = 0, speed = 0;
     const wander = (sp) => {
       if ((m.idleT -= dt) <= 0) { m.moving = !m.moving; m.idleT = 2 + Math.random() * 4; m.wander = Math.random() * Math.PI * 2; }
       if (m.moving) { dirX = Math.cos(m.wander); dirZ = Math.sin(m.wander); speed = sp; }
     };
-    const hostile = !creative && (m.type === 'crawler' || m.type === 'markoman' || (m.type === 'boar' && m.aggro));
-    if (m.type === 'sheep' && m.fleeT > 0) {
-      m.fleeT -= dt; dirX = -dx / dist; dirZ = -dz / dist; speed = 5.5;
-    } else if (hostile && player.alive && dist < (m.type === 'crawler' ? 26 : 30) && !(m.type !== 'boar' && shrineDist(player.pos.x, player.pos.z) < 11) && !(m.type === 'crawler' && playerSafe())) {
-      dirX = dx / dist; dirZ = dz / dist; speed = { boar: 5.2, crawler: 4.7, markoman: 4.4 }[m.type];
+    const night = day < 0.4;
+    let hostile = !creative && (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem' || ((m.type === 'boar' || m.type === 'wolf') && m.aggro) || (m.type === 'wolf' && night));
+    if (m.type === 'crawler' && set === 'shadow') hostile = false; // stínové brnění
+    if (m.type === 'deer' && dist < 7 && !creative) m.fleeT = Math.max(m.fleeT, 2); // plachý
+    if ((m.type === 'sheep' || m.type === 'deer') && m.fleeT > 0) {
+      m.fleeT -= dt; dirX = -dx / dist; dirZ = -dz / dist; speed = m.type === 'deer' ? 7 : 5.5;
+    } else if (hostile && player.alive && Math.abs(dyP) < 5 && dist < (m.type === 'crawler' ? 26 : 30) && !(m.type !== 'boar' && shrineDist(player.pos.x, player.pos.z) < 11) && !(m.type === 'crawler' && playerSafe())) {
+      dirX = dx / dist; dirZ = dz / dist; speed = HOSTILE_SPEED[m.type];
     } else {
-      if (m.type === 'boar' && dist > 30) m.aggro = false;
-      wander(m.type === 'crawler' ? 1.3 : 1.0);
+      if ((m.type === 'boar' || m.type === 'wolf') && dist > 30) m.aggro = false;
+      wander(m.type === 'crawler' ? 1.3 : m.type === 'golem' ? 0.8 : 1.0);
     }
-    if (m.type === 'crawler' || m.type === 'markoman') {
+    if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem' || m.type === 'wolf') {
       const sh = shrineOf(m.pos.x), sd = shrineDist(m.pos.x, m.pos.z);
       if (sd < 13) { dirX = (m.pos.x - sh.x) / sd; dirZ = (m.pos.z - sh.z) / sd; speed = 3; }
     }
     if (m.type === 'crawler') {
       for (const s of specials.values()) {
-        if (!BLOCKS[s.type].light) continue;
+        if (!BLOCKS[s.type].light || s.type === 'spawner') continue;
         const lx = m.pos.x - (s.x + 0.5), lz = m.pos.z - (s.z + 0.5), ld = Math.hypot(lx, lz);
         if (ld < 6) { dirX = lx / ld; dirZ = lz / ld; speed = 3; }
       }
-      if (day > 0.75) { m.hp -= dt * 2.5; if (Math.random() < dt * 20) debris.emit(m.pos.x, m.pos.y + 0.8, m.pos.z, [0.1, 0.1, 0.1], 2, 1, 2); if (m.hp <= 0) { killMob(m, false); continue; } }
+      // Na denním světle shoří (v podzemí ne).
+      if (day > 0.75 && !m.under) { m.hp -= dt * 2.5; if (Math.random() < dt * 20) debris.emit(m.pos.x, m.pos.y + 0.8, m.pos.z, [0.1, 0.1, 0.1], 2, 1, 2); if (m.hp <= 0) { killMob(m, false); continue; } }
     }
 
     const k = Math.min(1, dt * 4);
     m.vel.x += (dirX * speed - m.vel.x) * k;
     m.vel.z += (dirZ * speed - m.vel.z) * k;
     const nx = m.pos.x + m.vel.x * dt, nz = m.pos.z + m.vel.z * dt;
-    const gy = groundHeight(nx, nz);
-    // Do vykopané díry ani do zdi tvorové nevlezou.
-    if (!isFinite(gy) || solidAt(Math.floor(nx), Math.floor(gy + 0.5), Math.floor(nz))) { m.vel.x *= -0.3; m.vel.z *= -0.3; m.wander += Math.PI; }
-    else { m.pos.x = nx; m.pos.z = nz; }
-    for (const c of forestColliders) {
-      const ox = m.pos.x - c.x, oz = m.pos.z - c.z, d = Math.hypot(ox, oz), min = c.r + 0.55;
-      if (d < min && d > 1e-4) { m.pos.x = c.x + (ox / d) * min; m.pos.z = c.z + (oz / d) * min; }
+    const bounce = () => { m.vel.x *= -0.3; m.vel.z *= -0.3; m.wander += Math.PI; };
+    const h = m.def.tall ? 2 : 1;
+    if (m.under) {
+      // Pod zemí (kobky, jeskyně): chůze po blocích, schod max. 1 blok, pád s gravitací.
+      const fl = voxFloor(nx, m.pos.y, nz);
+      let blocked = fl > m.pos.y + 1.05;
+      for (let i = 0; i < h && !blocked; i++) if (solidAny(Math.floor(nx), Math.floor(Math.max(fl, m.pos.y)) + i, Math.floor(nz))) blocked = true;
+      if (blocked) bounce(); else { m.pos.x = nx; m.pos.z = nz; }
+      const floor = voxFloor(m.pos.x, m.pos.y, m.pos.z);
+      if (floor >= m.pos.y) { m.pos.y = floor; m.vy = 0; }
+      else { m.vy -= 18 * dt; m.pos.y = Math.max(floor, m.pos.y + m.vy * dt); if (m.pos.y === floor) m.vy = 0; }
+    } else {
+      const gy = groundHeight(nx, nz);
+      // Do vykopané díry ani do zdi tvorové na povrchu nevlezou.
+      let blocked = !isFinite(gy);
+      for (let i = 0; i < h && !blocked; i++) if (solidAt(Math.floor(nx), Math.floor(gy + 0.5) + i, Math.floor(nz))) blocked = true;
+      if (blocked) bounce(); else { m.pos.x = nx; m.pos.z = nz; }
+      for (const c of forestColliders) {
+        const ox = m.pos.x - c.x, oz = m.pos.z - c.z, d = Math.hypot(ox, oz), min = c.r + 0.55;
+        if (d < min && d > 1e-4) { m.pos.x = c.x + (ox / d) * min; m.pos.z = c.z + (oz / d) * min; }
+      }
+      const my = groundHeight(m.pos.x, m.pos.z);
+      if (isFinite(my)) m.pos.y = my;
+      // Stojí-li na položeném bloku (podlaha pevnosti), vyleze na něj.
+      const bf = Math.floor(m.pos.y + 0.05);
+      if (solidAt(Math.floor(m.pos.x), bf, Math.floor(m.pos.z))) m.pos.y = bf + 1;
     }
+    // Hroty: zraňují tvory, kteří na nich stojí; kořist padá do truhly.
+    if (blocks.get(bkey(Math.floor(m.pos.x), Math.floor(m.pos.y + 0.1), Math.floor(m.pos.z))) === 'spikes') {
+      m.hp -= 9 * dt;
+      m.flash = Math.max(m.flash, 0.4);
+      if (m.hp <= 0) { killMob(m, true, true); continue; }
+    }
+
     const sp = Math.hypot(m.vel.x, m.vel.z);
     m.phase += dt * (sp * 2.2 + (m.type === 'crawler' ? 2 : 0));
-    const my = groundHeight(m.pos.x, m.pos.z);
-    if (isFinite(my)) m.pos.y = my;
     let hop = 0;
     if (m.type === 'crawler') {
       hop = Math.abs(Math.sin(m.phase)) * (sp > 2 ? 0.5 : 0.18);
       const squash = 1 + Math.cos(m.phase * 2) * 0.12;
       m.body.scale.set(1 / Math.sqrt(squash), 0.8 * squash, 1.15 / Math.sqrt(squash));
-    } else if (m.type === 'markoman') {
-      const swing = Math.sin(m.phase * 1.6) * Math.min(sp / 2, 1) * 0.8;
+    } else if (m.arms.length) {
+      const swing = Math.sin(m.phase * (m.type === 'golem' ? 1.1 : 1.6)) * Math.min(sp / 2, 1) * 0.8;
       m.legs[0].rotation.x = swing;
       m.legs[1].rotation.x = -swing;
       m.arms[0].rotation.x = -swing * 0.8;
       m.atkT = Math.max(0, (m.atkT || 0) - dt);
-      m.arms[1].rotation.x = m.atkT > 0 ? -2.4 * Math.sin((1 - m.atkT / 0.35) * Math.PI) : swing * 0.6 - (dist < 6 ? 0.6 : 0);
+      m.arms[1].rotation.x = m.atkT > 0 ? -2.4 * Math.sin((1 - m.atkT / 0.35) * Math.PI) : swing * 0.6 - (dist < 6 && m.type === 'markoman' ? 0.6 : 0);
+      if (m.type === 'golem' && m.atkT > 0) m.arms[0].rotation.x = m.arms[1].rotation.x;
     } else {
       const swing = Math.sin(m.phase * 2.2) * Math.min(sp / 2, 1) * 0.7;
       m.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
-      m.body.position.y = (m.type === 'sheep' ? 0.78 : 0.72) + Math.abs(swing) * 0.03;
+      m.body.position.y = m.bodyY + Math.abs(swing) * 0.03;
     }
     m.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
     m.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
     if (sp > 0.15) m.group.rotation.y = Math.atan2(-m.vel.x, -m.vel.z);
 
     m.flash = Math.max(0, m.flash - dt * 5);
-    for (const mat of m.mats) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
+    for (const mat of m.mats) if (!mat.userData.glow) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
     m.cd -= dt;
-    if (hostile && dist < (m.type === 'markoman' ? 1.7 : 1.4) && m.cd <= 0 && player.alive) {
-      m.cd = 1.1;
+    const reach = { markoman: 1.7, golem: 2.4 }[m.type] || 1.4;
+    if (hostile && dist < reach && Math.abs(dyP) < 2 && m.cd <= 0 && player.alive) {
+      m.cd = m.type === 'golem' ? 1.6 : m.type === 'wolf' ? 0.8 : 1.1;
       m.atkT = 0.35;
-      if (m.type === 'markoman') Sound.swing();
+      if (m.arms.length) Sound.swing();
       damagePlayer(m.def.dmg, dx / dist, dz / dist);
       m.vel.x -= (dx / dist) * 4;
       m.vel.z -= (dz / dist) * 4;
     }
     if ((m.soundT -= dt) <= 0) {
       m.soundT = 5 + Math.random() * 10;
-      if (dist < 25) m.type === 'sheep' ? Sound.baa() : m.type === 'crawler' ? Sound.growl() : Sound.grunt();
+      if (dist < 25) ({ sheep: () => Sound.baa(), crawler: () => Sound.growl(), wolf: () => Sound.howl(), deer: () => {} }[m.type] || (() => Sound.grunt()))();
     }
   }
 }
@@ -3002,78 +3254,209 @@ function updateSpawns(dt, night) {
     const x = player.pos.x + Math.cos(a) * r, z = player.pos.z + Math.sin(a) * r;
     return shrineDist(x, z) < 35 || nearLight(x, z, 12) ? null : [x, z];
   };
-  if (isMark(player.pos.x)) { // v Markově dimenzi žijí jen Markomani
+  if (isMark(player.pos.x)) { // Markova dimenze: Markomani a krystaloví golemové
     if (count('markoman') < (night > 0.5 ? 8 : 5)) { const p = spot(); if (p) spawnMob('markoman', ...p); }
+    if (count('golem') < 2) { const p = spot(); if (p) spawnMob('golem', ...p); }
     return;
   }
   if (night > 0.5 && count('crawler') < 7) { const p = spot(); if (p) spawnMob('crawler', ...p); }
+  if (night > 0.5 && count('wolf') < 4) { const p = spot(); if (p && forest(...p) > 0.5) for (let i = 0; i < 2; i++) spawnMob('wolf', p[0] + i * 2, p[1]); }
   if (count('sheep') < 6) {
     const p = spot();
     if (p && forest(...p) < 0.55) for (let i = 0; i < randInt(2, 3); i++) spawnMob('sheep', p[0] + Math.random() * 4, p[1] + Math.random() * 4);
   }
   if (count('boar') < 3) { const p = spot(); if (p && forest(...p) > 0.45) spawnMob('boar', ...p); }
+  if (night < 0.5 && count('deer') < 4) { const p = spot(); if (p && forest(...p) > 0.35) for (let i = 0; i < 2; i++) spawnMob('deer', p[0] + i * 3, p[1] + i); }
 }
 
-// ============================================================ ruiny s truhlami (Markova dimenze)
-const RUIN_CELL = 70;
-const ruinsBuilt = new Set(save?.ruins || []);
-const ruinsOpened = new Set(save?.ruinsOpened || []);
-// [předmět, min, max, šance]
-const LOOT = [
-  ['markorite', 1, 3, 0.55], ['markorite_raw', 2, 4, 0.5], ['shard', 1, 3, 0.6], ['iron', 2, 6, 0.6], ['meat', 2, 5, 0.5],
-  ['torch', 4, 12, 0.5], ['essence', 1, 4, 0.4], ['coal', 3, 8, 0.4], ['crystal_pick', 1, 1, 0.14], ['crystal_sword', 1, 1, 0.12],
-  ['iron_helmet', 1, 1, 0.15], ['iron_chestplate', 1, 1, 0.15], ['crystal_helmet', 1, 1, 0.08], ['crystal_boots', 1, 1, 0.08],
-  ['markorite_sword', 1, 1, 0.04], ['markorite_helmet', 1, 1, 0.03],
-];
-function rollLoot(rnd) {
+// ============================================================ stavby: ruiny, pevnosti, věže, tábory a podzemní kobky
+const ruinsBuilt = new Set(save?.ruins || []);         // už postavené stavby (všechny druhy)
+const ruinsOpened = new Set(save?.ruinsOpened || []);  // prozkoumané stavby (otevřená truhla)
+const spawners = new Map(Object.entries(save?.spawners || {})); // klíč bloku spawneru -> druh tvora
+// Kořist: [předmět, min, max, šance]
+const LOOT = {
+  ruin: [
+    ['markorite', 1, 3, 0.55], ['markorite_raw', 2, 4, 0.5], ['shard', 1, 3, 0.6], ['iron', 2, 6, 0.6], ['meat', 2, 5, 0.5],
+    ['torch', 4, 12, 0.5], ['essence', 1, 4, 0.4], ['coal', 3, 8, 0.4], ['crystal_pick', 1, 1, 0.14], ['crystal_sword', 1, 1, 0.12],
+    ['iron_helmet', 1, 1, 0.15], ['iron_chestplate', 1, 1, 0.15], ['crystal_helmet', 1, 1, 0.08], ['markapple', 1, 1, 0.2], ['markorite_sword', 1, 1, 0.04],
+  ],
+  camp: [['meat', 2, 5, 0.8], ['torch', 4, 10, 0.7], ['iron', 1, 4, 0.5], ['coal', 3, 8, 0.6], ['stone_pick', 1, 1, 0.3], ['iron_sword', 1, 1, 0.12], ['berries', 3, 8, 0.6], ['wool', 2, 5, 0.4]],
+  tower: [['iron', 3, 8, 0.7], ['shard', 1, 2, 0.5], ['iron_helmet', 1, 1, 0.25], ['iron_boots', 1, 1, 0.25], ['crystal_sword', 1, 1, 0.08], ['torch', 6, 12, 0.6], ['meat', 2, 4, 0.5], ['sky_boots', 1, 1, 0.07]],
+  dungeon: [
+    ['iron', 3, 9, 0.8], ['shard', 2, 4, 0.6], ['markapple', 1, 2, 0.3], ['essence', 2, 5, 0.5], ['crystal_pick', 1, 1, 0.15], ['coal', 4, 10, 0.5],
+    ['sky_helmet', 1, 1, 0.12], ['sky_chestplate', 1, 1, 0.1], ['sky_leggings', 1, 1, 0.1], ['sky_boots', 1, 1, 0.12], ['shadow_helmet', 1, 1, 0.1], ['markorite', 1, 3, 0.3],
+  ],
+  fortress: [
+    ['markorite', 2, 5, 0.8], ['markapple', 1, 3, 0.6], ['iron', 4, 10, 0.7], ['markorite_helmet', 1, 1, 0.12], ['markorite_boots', 1, 1, 0.12],
+    ['markorite_sword', 1, 1, 0.1], ['sky_chestplate', 1, 1, 0.1], ['shard', 2, 5, 0.6], ['crystal_chestplate', 1, 1, 0.12],
+  ],
+};
+function rollLoot(rnd, table) {
   const slots = Array(27).fill(null);
-  for (const [id, a, b, chance] of LOOT) {
+  for (const [id, a, b, chance] of table) {
     if (rnd() >= chance) continue;
     let i;
     do i = Math.floor(rnd() * 27); while (slots[i]);
     slots[i] = { id, n: a + Math.floor(rnd() * (b - a + 1)) };
   }
-  if (!slots.some(Boolean)) slots[13] = { id: 'markorite', n: 1 };
+  if (!slots.some(Boolean)) slots[13] = { id: table[0][0], n: 1 };
   return slots;
 }
-function ruinAt(cx, cz) {
-  if (hash2(cx + 333, cz - 77) > 0.5) return null;
-  const x = Math.floor((cx + 0.3 + hash2(cx, cz + 5) * 0.4) * RUIN_CELL), z = Math.floor((cz + 0.3 + hash2(cx + 5, cz) * 0.4) * RUIN_CELL);
-  if (!isMark(x) || shrineDist(x, z) < 40) return null;
-  return { key: `ru${cx},${cz}`, x, z };
-}
-const ruinsNear = (px, pz, R) => {
-  const out = [];
-  for (let cz = Math.floor((pz - R) / RUIN_CELL); cz <= Math.floor((pz + R) / RUIN_CELL); cz++)
-    for (let cx = Math.floor((px - R) / RUIN_CELL); cx <= Math.floor((px + R) / RUIN_CELL); cx++) {
-      const r = ruinAt(cx, cz);
-      if (r && (r.x - px) ** 2 + (r.z - pz) ** 2 < R * R) out.push(r);
-    }
-  return out;
+const solidAny = (x, y, z) => solidAt(x, y, z) || solidVox(x, y, z);
+const put = (x, y, z, type) => blocks.set(bkey(x, y, z), type);
+function putChest(x, y, z, table, rnd) { const k = bkey(x, y, z); blocks.set(k, 'chest'); chests.set(k, rollLoot(rnd, LOOT[table])); }
+function putSpawner(x, y, z, mob) { const k = bkey(x, y, z); blocks.set(k, 'spawner'); spawners.set(k, mob); }
+
+// Druhy staveb: velikost buňky mřížky, šance, dimenze (true = Markova, false = domov, null = obě).
+const STRUCTS = {
+  ruin: { cell: 70, chance: 0.5, mark: true, salt: [333, 77], icon: '▣', name: 'Ruiny' },
+  fortress: { cell: 240, chance: 0.65, mark: true, salt: [911, 19], icon: '⛫', name: 'Markomanská pevnost' },
+  tower: { cell: 190, chance: 0.55, mark: false, salt: [515, 41], icon: '♜', name: 'Strážní věž' },
+  camp: { cell: 150, chance: 0.5, mark: false, salt: [717, 63], icon: '⛺', name: 'Opuštěný tábor' },
+  dungeon: { cell: 170, chance: 0.6, mark: null, salt: [123, 88], icon: '☠', name: 'Kobka' },
 };
-// Zbořené zdi z markwood prken a cihel, uprostřed truhla s kořistí; ruinu hlídají Markomani.
-function buildRuin(r) {
+function structAt(type, cx, cz) {
+  const S = STRUCTS[type];
+  if (hash2(cx + S.salt[0], cz - S.salt[1]) > S.chance) return null;
+  const x = Math.floor((cx + 0.3 + hash2(cx, cz + 5) * 0.4) * S.cell), z = Math.floor((cz + 0.3 + hash2(cx + 5, cz) * 0.4) * S.cell);
+  if ((S.mark !== null && isMark(x) !== S.mark) || shrineDist(x, z) < 45) return null;
+  return { type, key: type === 'ruin' ? `ru${cx},${cz}` : `${type}${cx},${cz}`, x, z };
+}
+function structuresNear(px, pz, R) {
+  const out = [];
+  for (const type of Object.keys(STRUCTS)) {
+    const C = STRUCTS[type].cell;
+    for (let cz = Math.floor((pz - R) / C); cz <= Math.floor((pz + R) / C); cz++)
+      for (let cx = Math.floor((px - R) / C); cx <= Math.floor((px + R) / C); cx++) {
+        const s = structAt(type, cx, cz);
+        if (s && (s.x - px) ** 2 + (s.z - pz) ** 2 < R * R) out.push(s);
+      }
+  }
+  return out;
+}
+const ruinsNear = structuresNear;
+
+const BUILDERS = {
+  // Zbořené zdi z markwood prken a cihel, uprostřed truhla; hlídají Markomani.
+  ruin(r, rnd) {
+    for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) {
+      if ((Math.abs(dx) !== 3 && Math.abs(dz) !== 3) || (dz === 3 && Math.abs(dx) <= 1)) continue;
+      const base = topY(r.x + dx, r.z + dz), h = 1 + Math.floor(rnd() * 3);
+      for (let y = 0; y < h; y++) put(r.x + dx, base + y, r.z + dz, rnd() < 0.55 ? 'mark_planks' : 'bricks');
+    }
+    putChest(r.x, topY(r.x, r.z), r.z, 'ruin', rnd);
+    put(r.x + 2, topY(r.x + 2, r.z + 2), r.z + 2, 'torch');
+    for (let i = 0; i < 2; i++) spawnMob('markoman', r.x + 6 + i * 2, r.z + 6);
+  },
+  // Markomanská pevnost: hradby 13×13 s věžemi, brána na jihu, uvnitř spawner Markomanů a bohatá truhla.
+  fortress(r, rnd) {
+    const b = topY(r.x, r.z);
+    for (let dx = -6; dx <= 6; dx++) for (let dz = -6; dz <= 6; dz++) {
+      const edge = Math.abs(dx) === 6 || Math.abs(dz) === 6, corner = Math.abs(dx) >= 5 && Math.abs(dz) >= 5;
+      if (!edge && !corner) { if (Math.abs(dx) <= 4 && Math.abs(dz) <= 4) put(r.x + dx, b, r.z + dz, 'bricks'); continue; }
+      const h = corner ? 7 : 4 + ((dx + dz) % 2 === 0 ? 1 : 0);
+      for (let y = 0; y < h; y++) {
+        if (dz === 6 && Math.abs(dx) <= 1 && y <= 2) continue; // brána
+        put(r.x + dx, b + y, r.z + dz, y < 2 ? 'bricks' : 'mark_planks');
+      }
+    }
+    putSpawner(r.x, b + 1, r.z - 2, 'markoman');
+    putChest(r.x, b + 1, r.z - 4, 'fortress', rnd);
+    putChest(r.x + 3, b + 1, r.z - 4, 'ruin', rnd);
+    for (const [dx, dz] of [[-4, -4], [4, -4], [-4, 4], [4, 4]]) put(r.x + dx, b + 1, r.z + dz, 'torch');
+    for (let i = 0; i < 3; i++) spawnMob('markoman', r.x - 2 + i * 2, r.z + 9);
+  },
+  // Strážní věž: dutá cihlová věž 5×5, uvnitř schody do kruhu, nahoře plošina s truhlou.
+  tower(r, rnd) {
+    const b = topY(r.x, r.z);
+    for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+      if (Math.abs(dx) !== 2 && Math.abs(dz) !== 2) continue;
+      for (let y = 0; y <= 10; y++) {
+        if (dz === 2 && dx === 0 && y <= 1) continue; // dveře
+        if (y >= 10 && (dx + dz) % 2 !== 0) continue; // cimbuří
+        if (y === 6 && dx === 0 && rnd() < 0.7) continue; // okna
+        put(r.x + dx, b + y, r.z + dz, 'bricks');
+      }
+    }
+    const ring = [[1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]];
+    for (let k = 0; k < 9; k++) { const [dx, dz] = ring[k % 8]; put(r.x + dx, b + k, r.z + dz, 'planks'); }
+    for (const [dx, dz] of ring.concat([[0, 0]])) {
+      if ((dx === 1 && dz === 1) || (dx === 0 && dz === 1)) continue; // průlez nad schody
+      put(r.x + dx, b + 9, r.z + dz, 'planks');
+    }
+    putChest(r.x - 1, b + 10, r.z - 1, 'tower', rnd);
+    put(r.x + 1, b + 10, r.z - 1, 'torch');
+  },
+  // Opuštěný tábor: stan, táborák a truhla se zásobami.
+  camp(r, rnd) {
+    for (let dz = -1; dz <= 1; dz++) {
+      put(r.x - 4, topY(r.x - 4, r.z + dz), r.z + dz, 'planks');
+      put(r.x - 2, topY(r.x - 2, r.z + dz), r.z + dz, 'planks');
+      put(r.x - 3, topY(r.x - 3, r.z + dz) + 1, r.z + dz, 'planks');
+    }
+    put(r.x, topY(r.x, r.z), r.z, 'campfire');
+    putChest(r.x + 2, topY(r.x + 2, r.z - 2), r.z - 2, 'camp', rnd);
+    put(r.x + 2, topY(r.x + 2, r.z + 2), r.z + 2, 'torch');
+  },
+  // Kobka: místnost 9×9 hluboko pod zemí, schody od povrchu, spawner a dvě truhly. Vchod značí cihlový oblouk.
+  dungeon(r, rnd) {
+    const top = topY(r.x, r.z), fy = top - 14, mark = isMark(r.x);
+    for (let dx = -5; dx <= 5; dx++) for (let dz = -5; dz <= 5; dz++) for (let dy = -1; dy <= 4; dy++) {
+      const x = r.x + dx, y = fy + dy, z = r.z + dz;
+      setVox(x, y, z, V.AIR);
+      const wall = Math.abs(dx) === 5 || Math.abs(dz) === 5 || dy === -1 || dy === 4;
+      if (wall && !(dz === 5 && dx === 0 && dy >= 0 && dy <= 2)) put(x, y, z, dy === -1 ? 'cobble' : rnd() < 0.8 ? 'bricks' : 'cobble');
+    }
+    putSpawner(r.x, fy, r.z, mark ? 'markoman' : 'crawler');
+    putChest(r.x - 3, fy, r.z - 3, 'dungeon', rnd);
+    putChest(r.x + 3, fy, r.z - 3, 'dungeon', rnd);
+    for (const [dx, dz] of [[-4, 4], [4, 4], [-4, -4], [4, -4]]) put(r.x + dx, fy, r.z + dz, 'torch');
+    // Schody nahoru (každý schod o 1 blok, tunel 3 bloky vysoký)
+    let i = 0;
+    for (; i < 40; i++) {
+      const z = r.z + 6 + i, y = fy + i;
+      for (let k = 0; k < 3; k++) setVox(r.x, y + k, z, V.AIR);
+      if (y > topY(r.x, z)) break;
+    }
+    // Oblouk nad vstupem
+    const az = r.z + 6 + i, ab = topY(r.x, az);
+    for (let y = 0; y < 3; y++) { put(r.x - 1, ab + 1 + y, az, 'bricks'); put(r.x + 1, ab + 1 + y, az, 'bricks'); }
+    for (let dx = -1; dx <= 1; dx++) put(r.x + dx, ab + 4, az, 'bricks');
+    put(r.x - 1, ab + 4, az + 1, 'torch');
+  },
+};
+function buildStructure(r) {
   ruinsBuilt.add(r.key);
   const rnd = rng(1 + Math.floor(hash2(r.x, r.z) * 1e9));
-  for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) {
-    if (Math.abs(dx) !== 3 && Math.abs(dz) !== 3) continue;
-    if (dz === 3 && Math.abs(dx) <= 1) continue; // vchod
-    const x = r.x + dx, z = r.z + dz, base = topY(x, z);
-    const h = 1 + Math.floor(rnd() * 3);
-    for (let y = 0; y < h; y++) blocks.set(bkey(x, base + y, z), rnd() < 0.55 ? 'mark_planks' : 'bricks');
-  }
-  const ck = bkey(r.x, topY(r.x, r.z), r.z);
-  blocks.set(ck, 'chest');
-  chests.set(ck, rollLoot(rnd));
-  blocks.set(bkey(r.x + 2, topY(r.x + 2, r.z + 2), r.z + 2), 'torch');
+  BUILDERS[r.type](r, rnd);
   rebuildBlocks();
-  for (let i = 0; i < 2; i++) spawnMob('markoman', r.x + 6 + i * 2, r.z + 6);
 }
 let ruinT = 0;
 function updateRuins(dt) {
-  if ((ruinT -= dt) > 0 || !isMark(player.pos.x)) return;
+  if ((ruinT -= dt) > 0) return;
   ruinT = 1;
-  for (const r of ruinsNear(player.pos.x, player.pos.z, 110)) if (!ruinsBuilt.has(r.key)) buildRuin(r);
+  for (const r of structuresNear(player.pos.x, player.pos.z, 110)) if (!ruinsBuilt.has(r.key)) buildStructure(r);
+}
+
+// Spawnery: když je hráč do 24 m, občas zrodí tvora vedle sebe (max. 4 v okolí).
+let spawnerT = 0;
+function updateSpawners(dt) {
+  if ((spawnerT -= dt) > 0) return;
+  spawnerT = 1;
+  for (const [k, type] of spawners) {
+    if (blocks.get(k) !== 'spawner') { spawners.delete(k); continue; }
+    const [x, y, z] = k.split(',').map(Number);
+    if (Math.hypot(x + 0.5 - player.pos.x, y - player.pos.y, z + 0.5 - player.pos.z) > 24 || Math.random() > 0.3) continue;
+    if (mobs.filter((m) => !m.dead && m.type === type && Math.hypot(m.pos.x - x, m.pos.z - z) < 10).length >= 4) continue;
+    for (let tries = 0; tries < 8; tries++) {
+      const sx = x + randInt(-2, 2), sz = z + randInt(-2, 2);
+      if ((sx === x && sz === z) || solidAny(sx, y, sz) || solidAny(sx, y + 1, sz)) continue;
+      if (!solidAny(sx, y - 1, sz) && y - 1 !== topY(sx, sz)) continue;
+      spawnMob(type, sx + 0.5, sz + 0.5, y);
+      sparks.emit(sx + 0.5, y + 0.8, sz + 0.5, [0.8, 0.3, 1], 25, 2, 1);
+      break;
+    }
+  }
 }
 
 // Markova dimenze: fialová obloha, modravé světlo a mlha.
@@ -3124,6 +3507,11 @@ function die() {
 let starveT = 0, hungerWarned = false;
 function updateSurvival(dt) {
   if (creative) { player.hunger = 100; player.hp = 100; return; }
+  if (fullSet() === 'sky') player.hp = Math.min(100, player.hp + dt);
+  if (blocks.get(bkey(Math.floor(player.pos.x), Math.floor(player.pos.y + 0.1), Math.floor(player.pos.z))) === 'spikes') {
+    player.hp -= 3 * dt; vignette = Math.max(vignette, 0.5);
+    if (player.hp <= 0) die();
+  }
   player.hunger = Math.max(0, player.hunger - dt * (player.sprinting ? 0.3 : 0.11));
   if (player.hunger < 25 && !hungerWarned) { hungerWarned = true; toast('Máš hlad – sněz něco (pravé tlačítko)'); }
   if (player.hunger > 40) hungerWarned = false;
@@ -3278,8 +3666,13 @@ function updateTips() {
 let vignette = 0, tipT = 0;
 function updateHUD(dt) {
   for (const item of compassItems) if (item !== shrineMark && item !== shardMark && item !== ruinMark) placeCompass(item);
-  const ruin = isMark(player.pos.x) ? ruinsNear(player.pos.x, player.pos.z, 320).filter((r) => !ruinsOpened.has(r.key)).sort((a, b) => Math.hypot(a.x - player.pos.x, a.z - player.pos.z) - Math.hypot(b.x - player.pos.x, b.z - player.pos.z))[0] : null;
-  setMarker(ruinMark, ruin ? ruin.x : null, ruin ? ruin.z : null);
+  // Nejbližší neprozkoumaná stavba (ruiny, pevnost, věž, tábor, kobka)
+  const near = structuresNear(player.pos.x, player.pos.z, 320).filter((r) => !ruinsOpened.has(r.key));
+  near.sort((a, b) => Math.hypot(a.x - player.pos.x, a.z - player.pos.z) - Math.hypot(b.x - player.pos.x, b.z - player.pos.z));
+  const st = near[0];
+  if (st) ruinMark.el.firstChild.textContent = STRUCTS[st.type].icon;
+  setMarker(ruinMark, st ? st.x : null, st ? st.z : null);
+  ruinMark.el.title = st ? STRUCTS[st.type].name : '';
   let best = null, bd = Infinity;
   for (const s of shardObjs.values()) {
     const d = Math.hypot(s.x - player.pos.x, s.z - player.pos.z);
@@ -3292,6 +3685,11 @@ function updateHUD(dt) {
   $('hpfill').style.width = `${Math.max(0, player.hp)}%`;
   $('foodfill').style.width = `${player.hunger}%`;
   $('armorfill').style.width = `${(armorPoints() / 23) * 100}%`;
+  const set = fullSet(), fx = [];
+  if (player.flyT > 0) fx.push(`🍎 Létání ${Math.ceil(player.flyT)} s`);
+  if (set) fx.push(`🛡 ${ARMOR_SETS[set].name}á sada: ${ARMOR_SETS[set].bonus}`);
+  const fxHtml = fx.map((t) => `<div>${t}</div>`).join('');
+  if ($('effects').innerHTML !== fxHtml) $('effects').innerHTML = fxHtml;
   vignette = Math.max(0, vignette - dt * 1.5);
   $('vignette').style.opacity = Math.max(vignette, player.alive ? (1 - player.hp / 100) * 0.5 : 0);
   if (toastTimer > 0 && (toastTimer -= dt) <= 0) $('toast').classList.remove('show');
@@ -3306,7 +3704,7 @@ function saveGame() {
       inv: inv.slots, pos: player.pos.toArray(), yaw: player.yaw, hp: Math.max(player.hp, 1), hunger: player.hunger,
       dayTime, day: dayCount, blocks: [...blocks], removed: [...removed], crafted, placedAny, fires: Object.fromEntries(fires),
       vox: [...voxEdits.values()].flatMap((m) => [...m]),
-      creative, flying: player.flying, armor, chests: Object.fromEntries(chests), ruins: [...ruinsBuilt], ruinsOpened: [...ruinsOpened], portal: portalActive,
+      creative, flying: player.flying, flyT: player.flyT || 0, spawners: Object.fromEntries(spawners), armor, chests: Object.fromEntries(chests), ruins: [...ruinsBuilt], ruinsOpened: [...ruinsOpened], portal: portalActive,
     }));
   } catch {}
 }
@@ -3330,7 +3728,7 @@ updateTips();
 if (!save) $('intro').style.display = 'grid';
 
 function tick(realDt) {
-  const playing = (isLocked() || game.testMode) && !invOpen;
+  const playing = (isLocked() || game.testMode) && !invOpen && !guideOpen;
   const dt = playing ? realDt : 0;
   gameClock += realDt;
   gameTime += dt;
@@ -3348,6 +3746,7 @@ function tick(realDt) {
   applyDimension();
   applyUnderground();
   updateRuins(realDt);
+  if (playing) updateSpawners(realDt);
   if (playing) {
     if (player.alive) updateInteraction(dt);
     updateSurvival(dt);
@@ -3391,7 +3790,7 @@ const game = window.game = {
   testMode: false, tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, spawnMob, blocks, rebuildBlocks, forestTrees, forestRocks,
   slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
   get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
-  get portalActive() { return portalActive; }, setCreative, get creative() { return creative; }, cellFree,
+  get portalActive() { return portalActive; }, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
   setTime: (t) => (dayTime = t), get target() { return target; }, openInventory, closeInventory,
 };
 window.gameStarted = true;
