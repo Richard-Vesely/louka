@@ -98,7 +98,7 @@ Debug in the browser console: `game.addItem('iron', 5)`, `game.setTime(0.9)` (ni
 `{ out: 'honey', n: 1, shape: ['BB', 'BB'], key: { B: 'berries' } }`.
 Letters in `shape` map to items in `key`, a space is an empty cell. Up to 2×2 works in the inventory,
 bigger needs a workbench (3×3). Mirrored shapes match automatically.
-Note: the play-test checks the original 16 recipes are present in order, so **append** new recipes at the end.
+Note: the tests check that the original 16 recipes come first, in order, so **append** new recipes at the end.
 
 ### Add a cooking recipe
 `shared/cooking.js`: `COOKING.fish = 'cooked_fish'` (both must be items).
