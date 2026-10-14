@@ -111,6 +111,26 @@ await sleep(400);
 const [pa, pb] = await Promise.all([a, b].map((p) => p.evaluate(() => { const m = window.game.mobs.find((q) => q.type === 'sheep'); return m && [m.id, m.pos.x, m.pos.z]; })));
 check('both players see the same sheep at the same place', pa && pb && pa[0] === pb[0] && Math.hypot(pa[1] - pb[1], pa[2] - pb[2]) < 1, JSON.stringify({ pa, pb }));
 
+// Minecraft tricks online: A throws an item (Q), B sees it and picks it up; B sees A sneaking.
+addItem(serverPlayer('Ája'), 'torch', 3);
+await a.waitForFunction(() => window.game.countItem('torch') === 3, null, { timeout: 2000, polling: 100 });
+await a.evaluate(() => { const g = window.game, i = g.inv.slots.findIndex((x) => x?.id === 'torch'); g.inv.sel = i; g.net.act({ t: 'select', i }); g.player.yaw = 0; g.player.pitch = 0; g.dropHeld(false); });
+await b.waitForFunction(() => [...window.game.drops.values()].some((d) => d.id === 'torch'), null, { timeout: 2000, polling: 100 });
+check('an item thrown by A (Q) appears on the ground for B', serverPlayer('Ája') && [...srv.room.game.world.drops.values()].some((d) => d.id === 'torch'));
+const dropAt = [...srv.room.game.world.drops.values()].find((d) => d.id === 'torch');
+await sleep(2100); // thrown items can be picked up after 2 s
+await b.evaluate(async ({ x, y, z }) => { // walk to it at a player's speed
+  const p = window.game.player.pos, from = p.clone();
+  for (let i = 1; i <= 12; i++) { p.set(from.x + (x - from.x) * i / 12, Math.max(y, 0.45), from.z + (z - from.z) * i / 12); await new Promise((ok) => setTimeout(ok, 110)); }
+}, { x: dropAt.x, y: dropAt.y, z: dropAt.z });
+await b.waitForFunction(() => window.game.countItem('torch') === 1, null, { timeout: 3000, polling: 100 });
+await a.waitForFunction(() => window.game.drops.size === 0, null, { timeout: 2000, polling: 100 });
+check('B picks it up; it disappears for A too', serverPlayer('Bára').inv.slots.some((x) => x?.id === 'torch'));
+await a.evaluate(() => { const g = window.game; g.testMode = true; g.keys.add('ShiftLeft'); });
+await b.waitForFunction(() => [...window.game.others.values()].find((o) => o.name === 'Ája')?.sneak === true, null, { timeout: 2000, polling: 100 });
+await a.evaluate(() => { const g = window.game; g.keys.clear(); g.testMode = false; });
+check('B sees A sneaking (Shift)', serverPlayer('Ája').sneaking === true);
+
 // Screenshot from A, looking at B.
 await a.evaluate(() => { const g = window.game, o = [...g.others.values()][0]; g.player.yaw = Math.atan2(-(o.pos.x - g.player.pos.x), -(o.pos.z - g.player.pos.z)); window.__skipDraw = false; });
 await sleep(1500);

@@ -93,8 +93,8 @@ check('Czech hint text present', (await ev(() => T.text('hint'))).includes('WASD
 // ---------------------------------------------------------------- movement
 let r = await ev(() => { const g = window.game; T.tp(0, 14); const z0 = g.player.pos.z; g.keys.add('KeyW'); T.step(20); g.keys.delete('KeyW'); T.step(10); return { z0, z1: g.player.pos.z }; });
 check('walk forward (W) moves player', r.z1 < r.z0 - 2, `${r.z0.toFixed(2)} -> ${r.z1.toFixed(2)}`);
-r = await ev(() => { const g = window.game; T.tp(0, 14); g.keys.add('KeyW'); T.step(20); const walk = Math.hypot(g.player.vel.x, g.player.vel.z); g.keys.add('ShiftLeft'); T.step(20); const run = Math.hypot(g.player.vel.x, g.player.vel.z); g.keys.clear(); T.step(10); return { walk, run }; });
-check('sprint (Shift) is faster than walk', r.run > r.walk * 1.5, `walk ${r.walk.toFixed(2)} run ${r.run.toFixed(2)}`);
+r = await ev(() => { const g = window.game; T.tp(0, 14); g.keys.add('KeyW'); T.step(20); const walk = Math.hypot(g.player.vel.x, g.player.vel.z); g.keys.add('ControlLeft'); T.step(20); const run = Math.hypot(g.player.vel.x, g.player.vel.z); g.keys.clear(); T.step(10); return { walk, run }; });
+check('sprint (Ctrl) is faster than walk', r.run > r.walk * 1.5, `walk ${r.walk.toFixed(2)} run ${r.run.toFixed(2)}`);
 r = await ev(() => { const g = window.game; T.tp(0, 14); T.step(5); const y0 = g.player.pos.y; g.keys.add('Space'); T.step(4); g.keys.delete('Space'); const y1 = g.player.pos.y; T.step(30); return { y0, y1, y2: g.player.pos.y }; });
 check('jump (Space) goes up and lands', r.y1 > r.y0 + 0.3 && Math.abs(r.y2 - r.y0) < 0.05, JSON.stringify(r));
 r = await ev(() => { const g = window.game; const before = g.inv.sel; window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3' })); const after = g.inv.sel; window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit3' })); return { before, after, active: [...document.querySelectorAll('#hotbar .slot')].findIndex((s) => s.classList.contains('active')) }; });
