@@ -1,21 +1,16 @@
 // ============================================================ hráč: pohyb a kolize
-import * as THREE from 'three';
-import { EYE, WALK, RUN, JUMP, GRAVITY, PW, PH, SPAWN } from '@louka/shared/constants.js';
+import { EYE, WALK, RUN, JUMP, GRAVITY, PW, PH } from '@louka/shared/constants.js';
 import { groundHeight } from '@louka/shared/terrain.js';
-import { save } from '../save/load.js';
+import { SHRINE_COLLIDERS, pushOut } from '@louka/shared/game/colliders.js';
 import { camera } from '../render/renderer.js';
 import { Sound } from '../audio/sound.js';
 import { solidAt } from '../world/blocks.js';
 import { forestColliders } from '../world/forest.js';
-import { shrineColliders } from '../world/shrine.js';
 import { keys } from './controls.js';
+import { player } from './state.js';
 
-/** Hráč: pozice, rychlost, kam se dívá, zdraví a hlad. */
-export const player = {
-  pos: new THREE.Vector3(...(save?.pos || SPAWN)), vel: new THREE.Vector3(),
-  yaw: save?.yaw ?? 0, pitch: -0.05, onGround: true, bob: 0,
-  hp: save?.hp ?? 100, hunger: save?.hunger ?? 100, alive: true, lastHurt: -99, shake: 0,
-};
+/** Hráč u tohoto počítače (stav je v player/state.js). */
+export { player };
 
 // Kolize hráče s položenými bloky (osa po ose, jako v Minecraftu).
 function collidesBlocks(p) {
@@ -71,12 +66,8 @@ export function updatePlayer(dt) {
     if (moveAxis('y', (v.y * dt) / steps)) onBlock = true;
     moveAxis('z', (v.z * dt) / steps);
   }
-  for (const list of [forestColliders, shrineColliders]) {
-    for (const c of list) {
-      const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), min = c.r + PW;
-      if (d < min && d > 1e-4) { p.x = c.x + (dx / d) * min; p.z = c.z + (dz / d) * min; }
-    }
-  }
+  pushOut(p, forestColliders, PW);
+  pushOut(p, SHRINE_COLLIDERS, PW);
   const g = groundHeight(p.x, p.z);
   if (p.y <= g) { p.y = g; v.y = 0; player.onGround = true; }
   else if (onBlock) player.onGround = true;

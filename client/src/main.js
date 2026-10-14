@@ -12,7 +12,7 @@ import { ICONS } from './render/icons.js';
 import { ground } from './world/ground.js';
 import { grassLayers, regrowGrass, cutGrass } from './world/grass.js';
 import './render/fireflies.js';
-import { blocks, fires } from './world/state.js';
+import { world, blocks, fires, mobs } from './world/state.js';
 import { rebuildForest, forestTrees, forestRocks } from './world/forest.js';
 import { updateShards } from './world/shards.js';
 import './world/shrine.js';
@@ -20,18 +20,24 @@ import { rebuildBlocks, specials, updateLights } from './world/blocks.js';
 import { sparks, debris } from './render/particles.js';
 import { Sound } from './audio/sound.js';
 import { inv, addItem, countItem } from './inventory/inventory.js';
-import { ui, slotClick, takeResult, fillRecipe, fillCooking, updateFires } from './inventory/crafting.js';
+import { ui, slotClick, takeResult, fillRecipe, fillCooking, updateFireWindow } from './inventory/crafting.js';
 import { renderHotbar, openInventory, closeInventory } from './inventory/inventory-ui.js';
-import { player, updatePlayer } from './player/player.js';
+import { player } from './player/state.js';
+import { updatePlayer } from './player/player.js';
 import { keys, input, isLocked } from './player/controls.js';
 import { updateHeldModel, updateSwing } from './render/held-item.js';
 import { act, updateInteraction } from './player/interaction.js';
-import { updateSurvival } from './player/survival.js';
-import { mobs, spawnMob, updateMobs, updateSpawns } from './mobs/mobs.js';
-import { time, updateDay } from './world/day.js';
+import { updateMobViews } from './mobs/mobs.js';
+import { updateDay } from './world/day.js';
+import { net } from './net/net.js';
+import { startOffline } from './net/local.js';
+import { onEvent } from './net/events.js';
 import { updateHUD } from './ui/hud.js';
 import { updateTips } from './ui/tips.js';
 import './save/save.js';
+
+// Hra pro jednoho hráče: celá hra běží tady v prohlížeči (net/local.js).
+Object.assign(net, startOffline({ world, mobs, player, onEvent }));
 
 const timer = new THREE.Clock();
 let envTimer = 0, frames = 0, fpsTimer = 0, settle = 0;
@@ -57,16 +63,14 @@ function tick(realDt) {
   updateHeldModel();
   updateSwing(dt, moving);
 
-  const { night, day } = updateDay(dt);
   rebuildForest(player.pos.x, player.pos.z);
-  if (playing) {
-    if (player.alive) updateInteraction(dt);
-    updateSurvival(dt);
-    updateMobs(dt, day);
-    updateSpawns(dt, night);
-    updateShards(dt);
-  }
-  updateFires(realDt);
+  if (playing && player.alive) updateInteraction(dt);
+  // Hra: čas, hlad, tvorové, táboráky (táboráky a oživení běží i v pauze).
+  net.tick(dt, realDt);
+  const { night, day } = updateDay();
+  updateMobViews(dt, day);
+  updateShards(dt);
+  updateFireWindow(realDt);
   regrowGrass(realDt);
   updateLights(clock.gameClock);
   if (Math.random() < realDt * 6) for (const s of specials.values()) if (s.type === 'campfire') sparks.emit(s.x + 0.5, s.ry + 0.4, s.z + 0.5, [1, 0.5, 0.15], 1, 0.6, 1.5);
@@ -100,9 +104,10 @@ function frame() {
 window.game = {
   get testMode() { return debug.testMode; },
   set testMode(v) { debug.testMode = !!v; },
-  tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, spawnMob, blocks, rebuildBlocks, forestTrees, forestRocks,
-  slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass,
-  setTime: (t) => (time.dayTime = t), get target() { return act.target; }, openInventory, closeInventory,
+  tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, blocks, rebuildBlocks, forestTrees, forestRocks,
+  slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, net, world,
+  spawnMob: (type, x, z) => net.game?.spawnMob(type, x, z),
+  setTime: (t) => (world.time.dayTime = t), get target() { return act.target; }, openInventory, closeInventory,
 };
 window.gameStarted = true;
 frame();

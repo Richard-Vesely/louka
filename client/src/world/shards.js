@@ -1,18 +1,14 @@
-// ============================================================ úlomky světla – vzhled a sbírání
-// Zářící krystaly s paprskem do nebe. Kde leží, říká shardAt() v shared/worldgen.js.
+// ============================================================ úlomky světla – vzhled
+// Zářící krystaly s paprskem do nebe. Kde leží, říká shardAt() v shared/worldgen.js;
+// sebrání řeší hra (shared/game/shards.js) a pošle zprávu 'removed'.
 import * as THREE from 'three';
 import { terrainH } from '@louka/shared/terrain.js';
 import { shardAt } from '@louka/shared/worldgen.js';
 import { SHARD_CELL } from '@louka/shared/constants.js';
 import { scene, U } from '../render/renderer.js';
 import { glowTex } from '../render/textures.js';
-import { sparks } from '../render/particles.js';
 import { clock } from '../core/runtime.js';
-import { Sound } from '../audio/sound.js';
 import { removed } from './state.js';
-import { player } from '../player/player.js';
-import { addItem } from '../inventory/inventory.js';
-import { toast } from '../ui/hud.js';
 
 /** Úlomky, které jsou teď ve scéně: klíč -> { x, z, group, crystal }. */
 export const shardObjs = new Map();
@@ -56,19 +52,10 @@ export function refreshShards(px, pz) {
   for (const [k, o] of shardObjs) if (!wanted.has(k)) { scene.remove(o.group); shardObjs.delete(k); }
 }
 
-/** Točí krystaly a sebere úlomek, když do něj hráč vejde. */
+/** Točí krystaly a nechá je vznášet se. */
 export function updateShards(dt) {
-  for (const [k, s] of shardObjs) {
+  for (const s of shardObjs.values()) {
     s.crystal.rotation.y += dt * 1.2;
     s.crystal.position.y = 1.3 + Math.sin(clock.gameClock * 2 + s.x) * 0.15;
-    if (player.alive && Math.hypot(player.pos.x - s.x, player.pos.z - s.z) < 1.9) {
-      removed.add(k);
-      scene.remove(s.group);
-      shardObjs.delete(k);
-      addItem('shard', 1);
-      sparks.emit(s.x, s.group.position.y + 1.3, s.z, [0.4, 0.95, 1.0], 80, 5, 3);
-      Sound.pickup();
-      toast('Úlomek světla!');
-    }
   }
 }

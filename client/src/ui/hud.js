@@ -5,7 +5,7 @@ import { $ } from '../core/dom.js';
 import { ICONS } from '../render/icons.js';
 import { time } from '../world/day.js';
 import { shardObjs } from '../world/shards.js';
-import { player } from '../player/player.js';
+import { player } from '../player/state.js';
 import { ui } from '../inventory/crafting.js';
 import { renderInventory } from '../inventory/inventory-ui.js';
 import { updateTips } from './tips.js';
