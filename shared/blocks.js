@@ -10,6 +10,7 @@
 //   drop    – jaký předmět z něj padne
 //   special – má vlastní 3D model (client/src/world/special-blocks.js)
 //   light   – jak silně svítí v noci
+//   color   – barva kostky, když blok nemá vlastní texturu (např. '#8ab4d8')
 
 export const BLOCKS = {
   planks: { name: 'Prkna', solid: true, hard: 1.2, tool: 'axe', drop: 'planks' },

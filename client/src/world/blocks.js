@@ -11,14 +11,21 @@ import { world, blocks } from './state.js';
 import { buildSpecial } from './special-blocks.js';
 import { player } from '../player/state.js';
 
-/** Materiály obyčejných bloků (podle typu bloku). */
+/** Materiály obyčejných bloků (podle typu bloku). Nový blok bez textury dostane barvu `color` z shared/blocks.js. */
 export const blockMats = {
   planks: new THREE.MeshStandardMaterial({ map: planksTex, roughness: 0.85 }),
   cobble: new THREE.MeshStandardMaterial({ map: cobbleTex, roughness: 0.95 }),
   bricks: new THREE.MeshStandardMaterial({ map: bricksTex, roughness: 0.9 }),
 };
+/** Materiál bloku (pro nový blok ho vyrobí podle barvy z dat). */
+export function blockMat(type) {
+  return (blockMats[type] ||= new THREE.MeshStandardMaterial({ color: BLOCKS[type]?.color || '#9a9a9a', roughness: 0.9 }));
+}
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-const blockMeshes = Object.fromEntries(Object.entries(blockMats).map(([k, m]) => [k, makeInstanced(boxGeo, m, 6000)]));
+// Jedna "kreslicí sada" (až 6000 kostek) pro každý typ obyčejného bloku.
+const blockMeshes = {};
+const meshOf = (type) => (blockMeshes[type] ||= makeInstanced(boxGeo, blockMat(type), 6000));
+for (const type of Object.keys(blockMats)) meshOf(type);
 
 /** Zvláštní bloky ve scéně: klíč -> { type, x, y, z, ry, obj, flames }. */
 export const specials = new Map();
@@ -29,20 +36,21 @@ export const solidAt = (x, y, z) => { const t = blocks.get(bkey(x, y, z)); retur
 /** Překreslí všechny bloky podle mapy `blocks` (po položení nebo rozbití). */
 export function rebuildBlocks() {
   world.rev++; // bloky se mohly změnit i přímo (ladění) – hra si přepočítá světla
-  const counts = { planks: 0, cobble: 0, bricks: 0 };
+  const counts = {};
   for (const [k, type] of blocks) {
-    if (BLOCKS[type].special) continue;
+    if (!BLOCKS[type] || BLOCKS[type].special) continue;
+    counts[type] ||= 0;
     const [x, y, z] = k.split(',').map(Number);
     dummy.position.set(x + 0.5, y + 0.5, z + 0.5);
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(1, 1, 1);
     dummy.updateMatrix();
-    blockMeshes[type].setMatrixAt(counts[type]++, dummy.matrix);
+    meshOf(type).setMatrixAt(counts[type]++, dummy.matrix);
   }
-  for (const [t, m] of Object.entries(blockMeshes)) { m.count = counts[t]; m.instanceMatrix.needsUpdate = true; }
+  for (const [t, m] of Object.entries(blockMeshes)) { m.count = counts[t] || 0; m.instanceMatrix.needsUpdate = true; }
 
   for (const [k, type] of blocks) {
-    if (!BLOCKS[type].special || specials.has(k)) continue;
+    if (!BLOCKS[type]?.special || specials.has(k)) continue;
     const [x, y, z] = k.split(',').map(Number);
     const { obj, flames } = buildSpecial(type);
     const ry = solidAt(x, y - 1, z) ? y : Math.max(y, groundHeight(x + 0.5, z + 0.5));

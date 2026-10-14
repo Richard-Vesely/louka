@@ -8,16 +8,16 @@ const STORE = 'louka-join';
 
 /**
  * Adresa serveru: ?server=… v adrese stránky > VITE_SERVER_URL při sestavení >
- * stejný server, odkud je stránka (když ji posílá herní server) > ws://localhost:8787.
+ * vývoj (Vite přeposílá /ws na herní server) > stejný server, odkud je stránka > ws://localhost:8787.
  */
 export function defaultServerUrl() {
   const q = new URLSearchParams(location.search).get('server');
   if (q) return q;
   if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL;
-  const h = location.hostname;
+  const h = location.hostname, ws = location.protocol === 'https:' ? 'wss' : 'ws';
   if (location.protocol === 'file:' || !h || h.endsWith('github.io')) return 'ws://localhost:8787';
-  if (location.port === '5173' || location.port === '4173') return `ws://${h}:8787`; // vývoj (vite dev / preview)
-  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`; // hru posílá herní server
+  if (import.meta.env.DEV || location.port === '4173') return `${ws}://${location.host}/ws`; // vite dev / preview
+  return `${ws}://${location.host}`; // hru posílá herní server
 }
 
 const load = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } };

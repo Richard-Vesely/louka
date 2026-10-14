@@ -175,7 +175,8 @@ check('right-click takes half a stack', r.cur === 1 && r.left === 1, JSON.string
 r = await ev(() => { const g = window.game; T.clearInv(); T.give('stick', 4); g.inv.slots[9] = g.inv.slots[0]; g.inv.slots[0] = null; g.openInventory('inv'); g.slotClick('inv', 9, 0, true); const hot = g.inv.slots.slice(0, 9).some((s) => s?.id === 'stick'); g.closeInventory(); return hot; });
 check('shift-click moves stack bag → hotbar', r);
 r = await ev(() => { const g = window.game; return g.RECIPES.map((x) => x.out).join(','); });
-check('all original recipes present', r === 'planks,stick,workbench,torch,bricks,campfire,wood_pick,wood_axe,wood_sword,stone_pick,stone_axe,stone_sword,iron_pick,iron_axe,iron_sword,crystal_sword', r);
+// New recipes may be added after the original 16 (that's how kids add content).
+check('all original recipes present', r.startsWith('planks,stick,workbench,torch,bricks,campfire,wood_pick,wood_axe,wood_sword,stone_pick,stone_axe,stone_sword,iron_pick,iron_axe,iron_sword,crystal_sword'), r);
 r = await ev(() => { const g = window.game; const grid = Array(4).fill(null); grid[1] = { id: 'planks', n: 1 }; grid[3] = { id: 'planks', n: 1 }; return g.findRecipe(grid, 2)?.out; });
 check('recipe matching ignores position in grid', r === 'stick', r);
 r = await ev(() => { const g = window.game; const grid = Array(9).fill(null); grid[1] = { id: 'planks', n: 1 }; grid[2] = { id: 'planks', n: 1 }; grid[4] = { id: 'stick', n: 1 }; grid[5] = { id: 'planks', n: 1 }; grid[7] = { id: 'stick', n: 1 }; return g.findRecipe(grid, 3)?.out; });

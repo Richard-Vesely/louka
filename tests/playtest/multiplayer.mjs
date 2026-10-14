@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { startServer } from '../../server/src/server.js';
 import { addItem } from '@louka/shared/game/inventory.js';
+import { damagePlayer } from '@louka/shared/game/survival.js';
 
 const dist = path.resolve('client/dist');
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'louka-mp-'));
@@ -78,6 +79,31 @@ await b.waitForFunction(() => window.game.blocks.get('1,0,11') === 'planks', nul
 const ms = Date.now() - t0;
 check('block placed by A appears for B', ms < 1000, `${ms} ms incl. browser polling`);
 
+// Crafting online, through the same UI functions the inventory window uses.
+addItem(serverPlayer('Ája'), 'log', 1);
+await a.waitForFunction(() => window.game.countItem('log') === 1, null, { timeout: 2000, polling: 100 });
+await a.evaluate(() => { const g = window.game; g.openInventory('inv'); g.fillRecipe(g.RECIPES.find((r) => r.out === 'planks'), false); });
+await a.waitForFunction(() => window.game.ui.craft.some((s) => s?.id === 'log'), null, { timeout: 2000, polling: 100 });
+await a.evaluate(() => window.game.takeResult(false));
+await a.waitForFunction(() => window.game.inv.cursor?.id === 'planks', null, { timeout: 2000, polling: 100 });
+await a.evaluate(() => window.game.closeInventory());
+await a.waitForFunction(() => window.game.countItem('planks') === 8 && !window.game.inv.cursor, null, { timeout: 2000, polling: 100 });
+check('crafting works online (recipe book, take result, close)', serverPlayer('Ája').crafted.planks === true);
+
+// Eating online: the server decides, the HUD shows it.
+addItem(serverPlayer('Ája'), 'berries', 1);
+serverPlayer('Ája').hunger = 50;
+await a.waitForFunction(() => window.game.countItem('berries') === 1, null, { timeout: 2000, polling: 100 });
+await a.evaluate(() => { const g = window.game, i = g.inv.slots.findIndex((x) => x?.id === 'berries'); g.inv.sel = i; g.net.act({ t: 'select', i }); g.net.act({ t: 'eat' }); });
+await a.waitForFunction(() => window.game.player.hunger > 57 && window.game.countItem('berries') === 0, null, { timeout: 3000, polling: 100 });
+check('eating works online', true);
+
+// Death and respawn online.
+damagePlayer(srv.room.game, serverPlayer('Ája'), 200, 0, 0);
+await a.waitForFunction(() => document.getElementById('fade').style.opacity === '1' && !window.game.player.alive, null, { timeout: 2000, polling: 100 });
+await a.waitForFunction(() => window.game.player.alive && document.getElementById('toast').textContent === 'Svatyně tě přivedla zpět', null, { timeout: 5000, polling: 100 });
+check('death ("Padl jsi…") and respawn at the shrine work online', await a.evaluate(() => window.game.player.hp === 100 && Math.round(window.game.player.pos.z) === 14));
+
 // Mobs are server-controlled: both see the same sheep in the same place.
 srv.room.game.spawnMob('sheep', 6, 20);
 await a.waitForFunction(() => window.game.mobs.some((m) => m.type === 'sheep'), null, { timeout: 3000, polling: 100 });
@@ -99,9 +125,9 @@ srv = await startServer({ ...opts, port });
 await a.waitForFunction(() => document.getElementById('netStatus').style.display === 'none' && window.game.net.mode === 'online', null, { timeout: 15000, polling: 100 });
 await b.waitForFunction(() => document.getElementById('netStatus').style.display === 'none', null, { timeout: 15000, polling: 100 });
 check('both reconnect automatically after a server restart', true);
-await a.waitForFunction(() => window.game.countItem('planks') === 4, null, { timeout: 3000, polling: 100 }).catch(() => {});
+await a.waitForFunction(() => window.game.countItem('planks') === 8, null, { timeout: 3000, polling: 100 }).catch(() => {});
 const after = await a.evaluate(() => ({ block: window.game.blocks.get('1,0,11'), planks: window.game.countItem('planks') }));
-check('after restart: block still there, A still has 4 planks', after.block === 'planks' && after.planks === 4, JSON.stringify(after));
+check('after restart: block still there, A still has the 8 planks', after.block === 'planks' && after.planks === 8, JSON.stringify(after));
 
 // B leaves and comes back: same position.
 const posB = await b.evaluate(() => window.game.player.pos.toArray().map((v) => +v.toFixed(1)));

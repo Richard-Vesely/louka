@@ -1,0 +1,27 @@
+# systemd služba: herní server Louky běží pořád a po pádu nebo restartu VPS naběhne sám.
+# Instalace: deploy/setup-vps.sh (nebo ručně: cp deploy/louka.service /etc/systemd/system/ && systemctl enable --now louka)
+[Unit]
+Description=Louka – herní server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=louka
+Group=louka
+WorkingDirectory=/opt/louka
+EnvironmentFile=/etc/louka.env
+ExecStart=/usr/bin/node server/src/index.js
+Restart=always
+RestartSec=3
+# SIGTERM = server uloží svět a skončí
+KillSignal=SIGTERM
+TimeoutStopSec=20
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/louka/server/data
+
+[Install]
+WantedBy=multi-user.target
