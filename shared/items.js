@@ -30,6 +30,7 @@ export const ITEMS = {
   berries: { name: 'Lesní plody', icon: '🫐', food: 8 },
   raw_meat: { name: 'Syrové maso', icon: '🥩', food: 6 },
   meat: { name: 'Pečené maso', icon: '🍖', food: 35, heal: 10 },
+  fruit_salad: { name: 'Ovocný salát', icon: '🥗', food: 18 },
   torch: { name: 'Pochodeň', icon: '🕯️', block: 'torch' },
   campfire: { name: 'Táborák', icon: '🔥', block: 'campfire', stack: 8 },
   workbench: { name: 'Pracovní stůl', icon: '🛠️', block: 'workbench', stack: 8 },
