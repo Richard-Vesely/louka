@@ -47,6 +47,23 @@ function fireChanged(game, p) {
 }
 
 export const ACTIONS = {
+  /**
+   * Kde hráč je (posílá prohlížeč 10× za sekundu; pohyb počítá prohlížeč).
+   * Server jen hlídá, že hráč neletí rychleji, než se dá běžet; jinak ho vrátí zprávou 'correct'.
+   */
+  move(game, p, { p: [x, y, z], yaw, pitch, sp }) {
+    if (!p.alive) return;
+    const el = Math.max(game.gameTime - p.lastMoveT, 0.05);
+    const ok = !game.validate || (Math.hypot(x - p.pos.x, z - p.pos.z) <= 14 * el + 1.5 && Math.abs(y - p.pos.y) <= 42 * el + 2);
+    if (!ok) {
+      if (game.gameTime - p.lastCorrect > 0.5) { p.lastCorrect = game.gameTime; game.send(p, { t: 'correct', p: [p.pos.x, p.pos.y, p.pos.z] }); }
+      return;
+    }
+    p.pos.x = x; p.pos.y = y; p.pos.z = z;
+    p.yaw = yaw; p.pitch = pitch; p.sprinting = sp;
+    p.lastMoveT = game.gameTime;
+  },
+
   /** Vybrat políčko hotbaru 0–8. */
   select(game, p, { i }) { p.inv.sel = i; },
 

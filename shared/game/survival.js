@@ -35,6 +35,7 @@ export function updateRespawn(game, p, realDt) {
   p.hp = 100;
   p.hunger = Math.max(p.hunger, 60);
   p.alive = true;
+  p.lastMoveT = game.gameTime;
   // Stínožrouti, kteří hráče lovili, zmizí.
   for (const m of [...game.mobs]) if (m.type === 'crawler' && game.nearestPlayer(m.pos.x, m.pos.z)?.p === p) game.removeMob(m);
   game.send(p, { t: 'respawn', pos: [...SPAWN] });
