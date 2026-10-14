@@ -7,9 +7,9 @@ import { groundHeight } from '@louka/shared/terrain.js';
 import { scene } from '../render/renderer.js';
 import { planksTex, cobbleTex, bricksTex } from '../render/textures.js';
 import { makeInstanced, dummy } from '../render/mesh-utils.js';
-import { blocks } from './state.js';
+import { world, blocks } from './state.js';
 import { buildSpecial } from './special-blocks.js';
-import { player } from '../player/player.js';
+import { player } from '../player/state.js';
 
 /** Materiály obyčejných bloků (podle typu bloku). */
 export const blockMats = {
@@ -28,6 +28,7 @@ export const solidAt = (x, y, z) => { const t = blocks.get(bkey(x, y, z)); retur
 
 /** Překreslí všechny bloky podle mapy `blocks` (po položení nebo rozbití). */
 export function rebuildBlocks() {
+  world.rev++; // bloky se mohly změnit i přímo (ladění) – hra si přepočítá světla
   const counts = { planks: 0, cobble: 0, bricks: 0 };
   for (const [k, type] of blocks) {
     if (BLOCKS[type].special) continue;
@@ -69,6 +70,3 @@ export function updateLights(time) {
   });
   for (const s of list) for (const f of s.flames) f.scale.setScalar(f.userData.base * (0.85 + 0.2 * Math.sin(time * 17 + s.x + f.position.y * 9)));
 }
-
-/** Svítí nějaká pochodeň nebo táborák do `r` metrů od (x, z)? */
-export const nearLight = (x, z, r) => { for (const s of specials.values()) if (BLOCKS[s.type].light && (s.x + 0.5 - x) ** 2 + (s.z + 0.5 - z) ** 2 < r * r) return true; return false; };

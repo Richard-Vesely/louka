@@ -7,9 +7,10 @@ import { $ } from '../core/dom.js';
 import { ICONS } from '../render/icons.js';
 import { canvas } from '../render/renderer.js';
 import { SAVE_KEY, saveState } from '../save/load.js';
+import { net } from '../net/net.js';
 import { input } from '../player/controls.js';
-import { inv, countItem, addItem } from './inventory.js';
-import { ui, fireOf, hasFor, currentResult, slotClick, takeResult, returnGrid, fillRecipe, fillCooking } from './crafting.js';
+import { inv, countItem } from './inventory.js';
+import { ui, fireOf, hasFor, currentResult, slotClick, takeResult, fillRecipe, fillCooking } from './crafting.js';
 
 const invEl = $('inventory'), cursorEl = $('cursorItem');
 
@@ -141,11 +142,8 @@ invEl.addEventListener('contextmenu', (e) => e.preventDefault());
  * @param {string|null} [fireKey] klíč bloku táboráku
  */
 export function openInventory(mode = 'inv', fireKey = null) {
-  ui.mode = mode;
-  ui.size = mode === 'bench' ? 3 : 2;
-  ui.fireKey = fireKey;
-  ui.ghost = null;
-  ui.open = true;
+  Object.assign(ui, { mode, size: mode === 'bench' ? 3 : 2, fireKey, ghost: null, open: true });
+  net.act({ t: 'open', mode, k: fireKey });
   input.lmb = input.rmb = false;
   document.exitPointerLock?.();
   invEl.style.display = 'grid';
@@ -154,8 +152,7 @@ export function openInventory(mode = 'inv', fireKey = null) {
 
 /** Zavře okno inventáře a vrátí věci z mřížky a z kurzoru do batohu. */
 export function closeInventory() {
-  returnGrid();
-  if (inv.cursor) { addItem(inv.cursor.id, inv.cursor.n, true); inv.cursor = null; }
+  net.act({ t: 'close' });
   ui.open = false;
   invEl.style.display = 'none';
   cursorEl.style.display = 'none';

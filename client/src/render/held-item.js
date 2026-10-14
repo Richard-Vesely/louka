@@ -9,7 +9,7 @@ import { glowTex } from './textures.js';
 import { ICONS } from './icons.js';
 import { blockMats } from '../world/blocks.js';
 import { heldStack } from '../inventory/inventory.js';
-import { player } from '../player/player.js';
+import { player } from '../player/state.js';
 
 const holder = new THREE.Group();
 camera.add(holder);

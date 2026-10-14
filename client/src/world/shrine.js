@@ -3,9 +3,7 @@ import * as THREE from 'three';
 import { scene } from '../render/renderer.js';
 import { stoneTex } from '../render/textures.js';
 
-/** Sloupy a kameny svatyně, do kterých se nedá vejít. */
-export const shrineColliders = [];
-
+// Kde stojí sloupy (do kterých se nedá vejít), je v shared/game/colliders.js.
 const stoneMat = new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.9, color: 0xd8d2c4 });
 const floorTex = stoneTex.clone();
 floorTex.repeat.set(5, 5);
@@ -27,7 +25,6 @@ const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
     const x = Math.cos(a) * 7.4, z = Math.sin(a) * 7.4, tilt = h < 6 ? 0.05 : 0;
     add(new THREE.BoxGeometry(1.2, h, 1.2), stoneMat, x, 0.2 + h / 2, z, -a, tilt, tilt);
-    shrineColliders.push({ x, z, r: 0.85 });
     return { x, z };
   });
   for (const [i, j] of [[0, 1], [5, 6]]) {
@@ -36,10 +33,8 @@ const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95
   }
   add(new THREE.BoxGeometry(1.15, 3.2, 1.15), stoneMat, 9.8, 0.45, 5.6, 0.6, 0, Math.PI / 2 - 0.1);
   add(new THREE.BoxGeometry(1.1, 2.0, 1.1), stoneMat, -3.2, 0.75, 9.9, 1.3, 0, Math.PI / 2);
-  shrineColliders.push({ x: 9.8, z: 5.6, r: 1.2 }, { x: -3.2, z: 9.9, r: 1.0 });
   // Spící portál – tajemství na později
   add(new THREE.TorusGeometry(2.45, 0.32, 18, 72), new THREE.MeshStandardMaterial({ map: stoneTex, color: 0x9aa3a8, roughness: 0.6, metalness: 0.2, emissive: 0x2ad8ff, emissiveIntensity: 0.15 }), 0, 3.05, 0);
   add(new THREE.BoxGeometry(1.0, 0.9, 1.0), stoneMat, -2.45, 0.9, 0);
   add(new THREE.BoxGeometry(1.0, 0.9, 1.0), stoneMat, 2.45, 0.9, 0);
-  shrineColliders.push({ x: -2.5, z: 0, r: 0.6 }, { x: 2.5, z: 0, r: 0.6 });
 })();

@@ -2,22 +2,18 @@
 // Levé tlačítko: těžba / kácení / sekání trávy / útok. Pravé: položit blok, jíst, otevřít stůl / táborák.
 import * as THREE from 'three';
 import { ITEMS, TOOL_SPEED } from '@louka/shared/items.js';
-import { BLOCKS, bkey } from '@louka/shared/blocks.js';
-import { randInt } from '@louka/shared/math.js';
+import { bkey } from '@louka/shared/blocks.js';
 import { $ } from '../core/dom.js';
 import { scene } from '../render/renderer.js';
 import { debris } from '../render/particles.js';
+import { CHIP } from '../render/effects.js';
 import { startSwing } from '../render/held-item.js';
 import { Sound } from '../audio/sound.js';
-import { removed, blocks, placedAny, fires } from '../world/state.js';
-import { rebuildForest } from '../world/forest.js';
-import { rebuildBlocks } from '../world/blocks.js';
-import { cutGrass } from '../world/grass.js';
-import { addItem, consumeSelected, heldStack } from '../inventory/inventory.js';
+import { net } from '../net/net.js';
+import { blocks } from '../world/state.js';
+import { heldStack } from '../inventory/inventory.js';
 import { openInventory } from '../inventory/inventory-ui.js';
-import { hitMob } from '../mobs/mobs.js';
-import { toast } from '../ui/hud.js';
-import { player, playerIntersects } from './player.js';
+import { player } from './state.js';
 import { input } from './controls.js';
 import { pickTarget } from './targeting.js';
 
@@ -44,8 +40,6 @@ function placementCell(t) {
 }
 const mining = { key: null, p: 0 };
 const toolOf = (s) => (s && ITEMS[s.id].tool ? ITEMS[s.id] : null);
-// Barva třísek podle toho, co těžíš.
-const CHIP = { tree: [0.42, 0.3, 0.17], rock: [0.5, 0.5, 0.48], iron: [0.65, 0.35, 0.15], ground: [0.25, 0.5, 0.12], planks: [0.6, 0.45, 0.28], cobble: [0.5, 0.5, 0.48], bricks: [0.55, 0.52, 0.48] };
 
 /** Každý snímek: najde cíl, těží / útočí podle tlačítek a ukáže popisek a kroužek postupu. */
 export function updateInteraction(dt) {
@@ -67,7 +61,7 @@ export function updateInteraction(dt) {
   act.swingCd -= dt;
   act.useCd -= dt;
   if (input.lmb && target?.kind === 'mob') {
-    if (act.swingCd <= 0) { startSwing(); Sound.swing(); act.swingCd = 0.42; hitMob(target.mob, tool ? tool.dmg : 1); }
+    if (act.swingCd <= 0) { startSwing(); Sound.swing(); act.swingCd = 0.42; player.shake = 0.1; net.act({ t: 'hit', id: target.mob.id }); }
     mining.key = null;
   } else if (input.lmb && target && target.kind !== 'mob' && target.breakable !== false) {
     if (mining.key !== target.key) { mining.key = target.key; mining.p = 0; }
@@ -104,39 +98,11 @@ export function updateInteraction(dt) {
   pr.style.background = `conic-gradient(rgba(255,255,255,0.9) ${mining.p * 360}deg, rgba(255,255,255,0.15) 0deg)`;
 }
 
-// Vytěžený cíl: pokácený strom, rozbitý balvan nebo blok, posekaná tráva.
+// Vytěžený cíl: hra (nebo server) zkontroluje, že to jde, a pošle kořist a efekty.
 function breakTarget(t) {
-  if (t.kind === 'tree') {
-    removed.add(t.key);
-    const tr = t.tree;
-    addItem('log', (tr.pine ? 4 : 3) + randInt(0, 2));
-    if (Math.random() < 0.4) addItem('stick', randInt(1, 3));
-    if (!tr.pine && Math.random() < 0.3) addItem('berries', randInt(1, 3));
-    debris.emit(tr.x, tr.y + tr.trunkH, tr.z, [0.2, 0.45, 0.12], 60, 5, 2);
-    Sound.crack();
-    rebuildForest(player.pos.x, player.pos.z, true);
-  } else if (t.kind === 'rock') {
-    removed.add(t.key);
-    const r = t.rock;
-    if (r.iron) { addItem('iron_ore', randInt(2, 3)); addItem('stone', 1); }
-    else addItem('stone', 2 + Math.floor(r.s * 3));
-    debris.emit(r.x, r.y + 0.3, r.z, CHIP[r.iron ? 'iron' : 'rock'], 40, 4, 2);
-    Sound.crack();
-    rebuildForest(player.pos.x, player.pos.z, true);
-  } else if (t.kind === 'block') {
-    const k = bkey(...t.cell);
-    blocks.delete(k);
-    addItem(BLOCKS[t.type].drop, 1);
-    if (fires.has(k)) { for (const s of fires.get(k).slots) if (s) addItem(s.id, s.n); fires.delete(k); }
-    debris.emit(...t.at, CHIP[t.type] || CHIP.planks, 25, 3, 1.5);
-    Sound.crack();
-    rebuildBlocks();
-  } else if (t.kind === 'ground') {
-    addItem('fiber', randInt(1, 2));
-    if (Math.random() < 0.15) addItem('berries', 1);
-    cutGrass(t.point[0], t.point[2]);
-    debris.emit(...t.point, CHIP.ground, 18, 2, 2.5);
-  }
+  if (t.kind === 'tree' || t.kind === 'rock') net.act({ t: 'break', kind: t.kind, key: t.key });
+  else if (t.kind === 'block') net.act({ t: 'break', kind: 'block', cell: t.cell });
+  else if (t.kind === 'ground') net.act({ t: 'break', kind: 'ground', point: t.point });
 }
 
 // Pravé tlačítko.
@@ -151,22 +117,10 @@ function useItem() {
   if (!s) return;
   const d = ITEMS[s.id];
   if (d.food) {
-    if (player.hunger >= 100 && !(d.heal && player.hp < 100)) { toast('Nemáš hlad'); return; }
-    player.hunger = Math.min(100, player.hunger + d.food);
-    if (d.heal) player.hp = Math.min(100, player.hp + d.heal);
-    consumeSelected();
-    Sound.eat();
-    act.useCd = 0.6;
+    if (player.hunger < 100 || (d.heal && player.hp < 100)) act.useCd = 0.6;
+    net.act({ t: 'eat' });
     return;
   }
   const cell = d.block ? placementCell(target) : null;
-  if (!cell) return;
-  const k = bkey(...cell);
-  if (blocks.has(k)) return;
-  if (BLOCKS[d.block].solid && playerIntersects(...cell)) return;
-  blocks.set(k, d.block);
-  placedAny[d.block] = true;
-  consumeSelected();
-  rebuildBlocks();
-  Sound.place();
+  if (cell && !blocks.has(bkey(...cell))) net.act({ t: 'place', cell });
 }
