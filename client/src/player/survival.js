@@ -15,6 +15,7 @@ export function onHurt({ dx, dz }) {
 
 /** Smrt: obrazovka zčervená ("Padl jsi…"). */
 export function onDied() {
+  player.alive = false;
   $('fade').style.opacity = 1;
 }
 
@@ -23,6 +24,7 @@ export function onRespawn({ pos }) {
   player.pos.set(...pos);
   player.vel.set(0, 0, 0);
   player.yaw = 0;
+  player.alive = true;
   $('fade').style.opacity = 0;
   toast('Svatyně tě přivedla zpět');
 }
