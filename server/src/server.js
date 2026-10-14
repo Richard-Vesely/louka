@@ -36,7 +36,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
   // Spojení, které neodpovídá (spadlá wifi), se po 10 s zavře.
   const heartbeat = setInterval(() => {
     for (const ws of wss.clients) {
-      if (!ws.isAlive) { ws.terminate(); continue; }
+      if (!ws.isAlive) { log('Spojení neodpovídá 10 s, zavírám ho.'); ws.terminate(); continue; }
       ws.isAlive = false;
       ws.ping();
     }
