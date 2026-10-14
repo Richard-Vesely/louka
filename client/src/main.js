@@ -3,9 +3,7 @@
 import * as THREE from 'three';
 import { EYE } from '@louka/shared/constants.js';
 import { RECIPES, findRecipe } from '@louka/shared/recipes.js';
-import { $ } from './core/dom.js';
 import { clock, debug } from './core/runtime.js';
-import { save } from './save/load.js';
 import { renderer, scene, camera, U } from './render/renderer.js';
 import { sky, stars, updateEnvironment } from './render/sky.js';
 import { ICONS } from './render/icons.js';
@@ -29,15 +27,13 @@ import { updateHeldModel, updateSwing } from './render/held-item.js';
 import { act, updateInteraction } from './player/interaction.js';
 import { updateMobViews } from './mobs/mobs.js';
 import { updateDay } from './world/day.js';
+import { updateAvatars } from './render/avatars.js';
 import { net } from './net/net.js';
-import { startOffline } from './net/local.js';
-import { onEvent } from './net/events.js';
+import { startSolo, showStart } from './net/start.js';
+import { others } from './net/replica.js';
 import { updateHUD } from './ui/hud.js';
 import { updateTips } from './ui/tips.js';
 import './save/save.js';
-
-// Hra pro jednoho hráče: celá hra běží tady v prohlížeči (net/local.js).
-Object.assign(net, startOffline({ world, mobs, player, onEvent }));
 
 const timer = new THREE.Clock();
 let envTimer = 0, frames = 0, fpsTimer = 0, settle = 0;
@@ -47,14 +43,15 @@ updateDay(0);
 updateEnvironment();
 renderHotbar();
 updateTips();
-if (!save) $('intro').style.display = 'grid';
 
 /** Jeden krok hry o `realDt` sekund. */
 function tick(realDt) {
   const playing = (isLocked() || debug.testMode) && !ui.open;
   const dt = playing ? realDt : 0;
+  // Offline se svět při otevřeném inventáři zastaví; online běží dál (na serveru).
+  const worldDt = net.mode === 'online' ? realDt : dt;
   clock.gameClock += realDt;
-  clock.gameTime += dt;
+  clock.gameTime += worldDt;
   U.time.value = clock.gameClock;
 
   let moving = 0;
@@ -68,8 +65,9 @@ function tick(realDt) {
   // Hra: čas, hlad, tvorové, táboráky (táboráky a oživení běží i v pauze).
   net.tick(dt, realDt);
   const { night, day } = updateDay();
-  updateMobViews(dt, day);
-  updateShards(dt);
+  updateMobViews(worldDt, day);
+  updateAvatars(realDt);
+  updateShards(worldDt);
   updateFireWindow(realDt);
   regrowGrass(realDt);
   updateLights(clock.gameClock);
@@ -103,11 +101,13 @@ function frame() {
 // Pro ladění v konzoli prohlížeče (a pro automatický test tests/playtest).
 window.game = {
   get testMode() { return debug.testMode; },
-  set testMode(v) { debug.testMode = !!v; },
+  // testMode = automatický test: hraje se i bez zamčené myši a rovnou sám (bez přihlášení).
+  set testMode(v) { debug.testMode = !!v; if (v) startSolo(); },
   tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, blocks, rebuildBlocks, forestTrees, forestRocks,
-  slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, net, world,
+  slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, net, world, others,
   spawnMob: (type, x, z) => net.game?.spawnMob(type, x, z),
   setTime: (t) => (world.time.dayTime = t), get target() { return act.target; }, openInventory, closeInventory,
 };
 window.gameStarted = true;
+showStart();
 frame();

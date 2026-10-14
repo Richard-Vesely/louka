@@ -115,3 +115,26 @@ canvas { display: block; }
 #tooltip .t1 { color: #d9b07a; } #tooltip .t2 { color: #c8c8c8; } #tooltip .t3 { color: #ffffff; } #tooltip .t4 { color: #7ff3ff; }
 @media (max-width: 800px) { .mc-window { flex-direction: column; overflow: auto; } }
 #error { position: fixed; inset: 0; display: none; place-items: center; padding: 16px; background: #223; text-align: center; }
+
+/* ---------- multiplayer: přihlášení, stav spojení, kdo hraje ---------- */
+#join { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; padding: 16px; background: radial-gradient(ellipse at center, rgba(11, 15, 22, 0.55), rgba(11, 15, 22, 0.92)); }
+.join-card { width: min(360px, 100%); box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 22px 22px 18px; background: var(--panel); border: 1px solid rgba(232, 198, 106, 0.4); border-radius: 6px; backdrop-filter: blur(6px); }
+.join-card h1 { margin: 0; text-align: center; font: 700 44px 'Cinzel', serif; letter-spacing: 0.2em; }
+.join-card h2 { margin: -6px 0 6px; text-align: center; font: 500 16px 'Cinzel', serif; color: var(--gold); letter-spacing: 0.12em; }
+.join-card label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.join-card input { font: 16px system-ui, sans-serif; padding: 10px 12px; color: #f3ead2; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 4px; user-select: text; }
+.join-card input:focus { outline: 2px solid var(--gold); outline-offset: 0; }
+.join-card details { font-size: 13px; color: #c9c2ad; }
+.join-card details input { width: 100%; box-sizing: border-box; margin-top: 6px; font-size: 14px; }
+.join-card .mc-btn { padding: 10px 12px; font-size: 17px; }
+.join-card .mc-btn.ghost { background: #3a3a42; font-size: 15px; }
+.join-card .mc-btn:disabled { opacity: 0.6; cursor: wait; }
+.join-msg { min-height: 1.3em; margin: 0; font-size: 14px; text-align: center; }
+.join-msg.bad { color: #ff9b8a; }
+#netStatus { position: fixed; inset: 0; z-index: 25; display: none; place-items: center; background: rgba(0, 0, 0, 0.55); font: 700 24px 'Cinzel', serif; color: #fff4d6; text-align: center; padding: 16px; pointer-events: none; }
+#notices { position: fixed; top: 64px; left: 18px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+#notices div { padding: 4px 10px; background: var(--panel); border-left: 2px solid var(--cyan); border-radius: 3px; font-size: 14px; animation: feed 6s forwards; }
+#playerList { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 15; display: none; min-width: 240px; padding: 10px 14px; background: rgba(10, 14, 22, 0.85); border: 1px solid rgba(232, 198, 106, 0.4); border-radius: 4px; font: 16px 'Pixelify Sans', monospace; pointer-events: none; }
+#playerList .title { margin-bottom: 6px; font: 700 13px 'Cinzel', serif; color: var(--gold); letter-spacing: 0.1em; }
+#playerList div:not(.title) { display: flex; justify-content: space-between; gap: 18px; }
+#playerList b { font-weight: 400; color: #a9a9b2; }
