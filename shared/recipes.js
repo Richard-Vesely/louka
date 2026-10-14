@@ -22,7 +22,6 @@ for (const [tier, mat] of [['wood', 'planks'], ['stone', 'stone'], ['iron', 'iro
   );
 }
 RECIPES.push({ out: 'crystal_sword', n: 1, shape: [' H ', 'EHE', ' I '], key: { H: 'shard', E: 'essence', I: 'iron' } });
-RECIPES.push({ out: 'fruit_salad', n: 1, shape: ['BB'], key: { B: 'berries' } });
 
 // Předpočítá mřížku receptu (pat), šířku (w) a výšku (h).
 for (const r of RECIPES) {
