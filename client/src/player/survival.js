@@ -3,6 +3,7 @@
 import { $ } from '../core/dom.js';
 import { Sound } from '../audio/sound.js';
 import { hud, toast } from '../ui/hud.js';
+import { net } from '../net/net.js';
 import { player } from './state.js';
 
 /** Zásah: odhození do strany, otřes kamery, červená obrazovka. */
@@ -16,6 +17,8 @@ export function onHurt({ dx, dz }) {
 /** Smrt: obrazovka zčervená ("Padl jsi…"). */
 export function onDied() {
   $('fade').style.opacity = 1;
+  // Offline: oživení proběhne včas, i když prohlížeč zrovna nekreslí snímky (jako setTimeout v původní hře).
+  if (net.mode === 'offline') setTimeout(() => net.tick(0, 0), 2650);
 }
 
 /** Oživení u svatyně. */

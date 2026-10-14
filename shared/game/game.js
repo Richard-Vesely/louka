@@ -19,8 +19,10 @@ export class Game {
    * @param {import('./world.js').WorldState} [opts.world] stav světa (jinak nový)
    * @param {Array} [opts.mobs] pole pro tvory (prohlížeč si ho drží a kreslí z něj)
    * @param {boolean} [opts.validate] kontrolovat dosah a rychlost akcí (server: true)
+   * @param {() => number} [opts.now] skutečný čas v sekundách (testy si ho můžou podstrčit)
    */
-  constructor({ world = createWorld(), mobs = [], validate = true } = {}) {
+  constructor({ world = createWorld(), mobs = [], validate = true, now = () => performance.now() / 1000 } = {}) {
+    this.now = now;
     this.world = world;
     this.mobs = mobs;
     this.validate = validate;
@@ -99,7 +101,7 @@ export class Game {
   /**
    * Jeden krok hry.
    * @param {number} dt herní čas (0 = pauza v single-playeru)
-   * @param {number} [realDt] skutečný čas – táboráky pečou a mrtví se oživují i v pauze
+   * @param {number} [realDt] skutečný čas – táboráky pečou i v pauze (oživení hlídá game.now())
    */
   tick(dt, realDt = dt) {
     this.gameTime += dt;
@@ -111,7 +113,7 @@ export class Game {
       updateSpawns(this, dt, night);
       for (const p of this.players.values()) if (p.alive) pickShards(this, p);
     }
-    for (const p of this.players.values()) updateRespawn(this, p, realDt);
+    for (const p of this.players.values()) updateRespawn(this, p);
     updateFires(this, realDt);
     this.flush();
   }

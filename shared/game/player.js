@@ -42,7 +42,7 @@ export function createPlayer(name, saved = {}, vec3 = plainVec) {
     crafted: saved.crafted || {},
     placedAny: saved.placedAny || {},
     // Časovače hry (neukládají se).
-    respawnT: 0, starveT: 0, hungerWarned: false, lastBreak: -99, lastHit: -99, invDirty: false,
+    respawnAt: 0, starveT: 0, hungerWarned: false, lastBreak: -99, lastHit: -99, invDirty: false,
   };
 }
 

@@ -129,6 +129,8 @@ test('eating: restores hunger, heals with cooked meat, refuses when full', () =>
 
 test('survival: hunger drops, starving hurts, death and respawn after 2.6 s', () => {
   const { game, p, events } = setup();
+  let clock = 0;
+  game.now = () => clock;
   game.tick(10);
   assert.ok(Math.abs(p.hunger - (100 - 1.1)) < 1e-9);
   p.hunger = 0; p.hp = 4;
@@ -136,7 +138,9 @@ test('survival: hunger drops, starving hurts, death and respawn after 2.6 s', ()
   assert.equal(p.alive, false);
   assert.ok(events.some((e) => e.t === 'died'));
   game.act(p.id, { t: 'eat' }); // dead players can't act (no crash either)
-  for (let i = 0; i < 60; i++) game.tick(0.05);
+  clock += 2.5; game.tick(0.05);
+  assert.equal(p.alive, false);
+  clock += 0.2; game.tick(0.05);
   assert.equal(p.alive, true);
   assert.equal(p.hp, 100);
   assert.deepEqual([p.pos.x, p.pos.z], [0, 14]);

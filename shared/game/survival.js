@@ -13,7 +13,7 @@ export function damagePlayer(game, p, amount, dx, dz) {
   if (p.hp <= 0) {
     p.alive = false;
     p.hp = 0;
-    p.respawnT = 2.6;
+    p.respawnAt = game.now() + 2.6;
     game.send(p, { t: 'died' });
   }
 }
@@ -27,9 +27,9 @@ export function updateSurvival(game, p, dt) {
   if (p.hunger > 30 && game.gameTime - p.lastHurt > 4) p.hp = Math.min(100, p.hp + dt * 1.5);
 }
 
-/** Mrtvý hráč se po 2,6 s (skutečného času) objeví u svatyně. */
-export function updateRespawn(game, p, realDt) {
-  if (p.alive || (p.respawnT -= realDt) > 0) return;
+/** Mrtvý hráč se 2,6 s (skutečného času, jako setTimeout) po smrti objeví u svatyně. */
+export function updateRespawn(game, p) {
+  if (p.alive || game.now() < p.respawnAt) return;
   p.pos.x = SPAWN[0]; p.pos.y = SPAWN[1]; p.pos.z = SPAWN[2];
   p.yaw = 0;
   p.hp = 100;
