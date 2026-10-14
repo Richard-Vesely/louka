@@ -11,15 +11,25 @@ stav, peč maso u táboráku a přežij noc se *stínožrouty*. Spolu ve **stejn
 2. Napiš své **jméno** a **heslo kroužku** → **Hrát spolu**. (Bez internetu: **Hrát sám**.)
 3. Klikni do hry.
 
+Ovládání je jako v Minecraftu. Celý seznam je ve hře: **E → Ovládání**.
+
 | Ovládání | |
 |---|---|
-| W A S D | chůze, **Shift** běh, **mezerník** skok |
+| W A S D | chůze, **2× W** nebo **Ctrl** běh, **Shift** plížení (z okraje bloku nespadneš), **mezerník** skok |
 | myš | rozhlížení |
-| levé tlačítko (drž) | kácet, těžit, sekat trávu, útočit |
-| pravé tlačítko | položit blok, jíst, otevřít pracovní stůl / táborák |
+| levé tlačítko (drž) | kácet, těžit, sekat trávu, útočit (ve výskoku kritický zásah) |
+| pravé tlačítko | položit blok, jíst, otevřít pracovní stůl / táborák (se Shiftem na něj položíš blok) |
+| prostřední tlačítko | vzít do ruky blok, na který míříš |
+| Q / Ctrl+Q | vyhodit jeden kus / celou hromádku (kdokoli ji sebere) |
+| F | prohodit ruce: v druhé ruce může být pochodeň nebo jídlo |
 | E | inventář a výroba (Esc zavře) |
 | 1–9, kolečko | výběr v hotbaru |
 | Tab | kdo je ve hře |
+| F1 · F2 · F3 · F5 · F11 | schovat HUD · snímek obrazovky · ladicí údaje · pohled zezadu / zepředu · celá obrazovka |
+
+V inventáři: **Shift+klik** přesune, **dvojklik** posbírá stejné věci, **Shift+dvojklik** přesune všechny stejné,
+**tažení** levým rozdělí hromádku a pravým dá po jednom, **1–9 / F** nad políčkem prohodí s hotbarem / druhou rukou,
+**Q** nad políčkem vyhodí, **klik mimo okno** vyhodí, co držíš myší, **mezerník** zopakuje poslední recept.
 
 Když vypadne internet, hra napíše *„Spojení ztraceno — připojuji znovu…“* a připojí se sama.
 Se stejným jménem máš zpátky svůj batoh i místo, kde jsi stál(a).
@@ -38,6 +48,7 @@ Ještě jednodušší: na GitHubu **Code → Codespaces → Create codespace** (
 npm test             # rychlé testy
 npm run build        # sestavení hry do client/dist
 npm run playtest     # hra si sama zahraje 60 kontrol v prohlížeči
+npm run controls     # 32 kontrol ovládání (klávesnice a myš jako v Minecraftu)
 ```
 
 ## Uspořádat hru pro kroužek

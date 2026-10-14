@@ -1,7 +1,7 @@
 // ============================================================ PlayerState – stav hráče
 // Co o hráči ví hra: kde je, co má v batohu, zdraví, hlad a postup.
 import { ITEMS } from '../items.js';
-import { SPAWN, EYE, PW, PH } from '../constants.js';
+import { SPAWN, EYE, PW, PH, INV_SIZE, OFFHAND } from '../constants.js';
 
 /** Výchozí vektor: obyčejný objekt { x, y, z }. Prohlížeč místo něj dává THREE.Vector3. */
 export const plainVec = (x, y, z) => ({ x, y, z });
@@ -14,7 +14,7 @@ export const plainVec = (x, y, z) => ({ x, y, z });
  * @property {number} hp zdraví 0..100
  * @property {number} hunger sytost 0..100
  * @property {boolean} alive žije (false = čeká na oživení)
- * @property {{slots:Array<{id:string,n:number}|null>, sel:number, cursor:{id:string,n:number}|null}} inv batoh
+ * @property {{slots:Array<{id:string,n:number}|null>, sel:number, cursor:{id:string,n:number}|null}} inv batoh (37 políček, 36 = druhá ruka)
  * @property {{open:boolean, mode:string, size:number, craft:Array, fireKey:string|null, ghost:Array|null}} ui okno inventáře
  * @property {Object<string,boolean>} crafted co už vyrobil (pro rady)
  * @property {Object<string,boolean>} placedAny které bloky už položil (pro rady)
@@ -32,12 +32,15 @@ export function createPlayer(name, saved = {}, vec3 = plainVec) {
     name,
     pos: vec3(...(saved.pos || SPAWN)),
     yaw: saved.yaw ?? 0,
+    pitch: 0,
     hp: saved.hp ?? 100,
     hunger: saved.hunger ?? 100,
     alive: true,
     lastHurt: -99,
     sprinting: false,
-    inv: { slots: saved.inv || Array(36).fill(null), sel: 0, cursor: null },
+    sneaking: false,
+    // Starší uložené hry mají jen 36 políček (bez druhé ruky).
+    inv: { slots: Array.from({ length: INV_SIZE }, (_, i) => saved.inv?.[i] || null), sel: 0, cursor: null },
     ui: { open: false, mode: 'inv', size: 2, craft: Array(9).fill(null), fireKey: null, ghost: null },
     crafted: saved.crafted || {},
     placedAny: saved.placedAny || {},
@@ -57,8 +60,11 @@ export function playerIntersects(p, x, y, z) {
   return q.x - PW < x + 1 && q.x + PW > x && q.y < y + 1 && q.y + PH > y && q.z - PW < z + 1 && q.z + PW > z;
 }
 
-/** Co hráč drží v ruce (vybrané políčko hotbaru). */
-export const heldStack = (p) => p.inv.slots[p.inv.sel];
+/** Co hráč drží v ruce (vybrané políčko hotbaru), nebo v druhé ruce (`off`). */
+export const heldStack = (p, off = false) => p.inv.slots[off ? OFFHAND : p.inv.sel];
+
+/** Směr pohledu hráče (jednotkový vektor) podle otočení a sklonu. */
+export const lookDir = (p) => ({ x: -Math.sin(p.yaw) * Math.cos(p.pitch), y: Math.sin(p.pitch), z: -Math.cos(p.yaw) * Math.cos(p.pitch) });
 
 /** Nástroj z hromádky (nebo null, když to není nástroj). */
 export const toolOf = (s) => (s && ITEMS[s.id]?.tool ? ITEMS[s.id] : null);

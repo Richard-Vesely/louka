@@ -29,16 +29,16 @@ docs/     V1 brief, baseline checklist, hosting guide
 | `shared/mobs.js` | creatures: hp, size, damage, drops |
 | `shared/constants.js` | speeds, reach, day length, spawn point |
 | `shared/terrain.js`, `shared/worldgen.js` | terrain height (JS + GLSL twin), where trees/rocks/shards are |
-| `shared/game/` | **the game rules without graphics**: `Game` class, actions, inventory, crafting, mobs AI, survival, fires, day clock |
+| `shared/game/` | **the game rules without graphics**: `Game` class, actions, inventory (37 slots: 0–8 hotbar, 9–35 bag, 36 off-hand), crafting and the Minecraft inventory tricks, items on the ground (`drops.js`), mobs AI, survival, fires, day clock |
 | `shared/protocol.js` | every network message, documented, + validation of client messages |
 | `client/src/main.js` | start-up and the frame loop (`tick`) |
 | `client/src/net/` | `local.js` (single-player: the `Game` runs in the browser), `online.js` (WebSocket), `replica.js` (server state → local objects), `events.js` (game events → HUD/sound/particles), `start.js` (join screen flow) |
 | `client/src/world/` | drawing the world: ground, grass, forest, shards, shrine, blocks, special block models |
-| `client/src/player/` | movement + collisions (client-side), aiming, mining/attacking input |
+| `client/src/player/` | movement + collisions (client-side: sprint, sneak with edge protection), aiming from the eyes, mining/attacking, key and mouse bindings (`controls.js`) |
 | `client/src/inventory/` | inventory window, hotbar, recipe book (UI only; logic is in `shared/game`) |
 | `client/src/mobs/` | creature 3D models and animation (AI is in `shared/game/mobs.js`) |
-| `client/src/render/` | renderer, sky, textures, pixel-art icons, particles, held item, other players' avatars |
-| `client/src/ui/` | HUD, tips, join screen, notices, player list |
+| `client/src/render/` | renderer, sky, textures, pixel-art icons, particles, held items (both hands), avatars, items on the ground (`drops.js`), camera / F5 views (`view.js`) |
+| `client/src/ui/` | HUD, tips, join screen, notices, player list, F1/F2/F3/F11 (`fkeys.js`) |
 | `server/src/` | `index.js` (env config), `server.js` (HTTP + WebSocket), `room.js` (players, sync), `persist.js` (save + backups) |
 
 ## Data flow
@@ -79,6 +79,7 @@ npm install          # once
 npm run dev          # game + server: open http://localhost:5173
 npm test             # unit + server tests (fast)
 npm run build && npm run playtest            # 60 checks of the single-player game in a real browser
+npm run controls                             # 32 checks of the Minecraft controls with real keys and mouse
 node tests/playtest/multiplayer.mjs          # real server + two browsers
 ```
 For a quick look without a server: open the game and click **Hrát sám**, or add `?offline` to the URL.
@@ -117,4 +118,7 @@ Note: the tests check that the original 16 recipes come first, in order, so **ap
 ## What not to do
 - Don't edit `client/dist/` (built output) or `server/data/` (the live world).
 - Don't put secrets in the repo (`ROOM_PASSWORD` lives in an env file on the server).
-- Don't remove or rename `window.game` fields or DOM ids the play-test uses (see `tests/playtest/playtest.mjs`).
+- Don't remove or rename `window.game` fields or DOM ids the play-tests use (see `tests/playtest/playtest.mjs` and `controls.mjs`).
+- Controls follow Minecraft (Java edition defaults). A new key should not clash with them: check `client/src/player/controls.js`,
+  `client/src/inventory/inventory-ui.js` (keys in the open inventory) and `client/src/ui/fkeys.js`, and add it to the
+  "Ovládání" panel in `client/index.html`.

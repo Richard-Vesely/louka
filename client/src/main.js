@@ -1,7 +1,6 @@
 // ============================================================ Říše – start hry a herní smyčka
 // Tady se všechno spojí dohromady. Každý snímek se zavolá tick(): pohyb, svět, tvorové, HUD, vykreslení.
 import * as THREE from 'three';
-import { EYE } from '@louka/shared/constants.js';
 import { RECIPES, findRecipe } from '@louka/shared/recipes.js';
 import { clock, debug } from './core/runtime.js';
 import { renderer, scene, camera, U } from './render/renderer.js';
@@ -22,16 +21,19 @@ import { ui, slotClick, takeResult, fillRecipe, fillCooking, updateFireWindow } 
 import { renderHotbar, openInventory, closeInventory } from './inventory/inventory-ui.js';
 import { player } from './player/state.js';
 import { updatePlayer } from './player/player.js';
-import { keys, input, isLocked } from './player/controls.js';
+import { keys, input, move, isLocked, dropHeld, swapHands, pickBlock } from './player/controls.js';
 import { updateHeldModel, updateSwing } from './render/held-item.js';
 import { act, updateInteraction } from './player/interaction.js';
 import { updateMobViews } from './mobs/mobs.js';
 import { updateDay } from './world/day.js';
 import { updateAvatars } from './render/avatars.js';
+import { updateDropViews } from './render/drops.js';
+import { view, placeCamera } from './render/view.js';
 import { net } from './net/net.js';
 import { startSolo, showStart } from './net/start.js';
 import { others } from './net/replica.js';
 import { updateHUD } from './ui/hud.js';
+import { fk, updateFKeys, afterRender, toggleHud, toggleDebug } from './ui/fkeys.js';
 import { updateTips } from './ui/tips.js';
 import './save/save.js';
 
@@ -56,7 +58,7 @@ function tick(realDt) {
 
   let moving = 0;
   if (playing && player.alive) moving = updatePlayer(dt);
-  else { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
+  else placeCamera(player.pos.x, player.pos.y + player.eyeH, player.pos.z, realDt);
   updateHeldModel();
   updateSwing(dt, moving);
 
@@ -67,6 +69,7 @@ function tick(realDt) {
   const { night, day } = updateDay();
   updateMobViews(worldDt, day);
   updateAvatars(realDt);
+  updateDropViews(realDt, clock.gameClock);
   updateShards(worldDt);
   updateFireWindow(realDt);
   regrowGrass(realDt);
@@ -91,7 +94,9 @@ function tick(realDt) {
     fpsTimer = 0;
   }
   updateHUD(realDt);
+  updateFKeys(realDt);
   renderer.render(scene, camera);
+  afterRender();
 }
 function frame() {
   requestAnimationFrame(frame);
@@ -107,6 +112,8 @@ window.game = {
   slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, net, world, others,
   spawnMob: (type, x, z) => net.game?.spawnMob(type, x, z),
   setTime: (t) => (world.time.dayTime = t), get target() { return act.target; }, openInventory, closeInventory,
+  // Ovládání jako v Minecraftu (pro test: tests/playtest/controls.mjs).
+  move, view, fk, camera, drops: world.drops, dropHeld, swapHands, pickBlock, toggleHud, toggleDebug, act: (msg) => net.act(msg),
 };
 window.gameStarted = true;
 showStart();

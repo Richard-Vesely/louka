@@ -1,5 +1,10 @@
 // ============================================================ HUD – inventář, výroba, táborák (styl Minecraft)
 // Kreslí hotbar, okno inventáře, mřížku výroby, knihu receptů a tooltipy.
+// Triky z Minecraftu: klik = vzít/položit, pravé = půlka/po jednom, Shift+klik = přesunout,
+// dvojklik = posbírat stejné, Shift+dvojklik = přesunout všechny stejné, tažení = rozdělit (levé) / po jednom (pravé),
+// 1–9 nad políčkem = prohodit s hotbarem, F = s druhou rukou, Q = vyhodit (Ctrl+Q celé), klik mimo okno = vyhodit,
+// mezerník = znovu poslední recept (Shift = víc najednou).
+import { OFFHAND } from '@louka/shared/constants.js';
 import { ITEMS } from '@louka/shared/items.js';
 import { RECIPES, recipeNeeds } from '@louka/shared/recipes.js';
 import { COOKING, COOK_TIME } from '@louka/shared/cooking.js';
@@ -14,16 +19,30 @@ import { ui, fireOf, hasFor, currentResult, slotClick, takeResult, fillRecipe, f
 
 const invEl = $('inventory'), cursorEl = $('cursorItem');
 
+/** Přepínače vzhledu: advanced = pokročilé popisky (F3+H). */
+export const invView = { advanced: false };
+
+// Tažení s předmětem v kurzoru: { button, cells: [[c, i], …] }.
+let drag = null;
+const inDrag = (c, i) => drag?.cells.some(([dc, di]) => dc === c && di === i);
+
 const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
 function slotHTML(s, i, cls = '', c = 'inv') {
+  if (inDrag(c, i)) cls += ' drag';
   if (!s) return `<div class="slot ${cls}" data-c="${c}" data-i="${i}"></div>`;
   return `<div class="slot ${cls}" data-c="${c}" data-i="${i}" data-item="${s.id}">${iconImg(s.id)}${s.n > 1 ? `<b>${s.n}</b>` : ''}</div>`;
 }
 
-/** Překreslí hotbar dole na obrazovce. */
+/** Překreslí hotbar dole na obrazovce (a druhou ruku vedle něj). */
 export function renderHotbar() {
   $('hotbar').innerHTML = inv.slots.slice(0, 9).map((s, i) => slotHTML(s, i, i === inv.sel ? 'active' : '')).join('');
+  const off = inv.slots[OFFHAND];
+  $('offhand').innerHTML = off ? slotHTML(off, OFFHAND) : '';
+  $('offhand').style.display = off ? 'flex' : 'none';
 }
+
+// Co je v políčku (jak to vidí prohlížeč).
+const slotOf = (c, i) => (c === 'inv' ? inv.slots[i] : c === 'craft' ? ui.craft[i] : fireOf(ui.fireKey).slots[i]);
 
 let onlyCraftable = false;
 
@@ -88,6 +107,7 @@ export function renderInventory() {
   html = '';
   for (let i = 0; i < 9; i++) html += slotHTML(inv.slots[i], i);
   $('invHot').innerHTML = html;
+  $('invOff').innerHTML = slotHTML(inv.slots[OFFHAND], OFFHAND);
   renderCraftArea();
   renderBook();
   cursorEl.innerHTML = inv.cursor ? slotHTML(inv.cursor, -1, '', 'cursor') : '';
@@ -108,6 +128,7 @@ function itemInfo(id, el) {
     if (r.w > ui.size || r.h > ui.size) lines.push('<span style="color:#ff8a7a">Potřebuješ pracovní stůl</span>');
   }
   if (el?.dataset.cook) lines.push(`z: ${ITEMS[el.dataset.cook].name}`);
+  if (invView.advanced) lines.push(`<span class="adv">louka:${id} · max ${d.stack}</span>`);
   return `<div class="${d.tier ? 't' + d.tier : ''}">${d.name}</div>${lines.map((l) => `<div class="sub">${l}</div>`).join('')}`;
 }
 addEventListener('mouseover', (e) => {
@@ -124,17 +145,85 @@ addEventListener('mousemove', (e) => {
 });
 $('onlyCraftable').addEventListener('change', (e) => { onlyCraftable = e.target.checked; renderInventory(); });
 
+// Políčko pod myší (pro klávesy 1–9, F a Q v otevřeném okně).
+let hover = null;
+const slotEl = (t) => { const sl = t.closest?.('.slot[data-c][data-i]'); return sl && sl.dataset.c !== 'cursor' ? sl : null; };
+invEl.addEventListener('mouseover', (e) => { const sl = slotEl(e.target); hover = sl ? { c: sl.dataset.c, i: +sl.dataset.i } : null; if (sl && drag) dragOver(sl); });
+invEl.addEventListener('mouseleave', () => { hover = null; });
+
+let last = { t: 0, c: '', i: -1, id: null, shift: false }, lastRecipe = -1;
 invEl.addEventListener('mousedown', (e) => {
+  if (e.button === 1) return;
   const out = e.target.closest('[data-out]');
   if (out) return takeResult(e.shiftKey);
-  const sl = e.target.closest('.slot[data-c][data-i]');
-  if (sl && sl.dataset.c !== 'cursor') return slotClick(sl.dataset.c, +sl.dataset.i, e.button, e.shiftKey);
+  const sl = slotEl(e.target);
+  if (sl) {
+    const c = sl.dataset.c, i = +sl.dataset.i, now = performance.now(), s = slotOf(c, i);
+    const dbl = e.button === 0 && now - last.t < 300 && last.c === c && last.i === i;
+    if (e.shiftKey) {
+      // Shift + dvojklik: všechny hromádky stejného předmětu.
+      if (dbl && last.shift && last.id) { last.t = 0; return net.act({ t: 'moveall', c, i, id: last.id }); }
+      last = { t: now, c, i, id: s?.id, shift: true };
+      return slotClick(c, i, e.button, true);
+    }
+    // Dvojklik: posbírat stejné věci do kurzoru.
+    if (dbl && !last.shift) { last.t = 0; return net.act({ t: 'collect' }); }
+    last = { t: now, c, i, id: s?.id, shift: false };
+    // S věcí v kurzoru může začít tažení (rozhodne se při puštění tlačítka).
+    if (inv.cursor && (e.button === 0 || e.button === 2)) { drag = { button: e.button, cells: [[c, i]] }; sl.classList.add('drag'); return; }
+    return slotClick(c, i, e.button, false);
+  }
   const rc = e.target.closest('[data-r]');
-  if (rc) return fillRecipe(RECIPES[+rc.dataset.r], e.shiftKey);
+  if (rc) { lastRecipe = +rc.dataset.r; return fillRecipe(RECIPES[lastRecipe], e.shiftKey); }
   const ck = e.target.closest('[data-cook]');
-  if (ck) fillCooking(ck.dataset.cook);
+  if (ck) return fillCooking(ck.dataset.cook);
+  // Klik mimo okno s věcí v kurzoru: vyhodit (levé = všechno, pravé = jeden kus).
+  if (inv.cursor && !e.target.closest('.mc-window, #controlsHelp')) net.act({ t: 'drop', c: 'cur', all: e.button === 0 });
 });
 invEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// Tažení: přidá políčko, kam se dá něco z kurzoru dát (prázdné nebo stejný předmět, ne výstup táboráku).
+function dragOver(sl) {
+  const c = sl.dataset.c, i = +sl.dataset.i, s = slotOf(c, i), cur = inv.cursor;
+  if (!cur || inDrag(c, i) || (c === 'fire' && i === 1) || drag.cells.length >= cur.n) return;
+  if (s && (s.id !== cur.id || s.n >= ITEMS[s.id].stack)) return;
+  drag.cells.push([c, i]);
+  sl.classList.add('drag');
+}
+addEventListener('mouseup', (e) => {
+  if (!drag || e.button !== drag.button) return;
+  const { cells, button } = drag;
+  drag = null;
+  for (const el of invEl.querySelectorAll('.slot.drag')) el.classList.remove('drag');
+  if (cells.length === 1) slotClick(cells[0][0], cells[0][1], button, false);
+  else { last.t = 0; net.act({ t: 'spread', cells, button }); } // tažení není první klik dvojkliku
+});
+
+/**
+ * Klávesy v otevřeném okně (volá player/controls.js). Vrátí true, když klávesu zpracovalo.
+ * 1–9 / F nad políčkem = prohodit s hotbarem / druhou rukou, Q = vyhodit, mezerník = znovu poslední recept.
+ */
+export function inventoryKey(e) {
+  const m = e.code.match(/^Digit([1-9])$/);
+  if (hover && (m || (e.code === 'KeyF' && !e.repeat))) {
+    net.act({ t: 'swap', c: hover.c, i: hover.i, h: m ? Number(m[1]) - 1 : OFFHAND });
+    return true;
+  }
+  if (hover && e.code === 'KeyQ') {
+    net.act({ t: 'drop', c: hover.c, i: hover.i, all: e.ctrlKey || e.metaKey });
+    return true;
+  }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (lastRecipe >= 0 && ui.mode !== 'fire') fillRecipe(RECIPES[lastRecipe], e.shiftKey);
+    return true;
+  }
+  return false;
+}
+
+// Nápověda s ovládáním (tlačítko v okně inventáře).
+$('controlsBtn').addEventListener('click', () => $('controlsHelp').classList.toggle('show'));
+$('controlsHelp').addEventListener('mousedown', (e) => { e.stopPropagation(); $('controlsHelp').classList.remove('show'); });
 
 /**
  * Otevře okno inventáře.
@@ -155,6 +244,9 @@ export function closeInventory() {
   net.act({ t: 'close' });
   ui.open = false;
   invEl.style.display = 'none';
+  $('controlsHelp').classList.remove('show');
+  drag = null;
+  hover = null;
   cursorEl.style.display = 'none';
   tooltip.style.display = 'none';
   renderHotbar();

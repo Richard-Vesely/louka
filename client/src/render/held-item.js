@@ -1,6 +1,7 @@
 // ============================================================ předmět v ruce
-// 3D model toho, co držíš, a animace máchnutí.
+// 3D model toho, co držíš (a v levé ruce, co máš v druhé ruce – F), a animace máchnutí.
 import * as THREE from 'three';
+import { OFFHAND } from '@louka/shared/constants.js';
 import { ITEMS } from '@louka/shared/items.js';
 import { BLOCKS } from '@louka/shared/blocks.js';
 import { WALK } from '@louka/shared/constants.js';
@@ -9,11 +10,18 @@ import { camera } from './renderer.js';
 import { glowTex } from './textures.js';
 import { ICONS } from './icons.js';
 import { blockMat } from '../world/blocks.js';
-import { heldStack } from '../inventory/inventory.js';
+import { heldStack, inv } from '../inventory/inventory.js';
 import { player } from '../player/state.js';
 
-const holder = new THREE.Group();
-camera.add(holder);
+const holder = new THREE.Group(), offHolder = new THREE.Group();
+camera.add(holder, offHolder);
+offHolder.position.set(-0.36, -0.38, -0.62);
+offHolder.rotation.set(-0.3, -0.15, 0.4);
+
+/** Ukáže / schová ruce (ve 3. osobě – F5 – a se schovaným HUD – F1 – nejsou vidět). */
+export function setHandsVisible(on) { holder.visible = offHolder.visible = on && !hidden.hands; }
+/** hands: true = ruce schované (F1). */
+export const hidden = { hands: false };
 const TIER_MAT = {
   1: new THREE.MeshStandardMaterial({ color: 0x9a7448, roughness: 0.8 }),
   2: new THREE.MeshStandardMaterial({ color: 0x8e8e8e, roughness: 0.75, metalness: 0.1 }),
@@ -24,14 +32,14 @@ const handleMat = new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: 0
 const goldMat = new THREE.MeshStandardMaterial({ color: 0xc9a03a, metalness: 1, roughness: 0.35 });
 
 // Pixelová ikona jako textura pro předmět v ruce (ostré pixely jako v Minecraftu).
-function iconTexture(id) {
+export function iconTexture(id) {
   const t = new THREE.CanvasTexture(ICONS[id].canvas);
   t.magFilter = t.minFilter = THREE.NearestFilter;
   t.generateMipmaps = false;
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
-const heldCache = {};
+const heldCache = {}, offCache = {};
 function buildHeld(id) {
   const d = ITEMS[id], g = new THREE.Group();
   const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
@@ -69,15 +77,21 @@ function buildHeld(id) {
   return g;
 }
 
-let heldId = undefined;
-/** Vymění model v ruce, když se změní vybraný předmět. */
+let heldId = undefined, offId = undefined;
+/** Vymění modely v rukou, když se změní vybraný předmět nebo druhá ruka. */
 export function updateHeldModel() {
-  const s = heldStack();
-  const id = s ? s.id : null;
-  if (id === heldId) return;
-  heldId = id;
-  holder.clear();
-  if (id) holder.add(heldCache[id] ||= buildHeld(id));
+  const s = heldStack(), o = inv.slots[OFFHAND];
+  const id = s ? s.id : null, oid = o ? o.id : null;
+  if (id !== heldId) {
+    heldId = id;
+    holder.clear();
+    if (id) holder.add(heldCache[id] ||= buildHeld(id));
+  }
+  if (oid !== offId) {
+    offId = oid;
+    offHolder.clear();
+    if (oid) offHolder.add(offCache[oid] ||= buildHeld(oid));
+  }
 }
 
 // Klíčové pozice máchnutí: t čas 0..1, p pozice, r otočení.

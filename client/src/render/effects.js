@@ -23,6 +23,8 @@ export function playFx(ev) {
     case 'place': Sound.place(); break;
     case 'mobhit':
       sparks.emit(x, y, z, ev.mt === 'crawler' ? [0.7, 0.25, 1.0] : [1, 0.25, 0.2], 18, 3.5, 1.5);
+      // Kritický zásah: hvězdičky navíc (jako v Minecraftu).
+      if (ev.crit) { sparks.emit(x, y + 0.2, z, [1, 0.95, 0.55], 30, 4.5, 1.2); Sound.crit(); }
       Sound.hit();
       if (ev.mt === 'sheep') Sound.baa();
       if (ev.mt === 'boar') Sound.grunt();

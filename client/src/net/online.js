@@ -5,6 +5,7 @@
 import { PROTOCOL_VERSION } from '@louka/shared/protocol.js';
 import { advanceDay } from '@louka/shared/game/day.js';
 import { COOKING, COOK_TIME } from '@louka/shared/cooking.js';
+import { stepDrop } from '@louka/shared/game/drops.js';
 import { world } from '../world/state.js';
 import { player } from '../player/state.js';
 import { applyWelcome, applyMe, applyStats, applyState, addOther, others, interpolate } from './replica.js';
@@ -41,14 +42,16 @@ export function connectOnline({ url, name, password, onEvent, onNet }) {
       interpolate();
       // Ukazatel pečení u táboráku běží i mezi zprávami ze serveru.
       for (const [k, f] of world.fires) if (f.slots[0] && COOKING[f.slots[0].id] && world.blocks.has(k)) f.t = Math.min(f.t + realDt, COOK_TIME);
+      // Věci na zemi padají a kloužou i tady (sbírá je server).
+      for (const d of world.drops.values()) stepDrop(world, d, realDt);
       if (!joined) return;
       if ((moveT += realDt) >= 0.1) {
         moveT = 0;
         const p = player.pos, m = [+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), +player.yaw.toFixed(2), +player.pitch.toFixed(2)];
-        const key = m.join() + player.sprinting;
+        const key = m.join() + player.sprinting + player.sneaking;
         if (key !== lastMove || (idleMoveT += 0.1) > 1) {
           lastMove = key; idleMoveT = 0;
-          out.push({ t: 'move', p: m.slice(0, 3), yaw: m[3], pitch: m[4], sp: !!player.sprinting });
+          out.push({ t: 'move', p: m.slice(0, 3), yaw: m[3], pitch: m[4], sp: !!player.sprinting, sn: !!player.sneaking });
         }
       }
       if ((pingT += realDt) >= 2) { pingT = 0; out.push({ t: 'ping', c: performance.now(), rtt }); }

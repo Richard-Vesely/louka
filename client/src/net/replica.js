@@ -7,7 +7,7 @@ import { world, mobs } from '../world/state.js';
 import { player } from '../player/state.js';
 import { syncClock, pushSample, sampleAt, renderTime } from './interp.js';
 
-/** Ostatní hráči: id -> { id, name, pos, yaw, samples }. */
+/** Ostatní hráči: id -> { id, name, pos, yaw, sneak, samples }. */
 export const others = new Map();
 
 /** Přidá dalšího hráče (zpráva 'join' nebo seznam ve 'welcome'). */
@@ -27,6 +27,8 @@ export function applyWelcome(msg) {
   for (const k of w.removed) world.removed.add(k);
   world.fires.clear();
   for (const [k, f] of Object.entries(w.fires)) world.fires.set(k, f);
+  world.drops.clear();
+  for (const d of w.drops || []) world.drops.set(d.k, { ...d, vx: 0, vy: 0, vz: 0, pickAt: 0 });
   world.time.dayTime = w.dayTime;
   world.time.dayCount = w.day;
   world.rev++;
@@ -68,9 +70,9 @@ export function applyStats({ hp, hu, al }) {
 export function applyState(msg) {
   syncClock(msg.ts);
   if (msg.time) { world.time.dayTime = msg.time[0]; world.time.dayCount = msg.time[1]; }
-  for (const [id, x, y, z, yaw] of msg.pl || []) {
+  for (const [id, x, y, z, yaw, sn] of msg.pl || []) {
     const o = others.get(id);
-    if (o) pushSample(o, msg.ts, x, y, z, yaw);
+    if (o) { pushSample(o, msg.ts, x, y, z, yaw); o.sneak = !!sn; }
   }
   for (const [id, ti, x, y, z, ry, dead] of msg.mobs || []) {
     let m = mobs.find((q) => q.id === id);

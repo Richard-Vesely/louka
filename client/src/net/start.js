@@ -14,6 +14,7 @@ import { net } from './net.js';
 import { startOffline } from './local.js';
 import { connectOnline } from './online.js';
 import { onEvent } from './events.js';
+import { fk } from '../ui/fkeys.js';
 
 /** Hra pro jednoho hráče (uložená v prohlížeči). */
 export function startSolo() {
@@ -51,6 +52,7 @@ function onNet(what, data) {
     case 'join': notice(`👋 ${data.name} je ve hře`); break;
     case 'leave': notice(`${data.name} už není ve hře`); break;
     case 'list': setPlayerList(data); break;
+    case 'ping': fk.ping = data; break;
   }
 }
 

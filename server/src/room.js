@@ -161,7 +161,7 @@ export class Room {
     const me = c.p, pl = [], mobs = [], mg = [];
     for (const o of this.byId.values()) {
       if (o === c) continue;
-      const t = [o.p.id, r2(o.p.pos.x), r2(o.p.pos.y), r2(o.p.pos.z), r2(o.p.yaw)], s = t.join();
+      const t = [o.p.id, r2(o.p.pos.x), r2(o.p.pos.y), r2(o.p.pos.z), r2(o.p.yaw), o.p.sneaking ? 1 : 0], s = t.join();
       if (c.sentPl.get(o.p.id) !== s) { c.sentPl.set(o.p.id, s); pl.push(t); }
     }
     const seen = new Set();
