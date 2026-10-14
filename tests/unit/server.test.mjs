@@ -48,8 +48,8 @@ test('three players join, see each other, and a placed block reaches the others 
   await a.wait((m) => m.t === 'join' && m.name === 'Cyril');
 
   // Others move: A sees B's position in a state message.
-  b.send({ t: 'move', p: [2, 0.45, 13], yaw: 1, pitch: 0, sp: false });
-  const st = await a.wait((m) => m.t === 'state' && m.pl?.some((q) => q[0] === wc.players.find((p) => p.name === 'Bára').id && q[1] === 2));
+  b.send({ t: 'move', p: [1, 0.45, 13], yaw: 1, pitch: 0, sp: false }); // a small step: bigger jumps right after joining are refused
+  const st = await a.wait((m) => m.t === 'state' && m.pl?.some((q) => q[0] === wc.players.find((p) => p.name === 'Bára').id && q[1] === 1));
   assert.ok(st);
 
   addItem(serverPlayer('Ája'), 'planks', 5);
