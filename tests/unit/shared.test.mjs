@@ -22,8 +22,8 @@ test('every recipe, block drop, cooking result and mob drop is a known item', ()
   for (const [id, it] of Object.entries(ITEMS)) if (it.block) assert.ok(BLOCKS[it.block], `item ${id} places unknown block ${it.block}`);
 });
 
-test('the 16 original recipes in order', () => {
-  assert.equal(RECIPES.map((r) => r.out).join(','), 'planks,stick,workbench,torch,bricks,campfire,wood_pick,wood_axe,wood_sword,stone_pick,stone_axe,stone_sword,iron_pick,iron_axe,iron_sword,crystal_sword');
+test('the 16 original recipes come first, in order (new ones are appended)', () => {
+  assert.equal(RECIPES.slice(0, 16).map((r) => r.out).join(','), 'planks,stick,workbench,torch,bricks,campfire,wood_pick,wood_axe,wood_sword,stone_pick,stone_axe,stone_sword,iron_pick,iron_axe,iron_sword,crystal_sword');
 });
 
 test('findRecipe ignores position in the grid', () => {
