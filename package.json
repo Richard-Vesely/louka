@@ -1,0 +1,20 @@
+{
+  "name": "louka",
+  "private": true,
+  "description": "Louka – multiplayerová survival hra v prohlížeči (AI kroužek)",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "client"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w client",
+    "preview": "npm run preview -w client",
+    "test": "node --test \"tests/unit/*.test.mjs\"",
+    "playtest": "node tests/playtest/playtest.mjs client/dist"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

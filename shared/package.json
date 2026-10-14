@@ -1,0 +1,10 @@
+{
+  "name": "@louka/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Data a čisté funkce, které používá hra v prohlížeči i server (předměty, recepty, bloky, tvorové, terén).",
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  }
+}
