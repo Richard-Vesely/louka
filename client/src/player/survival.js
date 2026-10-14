@@ -16,6 +16,7 @@ export function onHurt({ dx, dz }) {
 
 /** Smrt: obrazovka zčervená ("Padl jsi…"). */
 export function onDied() {
+  player.alive = false;
   $('fade').style.opacity = 1;
   // Offline: oživení proběhne včas, i když prohlížeč zrovna nekreslí snímky (jako setTimeout v původní hře).
   if (net.mode === 'offline') setTimeout(() => net.tick(0, 0), 2650);
@@ -26,6 +27,7 @@ export function onRespawn({ pos }) {
   player.pos.set(...pos);
   player.vel.set(0, 0, 0);
   player.yaw = 0;
+  player.alive = true;
   $('fade').style.opacity = 0;
   toast('Svatyně tě přivedla zpět');
 }

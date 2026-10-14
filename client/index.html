@@ -49,6 +49,21 @@
       </div>
     </div>
   </div>
+  <div id="notices"></div>
+  <div id="playerList"></div>
+  <div id="netStatus"></div>
+  <div id="join">
+    <form class="join-card" id="joinForm" autocomplete="on">
+      <h1>ŘÍŠE</h1>
+      <h2>Hrajeme spolu</h2>
+      <label>Jméno<input id="joinName" maxlength="16" autocomplete="nickname" placeholder="např. Ája"></label>
+      <label>Heslo místnosti<input id="joinPass" type="password" maxlength="64" autocomplete="current-password"></label>
+      <details><summary>Adresa serveru</summary><input id="joinUrl" spellcheck="false"></details>
+      <button type="submit" class="mc-btn" id="joinGo">Hrát spolu</button>
+      <button type="button" class="mc-btn ghost" id="joinSolo">Hrát sám</button>
+      <p class="join-msg" id="joinMsg"></p>
+    </form>
+  </div>
   <div id="cursorItem"></div>
   <div id="tooltip"></div>
   <div id="error">Hru se nepodařilo načíst. Je potřeba připojení k internetu (stahuje se knihovna Three.js).</div>
