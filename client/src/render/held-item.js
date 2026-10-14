@@ -2,12 +2,13 @@
 // 3D model toho, co držíš, a animace máchnutí.
 import * as THREE from 'three';
 import { ITEMS } from '@louka/shared/items.js';
+import { BLOCKS } from '@louka/shared/blocks.js';
 import { WALK } from '@louka/shared/constants.js';
 import { lerp, smoothstep } from '@louka/shared/math.js';
 import { camera } from './renderer.js';
 import { glowTex } from './textures.js';
 import { ICONS } from './icons.js';
-import { blockMats } from '../world/blocks.js';
+import { blockMat } from '../world/blocks.js';
 import { heldStack } from '../inventory/inventory.js';
 import { player } from '../player/state.js';
 
@@ -50,8 +51,8 @@ function buildHeld(id) {
       mesh(new THREE.ConeGeometry(0.03, 0.08, 6), TIER_MAT[d.tier], 0.25, 0.39).rotation.z = -Math.PI / 2;
       mesh(new THREE.ConeGeometry(0.03, 0.08, 6), TIER_MAT[d.tier], -0.25, 0.39).rotation.z = Math.PI / 2;
     }
-  } else if (d.block && blockMats[d.block]) {
-    mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), blockMats[d.block], 0, 0.15).rotation.set(0.3, 0.6, 0);
+  } else if (d.block && !BLOCKS[d.block]?.special) {
+    mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), blockMat(d.block), 0, 0.15).rotation.set(0.3, 0.6, 0);
   } else if (id === 'torch') {
     mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.4, 6), handleMat, 0, 0.1);
     const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff8a2a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
