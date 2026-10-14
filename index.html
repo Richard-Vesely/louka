@@ -25,6 +25,7 @@
     #compass .tick { width: 1px; height: 7px; background: rgba(255, 255, 255, 0.35); }
     #compass .shrine { color: var(--gold); font-size: 17px; }
     #compass .shard { color: var(--cyan); font-size: 17px; }
+    #compass .ruin { color: #e070ff; font-size: 17px; }
 
     #clock { position: fixed; top: 16px; left: 18px; padding: 8px 12px; background: var(--panel); border-radius: 4px; font: 700 13px 'Cinzel', serif; color: var(--gold); pointer-events: none; }
     #tip { position: fixed; top: 16px; right: 18px; max-width: 290px; padding: 10px 14px; background: var(--panel); border-left: 2px solid var(--gold); border-radius: 4px; pointer-events: none; }
@@ -39,12 +40,13 @@
     #targetLabel small { display: block; font-size: 12px; color: #d8d8d8; opacity: 0.85; }
     #targetLabel .warn { color: #ff9b8a; }
 
-    #bars { position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%); width: min(500px, 90vw); display: flex; gap: 18px; pointer-events: none; }
+    #bars { position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%); width: min(620px, 92vw); display: flex; gap: 18px; pointer-events: none; }
     #bars .wrap { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 13px; text-shadow: 0 1px 2px #000; }
     .bar { flex: 1; height: 10px; border-radius: 5px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); overflow: hidden; }
     .bar i { display: block; height: 100%; transition: width 0.15s; }
     #hpfill { background: linear-gradient(90deg, #8e1b1b, #e0473b); }
     #foodfill { background: linear-gradient(90deg, #8a5a1c, #e0a03b); }
+    #armorfill { background: linear-gradient(90deg, #4a6ea8, #b8d4ff); }
 
     /* ---------- Minecraft styl (tmavá varianta) ---------- */
     .px { font-family: 'Pixelify Sans', 'Courier New', monospace; }
@@ -92,7 +94,9 @@
     .mc-book { width: 262px; }
     .mc-note { margin: 8px 2px 10px; font-size: 13px; color: #a9a9b2; line-height: 1.35; }
     #craftArea { min-height: 150px; margin-bottom: 4px; }
-    .craft-ui, .fire-ui { display: flex; align-items: center; gap: 14px; padding-left: 60px; }
+    .craft-ui, .fire-ui { display: flex; align-items: center; gap: 14px; padding-left: 20px; }
+    .armor-col { display: flex; flex-direction: column; gap: 2px; margin-right: 26px; }
+    .armor-pts { margin-top: 4px; text-align: center; font-size: 14px; color: #cfe3ff; text-shadow: 2px 2px 0 #18181b; }
     .cgrid { display: grid; gap: 2px; }
     .carrow { font-size: 30px; color: #8a8a94; text-shadow: 2px 2px 0 #1a1a1e; }
     .slot.out { width: 52px; height: 52px; }
@@ -105,7 +109,7 @@
     .parrow { position: relative; width: 60px; height: 14px; background: #24242a; box-shadow: inset 2px 2px 0 #121215, inset -2px -2px 0 #54545e; }
     .parrow i { position: absolute; left: 2px; top: 2px; bottom: 2px; max-width: calc(100% - 4px); background: #e8e8e8; }
     .mc-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 13px; color: #d0d0d8; cursor: pointer; }
-    .rgrid { display: grid; grid-template-columns: repeat(6, 40px); gap: 2px; max-height: 44vh; overflow: auto; }
+    .rgrid { display: grid; grid-template-columns: repeat(6, 40px); gap: 2px; max-height: 44vh; overflow-y: auto; overflow-x: hidden; padding-right: 6px; }
     .rgrid .slot.no { background: #4a2326; box-shadow: inset 2px 2px 0 #2a1214, inset -2px -2px 0 #7a3a3e; }
     .rgrid .slot.no img { opacity: 0.55; }
     .rgrid .slot.sel { outline: 2px solid #f2f2f2; outline-offset: -2px; }
@@ -121,7 +125,7 @@
     #tooltip { position: fixed; z-index: 20; display: none; pointer-events: none; padding: 5px 8px 6px; max-width: 260px; font: 15px 'Pixelify Sans', monospace; color: #fff;
       background: rgba(16, 2, 16, 0.94); border: 2px solid #25084f; outline: 2px solid rgba(16, 2, 16, 0.94); text-shadow: 2px 2px 0 #3a3a3a; }
     #tooltip .sub { font-size: 13px; color: #a8a8b0; text-shadow: none; }
-    #tooltip .t1 { color: #d9b07a; } #tooltip .t2 { color: #c8c8c8; } #tooltip .t3 { color: #ffffff; } #tooltip .t4 { color: #7ff3ff; }
+    #tooltip .t1 { color: #d9b07a; } #tooltip .t2 { color: #c8c8c8; } #tooltip .t3 { color: #ffffff; } #tooltip .t4 { color: #7ff3ff; } #tooltip .t5 { color: #f08aff; }
     @media (max-width: 800px) { .mc-window { flex-direction: column; overflow: auto; } }
     #error { position: fixed; inset: 0; display: none; place-items: center; padding: 16px; background: #223; text-align: center; }
   </style>
@@ -144,6 +148,7 @@
   <div id="bars">
     <div class="wrap">❤️<div class="bar"><i id="hpfill"></i></div></div>
     <div class="wrap">🍗<div class="bar"><i id="foodfill"></i></div></div>
+    <div class="wrap">🛡<div class="bar"><i id="armorfill"></i></div></div>
   </div>
   <div id="hotbar"></div>
   <div id="feed"></div>
@@ -157,7 +162,7 @@
   </div>
   <div id="vignette"></div>
   <div id="fade">Padl jsi…</div>
-  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · 1–9 výběr</div>
+  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · C kreativní · 1–9 výběr</div>
   <div id="inventory">
     <div class="mc-window">
       <div class="mc-panel mc-book">
@@ -171,7 +176,7 @@
         <div class="mc-title">Batoh</div>
         <div class="grid" id="invGrid"></div>
         <div class="grid hot" id="invHot"></div>
-        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="newWorld">Nový svět</button></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
       </div>
     </div>
   </div>
@@ -375,7 +380,7 @@ const NOISE_GLSL = /* glsl */`
   vec3 meadowColor(float m, float v, float mk) {
     float k = smoothstep(0.3, 0.9, (1.0 - m) * 0.75 + v * 0.35);
     vec3 home = mix(vec3(0.09, 0.22, 0.03), vec3(0.30, 0.29, 0.09), k);
-    vec3 mark = mix(vec3(0.03, 0.13, 0.32), vec3(0.24, 0.10, 0.36), k);
+    vec3 mark = mix(vec3(0.02, 0.15, 0.40), vec3(0.10, 0.10, 0.38), k);
     return mix(home, mark, mk);
   }
 `;
@@ -1311,44 +1316,131 @@ function refreshShards(px, pz) {
   for (const [k, o] of shardObjs) if (!wanted.has(k)) { scene.remove(o.group); shardObjs.delete(k); }
 }
 
-// ============================================================ svatyně (místo oživení, bezpečná zóna)
+// ============================================================ svatyně a portály (místo oživení, bezpečná zóna)
+// Domácí svatyně se aktivuje 3 úlomky světla a otevře portál do Markovy dimenze; tamní svatyně vede zpět.
 const shrineColliders = [];
-const stoneMat = new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.9, color: 0xd8d2c4 });
 const floorTex = stoneTex.clone();
 floorTex.repeat.set(5, 5);
 floorTex.needsUpdate = true;
-const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95, color: 0xbab3a4 });
-(function buildShrine() {
+const portalShader = (color1, color2) => new THREE.ShaderMaterial({
+  uniforms: { uTime: U.time, uOpen: { value: 0 }, uC1: { value: new THREE.Color(color1) }, uC2: { value: new THREE.Color(color2) } },
+  transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: /* glsl */`
+    uniform float uTime, uOpen;
+    uniform vec3 uC1, uC2;
+    varying vec2 vUv;
+    void main() {
+      vec2 p = vUv - 0.5;
+      float r = length(p) * 2.0, a = atan(p.y, p.x);
+      float s1 = sin(a * 5.0 + r * 12.0 - uTime * 3.0) * 0.5 + 0.5;
+      float s2 = sin(a * 3.0 - r * 8.0 + uTime * 2.0) * 0.5 + 0.5;
+      vec3 col = mix(uC1, uC2, s1 * s2);
+      float alpha = uOpen * smoothstep(1.0, 0.85, r) * (0.5 + 0.5 * s1);
+      gl_FragColor = vec4(col * (1.2 + smoothstep(0.6, 0.0, r) * 2.5) * alpha, 1.0);
+    }`,
+});
+function buildShrine(shrine) {
+  const { x: cx, z: cz, mark } = shrine;
+  const stoneMat = new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.9, color: mark ? 0x9a8ad8 : 0xd8d2c4 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95, color: mark ? 0x7a70b0 : 0xbab3a4 });
   const add = (geo, mat, x, y, z, ry = 0, rx = 0, rz = 0) => {
     const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
+    m.position.set(cx + x, y, cz + z);
     m.rotation.set(rx, ry, rz);
     scene.add(m);
     return m;
   };
   add(new THREE.CylinderGeometry(9.6, 9.9, 1, 64), floorMat, 0, -0.3, 0);
   add(new THREE.CylinderGeometry(4.6, 4.7, 0.25, 48), floorMat, 0, 0.325, 0);
-  const heights = [6, 6, 2.3, 6, 3.6, 6, 6, 1.4];
+  const heights = mark ? [6, 6, 6, 4.5, 6, 6, 3, 6] : [6, 6, 2.3, 6, 3.6, 6, 6, 1.4];
   const pillars = heights.map((h, i) => {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
     const x = Math.cos(a) * 7.4, z = Math.sin(a) * 7.4, tilt = h < 6 ? 0.05 : 0;
     add(new THREE.BoxGeometry(1.2, h, 1.2), stoneMat, x, 0.2 + h / 2, z, -a, tilt, tilt);
-    shrineColliders.push({ x, z, r: 0.85 });
+    shrineColliders.push({ x: cx + x, z: cz + z, r: 0.85 });
     return { x, z };
   });
   for (const [i, j] of [[0, 1], [5, 6]]) {
     const p = pillars[i], q = pillars[j];
     add(new THREE.BoxGeometry(Math.hypot(q.x - p.x, q.z - p.z) + 1.2, 0.75, 1.35), stoneMat, (p.x + q.x) / 2, 6.55, (p.z + q.z) / 2, -Math.atan2(q.z - p.z, q.x - p.x));
   }
-  add(new THREE.BoxGeometry(1.15, 3.2, 1.15), stoneMat, 9.8, 0.45, 5.6, 0.6, 0, Math.PI / 2 - 0.1);
-  add(new THREE.BoxGeometry(1.1, 2.0, 1.1), stoneMat, -3.2, 0.75, 9.9, 1.3, 0, Math.PI / 2);
-  shrineColliders.push({ x: 9.8, z: 5.6, r: 1.2 }, { x: -3.2, z: 9.9, r: 1.0 });
-  // Spící portál – tajemství na později
-  add(new THREE.TorusGeometry(2.45, 0.32, 18, 72), new THREE.MeshStandardMaterial({ map: stoneTex, color: 0x9aa3a8, roughness: 0.6, metalness: 0.2, emissive: 0x2ad8ff, emissiveIntensity: 0.15 }), 0, 3.05, 0);
+  if (!mark) {
+    add(new THREE.BoxGeometry(1.15, 3.2, 1.15), stoneMat, 9.8, 0.45, 5.6, 0.6, 0, Math.PI / 2 - 0.1);
+    add(new THREE.BoxGeometry(1.1, 2.0, 1.1), stoneMat, -3.2, 0.75, 9.9, 1.3, 0, Math.PI / 2);
+    shrineColliders.push({ x: cx + 9.8, z: cz + 5.6, r: 1.2 }, { x: cx - 3.2, z: cz + 9.9, r: 1.0 });
+  }
+  const glow = mark ? 0xd24ee8 : 0x2ad8ff;
+  shrine.ring = add(new THREE.TorusGeometry(2.45, 0.32, 18, 72), new THREE.MeshStandardMaterial({ map: stoneTex, color: 0x9aa3a8, roughness: 0.6, metalness: 0.2, emissive: glow, emissiveIntensity: 0.15 }), 0, 3.05, 0);
   add(new THREE.BoxGeometry(1.0, 0.9, 1.0), stoneMat, -2.45, 0.9, 0);
   add(new THREE.BoxGeometry(1.0, 0.9, 1.0), stoneMat, 2.45, 0.9, 0);
-  shrineColliders.push({ x: -2.5, z: 0, r: 0.6 }, { x: 2.5, z: 0, r: 0.6 });
-})();
+  shrineColliders.push({ x: cx - 2.5, z: cz, r: 0.6 }, { x: cx + 2.5, z: cz, r: 0.6 });
+  // Tři lůžka na úlomky světla nad portálem
+  shrine.sockets = [-0.6, 0, 0.6].map((dx) => {
+    const m = add(new THREE.OctahedronGeometry(0.2).scale(1, 1.5, 1), new THREE.MeshStandardMaterial({ color: 0x334048, roughness: 0.3, metalness: 0.5, emissive: 0x6ff2ff, emissiveIntensity: 0 }), dx, 5.85 + (dx ? -0.1 : 0.08), 0.35);
+    return m;
+  });
+  shrine.surface = add(new THREE.CircleGeometry(2.2, 64), portalShader(mark ? 0x7a1aff : 0x2a40ff, mark ? 0xffa0ff : 0xd0a0ff), 0, 3.05, 0);
+  shrine.light = new THREE.PointLight(mark ? 0xd070ff : 0x9a7aff, 0, 30, 1.6);
+  shrine.light.position.set(cx, 3.2, cz + 1);
+  scene.add(shrine.light);
+  shrine.open = 0;
+}
+SHRINES.forEach(buildShrine);
+let portalActive = !!save?.portal;
+const shrineActive = (s) => s.mark || portalActive;
+function updatePortals(dt) {
+  for (const s of SHRINES) {
+    const want = shrineActive(s) ? 1 : 0;
+    s.open += (want - s.open) * Math.min(1, dt * 0.8);
+    s.surface.material.uniforms.uOpen.value = s.open;
+    s.ring.material.emissiveIntensity = 0.15 + s.open * 1.2;
+    s.light.intensity = s.open * 35;
+    s.sockets.forEach((m) => (m.material.emissiveIntensity = shrineActive(s) ? 3 : 0));
+    if (s.open > 0.5 && Math.random() < dt * 25) {
+      const a = Math.random() * Math.PI * 2;
+      sparks.emit(s.x + Math.cos(a) * 2.4, 3.05 + Math.sin(a) * 2.4, s.z, s.mark ? [1, 0.5, 1] : [0.6, 0.6, 1], 1, 0.6, 0.5);
+    }
+  }
+}
+// Pravé tlačítko na spící portál: vloží 3 úlomky světla a probudí svatyni.
+function usePortal(s) {
+  if (shrineActive(s)) { toast('Projdi portálem'); return; }
+  if (countItem('shard') < 3) { toast(`Svatyně potřebuje 3 úlomky světla (máš ${countItem('shard')})`); return; }
+  removeItem('shard', 3);
+  renderHotbar();
+  portalActive = true;
+  Sound.portal();
+  sparks.emit(s.x, 4, s.z, [0.6, 0.7, 1], 120, 6, 2);
+  toast('Svatyně se probudila! Portál do Markovy dimenze je otevřený.');
+}
+// Průchod portálem přenese hráče do druhé svatyně.
+let portalCd = 0;
+function checkPortal(dt) {
+  if ((portalCd -= dt) > 0) return;
+  const p = player.pos, s = shrineOf(p.x);
+  if (s.open < 0.8 || Math.abs(p.x - s.x) > 1.7 || Math.abs(p.z - s.z) > 0.6 || p.y > 4) return;
+  const to = SHRINES[s.mark ? 0 : 1];
+  teleport(to.x, to.z + 3.5);
+  toast(to.mark ? 'Markova dimenze' : 'Zpět doma');
+}
+function teleport(x, z) {
+  portalCd = 3;
+  player.pos.set(x, 0.45, z);
+  player.vel.set(0, 0, 0);
+  player.yaw = Math.PI; // čelem od portálu
+  keys.clear();
+  for (const m of [...mobs]) removeMob(m);
+  rebuildForest(x, z, true);
+  updateEnvironment();
+  Sound.portal();
+  $('fade').style.transition = 'none';
+  $('fade').style.background = '#fff';
+  $('fade').textContent = '';
+  $('fade').style.opacity = 0.9;
+  requestAnimationFrame(() => { $('fade').style.transition = 'opacity 1.2s'; $('fade').style.opacity = 0; });
+  setTimeout(() => { $('fade').style.background = ''; $('fade').textContent = 'Padl jsi…'; $('fade').style.transition = ''; }, 1300);
+}
 
 // ============================================================ položené bloky a stavby
 const blockMats = {
@@ -1758,6 +1850,7 @@ const Sound = {
   place() { this.tone(120, 0.1, 0.3, 'sine', 0, 70); this.burst({ dur: 0.06, f0: 1200, f1: 400, vol: 0.2, type: 'lowpass' }); },
   eat() { for (let i = 0; i < 3; i++) this.burst({ dur: 0.07, f0: 1800, f1: 900, q: 2, vol: 0.2, delay: i * 0.13 }); },
   pickup() { [880, 1109, 1319, 1760].forEach((f, i) => this.tone(f, 0.6, 0.13, 'sine', i * 0.07)); },
+  portal() { [220, 277, 330, 440, 554, 660].forEach((f, i) => this.tone(f, 2.2, 0.07, 'triangle', i * 0.1)); this.burst({ dur: 1.6, f0: 200, f1: 4000, q: 2, vol: 0.18 }); },
   growl() { this.tone(70 + Math.random() * 30, 0.5, 0.12, 'sawtooth', 0, 45); },
   baa() { this.tone(420, 0.45, 0.05, 'sawtooth', 0, 360); this.tone(424, 0.45, 0.04, 'sawtooth', 0.02, 362); },
   grunt() { this.tone(110, 0.25, 0.12, 'sawtooth', 0, 70); },
@@ -1778,6 +1871,14 @@ function insertInto(stack, from, to) {
   }
   return stack.n;
 }
+// Vloží stack do libovolného pole políček (truhla); vrací, kolik se nevešlo.
+function insertStack(arr, stack) {
+  const max = ITEMS[stack.id].stack;
+  let n = stack.n;
+  for (const s of arr) if (n > 0 && s && s.id === stack.id && s.n < max) { const k = Math.min(max - s.n, n); s.n += k; n -= k; }
+  for (let i = 0; i < arr.length && n > 0; i++) if (!arr[i]) { const k = Math.min(max, n); arr[i] = { id: stack.id, n: k }; n -= k; }
+  return n;
+}
 function addItem(id, n, silent = false) {
   const left = insertInto({ id, n }, 0, 36);
   if (!silent && n - left > 0) feed(id, `+${n - left} ${ITEMS[id].name}`);
@@ -1795,7 +1896,7 @@ function removeItem(id, n) {
 function consumeSelected() {
   const s = inv.slots[inv.sel];
   if (!s) return;
-  if (--s.n <= 0) inv.slots[inv.sel] = null;
+  if (!creative && --s.n <= 0) inv.slots[inv.sel] = null;
   renderHotbar();
 }
 const heldStack = () => inv.slots[inv.sel];
@@ -1830,11 +1931,15 @@ function findRecipe(grid, size) {
 // ============================================================ HUD – inventář, výroba, táborák (styl Minecraft)
 const invEl = $('inventory'), cursorEl = $('cursorItem');
 let invOpen = false;
-// mode: 'inv' = inventář s mřížkou 2×2, 'bench' = pracovní stůl 3×3, 'fire' = táborák
+// mode: 'inv' = inventář s brněním a mřížkou 2×2, 'bench' = pracovní stůl 3×3, 'fire' = táborák, 'chest' = truhla
 const ui = { mode: 'inv', size: 2, craft: Array(9).fill(null), fireKey: null, ghost: null };
+const armor = save?.armor || [null, null, null, null]; // helma, brnění, kalhoty, boty
+const armorPoints = () => armor.reduce((n, s) => n + (s ? ITEMS[s.id].armor.pts : 0), 0);
+const chests = new Map(Object.entries(save?.chests || {})); // klíč bloku -> 27 políček
+const chestOf = (k) => { if (!chests.has(k)) chests.set(k, Array(27).fill(null)); return chests.get(k); };
 const fires = new Map(Object.entries(save?.fires || {})); // klíč bloku -> { slots: [vstup, výstup], t }
 const fireOf = (k) => { if (!fires.has(k)) fires.set(k, { slots: [null, null], t: 0 }); return fires.get(k); };
-const container = (c) => (c === 'inv' ? inv.slots : c === 'craft' ? ui.craft : fireOf(ui.fireKey).slots);
+const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots })[c]();
 
 const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
 function slotHTML(s, i, cls = '', c = 'inv') {
@@ -1849,6 +1954,11 @@ let onlyCraftable = false;
 const currentResult = () => (ui.mode === 'fire' ? null : findRecipe(ui.craft, ui.size));
 function renderCraftArea() {
   const area = $('craftArea');
+  if (ui.mode === 'chest') {
+    const c = chestOf(ui.fireKey);
+    area.innerHTML = `<div class="mc-title">Truhla</div><div class="grid">${c.map((s, i) => slotHTML(s, i, '', 'chest')).join('')}</div><div class="mc-note">Shift + klik přesune předmět mezi truhlou a batohem.</div>`;
+    return;
+  }
   if (ui.mode === 'fire') {
     const f = fireOf(ui.fireKey), [inp, out] = f.slots;
     const cooking = inp && COOKING[inp.id];
@@ -1870,8 +1980,12 @@ function renderCraftArea() {
     cells += s ? slotHTML(s, i, '', 'craft') : `<div class="slot ${g ? 'ghost' : ''}" data-c="craft" data-i="${i}">${g ? iconImg(g) : ''}</div>`;
   }
   const r = currentResult();
-  area.innerHTML = `<div class="mc-title">${ui.mode === 'bench' ? 'Pracovní stůl' : 'Výroba'}</div>
-    <div class="craft-ui">
+  // Brnění (jen v inventáři): 4 políčka, prázdná ukazují obrys.
+  const armorCol = ui.mode !== 'inv' ? '' : `<div class="armor-col">${armor.map((s, i) => s ? slotHTML(s, i, '', 'armor')
+    : `<div class="slot ghost" data-c="armor" data-i="${i}" title="${ARMOR_SLOT_NAMES[i]}">${iconImg(`iron_${ARMOR_SLOTS[i]}`)}</div>`).join('')}
+    <div class="armor-pts">🛡 ${armorPoints()}</div></div>`;
+  area.innerHTML = `<div class="mc-title">${ui.mode === 'bench' ? 'Pracovní stůl' : 'Brnění a výroba'}</div>
+    <div class="craft-ui">${armorCol}
       <div class="cgrid" style="grid-template-columns: repeat(${n}, 40px)">${cells}</div>
       <span class="carrow">➜</span>
       <div class="slot out" data-out="1" ${r ? `data-item="${r.out}"` : ''}>${r ? iconImg(r.out) + (r.n > 1 ? `<b>${r.n}</b>` : '') : ''}</div>
@@ -1879,12 +1993,21 @@ function renderCraftArea() {
     <div class="mc-note">${ui.mode === 'bench' ? 'Mřížka 3×3 – všechny recepty.' : 'Větší recepty vyrobíš u pracovního stolu.'}</div>`;
 }
 function renderBook() {
+  document.querySelector('.mc-book').style.display = ui.mode === 'chest' ? 'none' : '';
+  if (ui.mode === 'chest') return;
   $('onlyCraftable').parentElement.style.display = ui.mode === 'fire' ? 'none' : '';
   if (ui.mode === 'fire') {
     $('bookTitle').textContent = 'Pečení a tavení';
     $('recipes').innerHTML = Object.entries(COOKING).map(([from, to]) =>
       `<div class="slot ${countItem(from) ? '' : 'no'}" data-cook="${from}" data-item="${to}">${iconImg(to)}</div>`).join('');
     $('bookHint').textContent = 'Klikni a suroviny se vloží do táboráku.';
+    return;
+  }
+  if (creative && ui.mode === 'inv') {
+    $('onlyCraftable').parentElement.style.display = 'none';
+    $('bookTitle').textContent = 'Všechny předměty';
+    $('recipes').innerHTML = Object.keys(ITEMS).map((id) => `<div class="slot" data-give="${id}" data-item="${id}">${iconImg(id)}</div>`).join('');
+    $('bookHint').textContent = 'Kreativní režim: klik = vezmi plný stack, Shift + klik = rovnou do batohu.';
     return;
   }
   $('bookTitle').textContent = 'Recepty';
@@ -1915,7 +2038,9 @@ const tooltip = $('tooltip');
 function itemInfo(id, el) {
   const d = ITEMS[id];
   const lines = [];
-  if (d.tool) lines.push(`${['', 'Dřevo', 'Kámen', 'Železo', 'Krystal'][d.tier]} · poškození ${d.dmg}`);
+  const TIER_N = ['', 'Dřevo', 'Kámen', 'Železo', 'Krystal', 'Markorit'];
+  if (d.tool) lines.push(`${TIER_N[d.tier]} · poškození ${d.dmg}`);
+  if (d.armor) lines.push(`${TIER_N[d.tier]} · ochrana +${d.armor.pts} (${ARMOR_SLOT_NAMES[d.armor.slot]})`);
   if (d.food) lines.push(`Jídlo +${d.food}${d.heal ? ` · zdraví +${d.heal}` : ''} (pravé tl.)`);
   if (d.block) lines.push('Lze položit (pravé tl.)');
   if (el?.dataset.r !== undefined) {
@@ -1951,10 +2076,14 @@ function slotClick(c, i, button, shift) {
     else if (inv.cursor.id === s.id) { const k = Math.min(ITEMS[s.id].stack - inv.cursor.n, s.n); inv.cursor.n += k; if (!(s.n -= k)) arr[1] = null; }
     return refreshUI();
   }
+  if (c === 'armor' && inv.cursor && ITEMS[inv.cursor.id].armor?.slot !== i) return; // do políčka jen správný kus brnění
   if (shift && s && !inv.cursor) {
     arr[i] = null;
     let left = s.n;
+    const piece = ITEMS[s.id].armor;
     if (c !== 'inv') left = insertInto(s, 0, 36);
+    else if (ui.mode === 'inv' && piece && !armor[piece.slot]) { armor[piece.slot] = s; left = 0; }
+    else if (ui.mode === 'chest') left = insertStack(chestOf(ui.fireKey), s);
     else if (ui.mode === 'fire' && COOKING[s.id]) {
       const f = fireOf(ui.fireKey);
       if (!f.slots[0]) { f.slots[0] = s; left = 0; }
@@ -2047,6 +2176,13 @@ invEl.addEventListener('mousedown', (e) => {
   if (out) return takeResult(e.shiftKey);
   const sl = e.target.closest('.slot[data-c][data-i]');
   if (sl && sl.dataset.c !== 'cursor') return slotClick(sl.dataset.c, +sl.dataset.i, e.button, e.shiftKey);
+  const gv = e.target.closest('[data-give]');
+  if (gv) {
+    const id = gv.dataset.give;
+    if (e.shiftKey) addItem(id, ITEMS[id].stack, true);
+    else inv.cursor = { id, n: ITEMS[id].stack };
+    return refreshUI();
+  }
   const rc = e.target.closest('[data-r]');
   if (rc) return fillRecipe(RECIPES[+rc.dataset.r], e.shiftKey);
   const ck = e.target.closest('[data-cook]');
@@ -2075,6 +2211,7 @@ function closeInventory() {
   renderHotbar();
   canvas.requestPointerLock?.()?.catch?.(() => {});
 }
+$('modeBtn').addEventListener('click', () => setCreative(!creative));
 $('newWorld').addEventListener('click', () => {
   if (!confirm('Opravdu začít v novém světě? Současný postup bude smazán.')) return;
   resetting = true;
@@ -2113,10 +2250,29 @@ const player = {
 const keys = new Set();
 const input = { lmb: false, rmb: false };
 let resetting = false;
+// Kreativní režim: létání, okamžité ničení, nekonečné bloky, všechny předměty, žádné zranění.
+let creative = !!save?.creative;
+player.flying = creative && !!save?.flying;
+let lastSpace = 0;
+$('modeBtn').textContent = `Režim: ${creative ? 'Kreativní' : 'Přežití'}`;
+function setCreative(on) {
+  creative = on;
+  if (!on) player.flying = false;
+  toast(on ? 'Kreativní režim · 2× Mezerník = létání' : 'Režim přežití');
+  $('modeBtn').textContent = `Režim: ${on ? 'Kreativní' : 'Přežití'}`;
+  renderInventory();
+  renderHotbar();
+}
 
 addEventListener('keydown', (e) => {
   if (e.code === 'KeyE' && !e.repeat) { invOpen ? closeInventory() : (isLocked() || game.testMode) && openInventory(); return; }
   if (e.code === 'Escape' && invOpen) { closeInventory(); return; }
+  if (e.code === 'KeyC' && !e.repeat && !invOpen) { setCreative(!creative); return; }
+  if (e.code === 'Space' && !e.repeat && creative) {
+    const now = performance.now();
+    if (now - lastSpace < 300) { player.flying = !player.flying; player.vel.y = 0; toast(player.flying ? 'Létání zapnuto' : 'Létání vypnuto'); }
+    lastSpace = now;
+  }
   const m = e.code.match(/^Digit([1-9])$/);
   if (m) { inv.sel = Number(m[1]) - 1; renderHotbar(); }
   keys.add(e.code);
@@ -2172,16 +2328,23 @@ function updatePlayer(dt) {
   if (keys.has('KeyD') || keys.has('ArrowRight')) s += 1;
   if (keys.has('KeyA') || keys.has('ArrowLeft')) s -= 1;
   const len = Math.hypot(f, s) || 1;
-  const sprint = (keys.has('ShiftLeft') || keys.has('ShiftRight')) && player.hunger > 5;
-  const speed = sprint ? RUN : WALK;
+  const flying = creative && player.flying;
+  const shift = keys.has('ShiftLeft') || keys.has('ShiftRight');
+  const sprint = flying ? keys.has('ControlLeft') : shift && player.hunger > 5;
+  const speed = flying ? (sprint ? 24 : 12) : sprint ? RUN : WALK;
   const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
   const tx = ((s * cos - f * sin) / len) * speed, tz = ((-s * sin - f * cos) / len) * speed;
   const v = player.vel, p = player.pos;
-  const accel = Math.min(1, (player.onGround ? 10 : 2.5) * dt);
+  const accel = Math.min(1, (player.onGround || flying ? 10 : 2.5) * dt);
   v.x += (tx - v.x) * accel;
   v.z += (tz - v.z) * accel;
-  if (player.onGround && keys.has('Space')) { v.y = JUMP; player.onGround = false; }
-  v.y = Math.max(-40, v.y - GRAVITY * dt);
+  if (flying) { // Mezerník = nahoru, Shift = dolů, Ctrl = rychleji
+    const up = (keys.has('Space') ? 1 : 0) - (shift ? 1 : 0);
+    v.y += (up * 10 - v.y) * Math.min(1, 10 * dt);
+  } else {
+    if (player.onGround && keys.has('Space')) { v.y = JUMP; player.onGround = false; }
+    v.y = Math.max(-40, v.y - GRAVITY * dt);
+  }
 
   // Pojistka: hráč uvízlý uvnitř bloků vyskočí nahoru.
   if (collidesBlocks(p)) { const g0 = groundHeight(p.x, p.z); p.y = isFinite(g0) && g0 > p.y ? g0 : p.y + 1; v.y = 0; }
@@ -2212,7 +2375,8 @@ function updatePlayer(dt) {
   const g = groundHeight(p.x, p.z);
   if (!landed && wasGround && v.y <= 0 && p.y > g && p.y - g < 0.45 && !collidesBlocks({ x: p.x, y: g, z: p.z })) { p.y = g; v.y = 0; landed = true; }
   player.onGround = landed;
-  if (p.y < VMIN - 5) { p.set(0, 0.45, 14); v.set(0, 0, 0); }
+  if (flying && landed && shift) player.flying = false; // přistání ukončí let
+  if (p.y < VMIN - 5) { p.set(shrineOf(p.x).x, 0.45, 14); v.set(0, 0, 0); }
 
   const moving = Math.hypot(v.x, v.z);
   if (player.onGround) player.bob += dt * moving * 1.8;
@@ -2236,6 +2400,7 @@ const TIER_MAT = {
   2: new THREE.MeshStandardMaterial({ color: 0x8e8e8e, roughness: 0.75, metalness: 0.1 }),
   3: new THREE.MeshStandardMaterial({ color: 0xdfe5ec, roughness: 0.22, metalness: 1 }),
   4: new THREE.MeshStandardMaterial({ color: 0xbff8ff, roughness: 0.15, metalness: 0.3, emissive: 0x2fd0ff, emissiveIntensity: 0.9 }),
+  5: new THREE.MeshStandardMaterial({ color: 0xe9a0ff, roughness: 0.2, metalness: 0.6, emissive: 0xb020e0, emissiveIntensity: 0.9 }),
 };
 const handleMat = new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: 0.9 });
 const goldMat = new THREE.MeshStandardMaterial({ color: 0xc9a03a, metalness: 1, roughness: 0.35 });
@@ -2355,7 +2520,7 @@ function pickTarget() {
     const b = BLOCKS[bh.type];
     bt = bh.t;
     best = { kind: 'block', key: 'b' + bkey(bh.x, bh.y, bh.z), cell: [bh.x, bh.y, bh.z], normal: bh.normal, type: bh.type, name: b.name,
-      hint: bh.type === 'workbench' ? 'pravé tlačítko = výroba 3×3' : bh.type === 'campfire' ? 'pravé tlačítko = pečení a tavení' : '', hard: b.hard, tool: b.tool, req: b.req ? { tool: 'pick', tier: b.req } : null, at: [bh.x + 0.5, bh.y + 0.5, bh.z + 0.5] };
+      hint: { workbench: 'pravé tlačítko = výroba 3×3', campfire: 'pravé tlačítko = pečení a tavení', chest: 'pravé tlačítko = otevřít' }[bh.type] || '', hard: b.hard, tool: b.tool, req: b.req ? { tool: 'pick', tier: b.req } : null, at: [bh.x + 0.5, bh.y + 0.5, bh.z + 0.5] };
   }
   const a = d.x * d.x + d.z * d.z;
   for (const t of forestTrees) {
@@ -2388,7 +2553,20 @@ function pickTarget() {
     const tt = sphere(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.def.radius);
     if (tt >= bt) continue;
     bt = tt;
-    best = { kind: 'mob', mob: m, name: m.def.name, hint: m.type === 'crawler' ? 'nepřítel' : 'lovná zvěř' };
+    best = { kind: 'mob', mob: m, name: m.def.name, hint: m.type === 'crawler' || m.type === 'markoman' ? 'nepřítel' : 'lovná zvěř' };
+  }
+  // Portál ve svatyni (kruh o poloměru 2,4 m, stojí v rovině x–y)
+  const sh = shrineOf(o.x);
+  if (Math.abs(d.z) > 0.05) {
+    const tt = (sh.z - o.z) / d.z, hx = o.x + d.x * tt - sh.x, hy = o.y + d.y * tt - 3.05;
+    if (tt > 0 && tt < bt && hx * hx + hy * hy < 2.6 * 2.6) {
+      bt = tt;
+      const act = shrineActive(sh);
+      best = {
+        kind: 'portal', shrine: sh, name: sh.mark ? 'Portál domů' : act ? 'Portál do Markovy dimenze' : 'Spící portál svatyně',
+        hint: act ? 'projdi jím' : `pravé tlačítko: vlož 3 úlomky světla (máš ${countItem('shard')})`,
+      };
+    }
   }
   // Povrch terénu se trefí jen paprskem, který na něj dopadá shora (z jeskyně se přes strop nemíří).
   let above = o.y >= groundHeight(o.x, o.z);
@@ -2417,7 +2595,7 @@ function voxTarget(v, cell, normal, point, surfaceHit) {
     return { kind: 'grass', key: `g${x},${z}`, cell, normal, point, at: point, hard: 0.45, name: isMark(x) ? 'Modrá tráva' : 'Tráva', hint: 'drž levé tlačítko · vlákno, pak se kope hlína' };
   }
   const def = VOX[v];
-  const reqName = { 1: 'krumpáč', 2: 'kamenný krumpáč', 3: 'železný krumpáč' }[def.req];
+  const reqName = { 1: 'krumpáč', 2: 'kamenný krumpáč', 3: 'železný krumpáč', 4: 'krystalový krumpáč' }[def.req];
   return {
     kind: 'vox', key: `v${x},${y},${z}`, vox: v, cell, normal, point, at: point, surface: surfaceHit,
     name: def.name, hard: def.hard, tool: def.tool, req: def.req ? { tool: 'pick', tier: def.req } : null, reqName,
@@ -2479,6 +2657,10 @@ function updateInteraction(dt) {
   if (input.lmb && target?.kind === 'mob') {
     if (swingCd <= 0) { startSwing(); Sound.swing(); swingCd = 0.42; hitMob(target.mob, tool ? tool.dmg : 1); }
     mining.key = null;
+  } else if (creative && input.lmb && target && target.kind !== 'mob' && target.breakable !== false) {
+    if (swingCd <= 0) { startSwing(); swingCd = 0.2; breakTarget(target); }
+    mining.key = null;
+    mining.p = 0;
   } else if (input.lmb && target && target.kind !== 'mob' && target.breakable !== false) {
     if (mining.key !== target.key) { mining.key = target.key; mining.p = 0; }
     const req = target.req;
@@ -2505,7 +2687,8 @@ function updateInteraction(dt) {
     mining.key = null;
     mining.p = 0;
   }
-  if (input.rmb && useCd <= 0) { useCd = 0.25; useItem(); }
+  if (input.rmb && useCd <= 0) { useCd = ITEMS[heldStack()?.id]?.block ? 0.15 : 0.25; useItem(); }
+  if (input.rmb) pillarPlace();
 
   const label = $('targetLabel');
   label.innerHTML = warn ? `<span class="warn">${warn}</span>` : target ? `${target.name}${target.hint ? `<small>${target.hint}</small>` : ''}` : '';
@@ -2536,7 +2719,9 @@ function breakTarget(t) {
     const k = bkey(...t.cell);
     blocks.delete(k);
     addItem(BLOCKS[t.type].drop, 1);
-    if (fires.has(k)) { for (const s of fires.get(k).slots) if (s) addItem(s.id, s.n); fires.delete(k); }
+    for (const store of [fires.get(k)?.slots, chests.get(k)]) if (store) for (const s of store) if (s) addItem(s.id, s.n);
+    fires.delete(k);
+    chests.delete(k);
     debris.emit(...t.at, CHIP[t.type] || CHIP.planks, 25, 3, 1.5);
     Sound.crack();
     rebuildBlocks();
@@ -2559,10 +2744,13 @@ function breakTarget(t) {
 
 function useItem() {
   // Pravé tlačítko na pracovní stůl nebo táborák otevře jeho okno.
-  if (target?.kind === 'block' && (target.type === 'workbench' || target.type === 'campfire')) {
-    openInventory(target.type === 'workbench' ? 'bench' : 'fire', bkey(...target.cell));
+  const STATION_UI = { workbench: 'bench', campfire: 'fire', chest: 'chest' };
+  if (target?.kind === 'block' && STATION_UI[target.type]) {
+    openInventory(STATION_UI[target.type], bkey(...target.cell));
+    if (target.type === 'chest') { Sound.place(); for (const r of ruinsNear(target.cell[0], target.cell[2], 3)) ruinsOpened.add(r.key); }
     return;
   }
+  if (target?.kind === 'portal') return usePortal(target.shrine);
   const s = heldStack();
   if (!s) return;
   const d = ITEMS[s.id];
@@ -2576,9 +2764,10 @@ function useItem() {
     return;
   }
   const cell = d.block ? placementCell(target) : null;
-  if (!cell || !cellFree(...cell)) return;
-  const [x, y, z] = cell;
-  if (BLOCKS[d.block].solid && playerIntersects(x, y, z)) return;
+  if (cell && cellFree(...cell)) placeBlock(d, cell);
+}
+function placeBlock(d, [x, y, z]) {
+  if (BLOCKS[d.block].solid && playerIntersects(x, y, z)) return false;
   // Hlína a kámen vrácené do podzemí se stanou zase přirozenou zeminou (zaplní díru i povrch).
   const NATURAL = { dirt: V.DIRT, markdirt: V.MARKDIRT, cobble: V.STONE };
   if (NATURAL[d.block] && y <= topY(x, z) && getVox(x, y, z) === V.AIR) {
@@ -2590,6 +2779,14 @@ function useItem() {
   }
   consumeSelected();
   Sound.place();
+  return true;
+}
+// Stavění pod sebe (jako v Minecraftu): dívej se dolů, skákej a drž pravé tlačítko – pod nohama roste sloup.
+function pillarPlace() {
+  const held = heldStack();
+  if (!held || !ITEMS[held.id].block || player.pitch > -0.9 || player.onGround) return;
+  const p = player.pos, cell = [Math.floor(p.x), Math.floor(p.y) - 1, Math.floor(p.z)];
+  if (cellFree(...cell)) placeBlock(ITEMS[held.id], cell);
 }
 
 // ============================================================ tvorové: ovce, kanci, stínožrouti
@@ -2597,6 +2794,8 @@ const MOBS = {
   sheep: { name: 'Ovce', hp: 5, radius: 0.75, cy: 0.75, drops: [['raw_meat', 1, 2], ['wool', 1, 2]] },
   boar: { name: 'Kanec', hp: 12, radius: 0.8, cy: 0.7, dmg: 10, drops: [['raw_meat', 2, 3]] },
   crawler: { name: 'Stínožrout', hp: 10, radius: 0.7, cy: 0.5, dmg: 14, drops: [['essence', 1, 2]] },
+  // Markomani: nepřátelští bojovníci Markovy dimenze s dřevěnými meči. [předmět, min, max, šance]
+  markoman: { name: 'Markoman', hp: 24, radius: 0.75, cy: 1.1, dmg: 11, drops: [['markwood', 1, 2], ['markorite_raw', 1, 1, 0.35], ['wood_sword', 1, 1, 0.15], ['essence', 1, 1, 0.3]] },
 };
 const mobs = [];
 const shadowGeo = new THREE.CircleGeometry(0.75, 20).rotateX(-Math.PI / 2);
@@ -2631,6 +2830,30 @@ function buildMob(type) {
     for (const x of [-0.11, 0.11]) mesh(new THREE.ConeGeometry(0.03, 0.16, 5), tusk, x, 0.66, -1.12).rotation.x = -0.4;
     for (const x of [-0.13, 0.13]) mesh(new THREE.SphereGeometry(0.035, 6, 4), eyeMat.clone(), x, 0.84, -1.09).material.color.setRGB(0.05, 0.03, 0.02);
     for (const [x, z] of [[-0.22, -0.5], [0.22, -0.5], [-0.22, 0.5], [0.22, 0.5]]) leg(dark, x, 0.45, z, 0.45);
+  } else if (type === 'markoman') {
+    // Humanoid: nohy a ruce na kloubech, aby šly animovat; v pravé ruce dřevěný meč.
+    const cloth = mat({ color: 0x23285a }), plate = mat({ color: 0x5a3fa0, roughness: 0.5, metalness: 0.4 }), skin = mat({ color: 0x6f86b8 });
+    const glowEye = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.4, 2.4, 3), fog: false });
+    const limb = (m, x, y, w, len) => {
+      const pivot = new THREE.Group();
+      pivot.position.set(x, y, 0);
+      mesh(new THREE.BoxGeometry(w, len, w).translate(0, -len / 2, 0), m, 0, 0, 0, pivot);
+      g.add(pivot);
+      return pivot;
+    };
+    legs.push(limb(cloth, -0.14, 0.9, 0.22, 0.9), limb(cloth, 0.14, 0.9, 0.22, 0.9));
+    body = mesh(new THREE.BoxGeometry(0.58, 0.72, 0.32), plate, 0, 1.26, 0);
+    const head = mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), skin, 0, 1.86, 0);
+    for (const ex of [-0.1, 0.1]) mesh(new THREE.BoxGeometry(0.08, 0.05, 0.02), glowEye, ex, 0.03, -0.215, head);
+    mesh(new THREE.BoxGeometry(0.46, 0.12, 0.46), plate, 0, 0.2, 0, head); // přilba
+    const arms = [limb(plate, -0.4, 1.58, 0.17, 0.72), limb(plate, 0.4, 1.58, 0.17, 0.72)];
+    const sword = new THREE.Group();
+    sword.position.set(0, -0.68, -0.05);
+    sword.rotation.x = -Math.PI / 2;
+    mesh(new THREE.BoxGeometry(0.07, 0.7, 0.025).translate(0, 0.42, 0), TIER_MAT[1], 0, 0, 0, sword);
+    mesh(new THREE.BoxGeometry(0.22, 0.04, 0.06), handleMat, 0, 0.06, 0, sword);
+    arms[1].add(sword);
+    g.userData.arms = arms;
   } else {
     body = mesh(new THREE.SphereGeometry(0.6, 22, 16), mat({ color: 0x0e0a12, roughness: 0.35, metalness: 0.2 }), 0, 0.48, 0);
     body.scale.set(1, 0.8, 1.15);
@@ -2643,7 +2866,7 @@ function buildMob(type) {
   }
   const mats = [];
   g.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial && !mats.includes(o.material)) mats.push(o.material); });
-  return { group: g, body, legs, mats };
+  return { group: g, body, legs, mats, arms: g.userData.arms || [] };
 }
 function spawnMob(type, x, z) {
   const m = buildMob(type);
@@ -2672,7 +2895,7 @@ function hitMob(m, dmg) {
 function killMob(m, drops) {
   m.dead = true;
   sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 50, 5, 2);
-  if (drops) for (const [id, a, b] of m.def.drops) addItem(id, randInt(a, b));
+  if (drops) for (const [id, a, b, chance] of m.def.drops) if (chance === undefined || Math.random() < chance) addItem(id, randInt(a, b));
   if (m.type === 'crawler') Sound.kill();
 }
 const playerSafe = () => shrineDist(player.pos.x, player.pos.z) < 11 || nearLight(player.pos.x, player.pos.z, 5);
@@ -2693,18 +2916,20 @@ function updateMobs(dt, day) {
       if ((m.idleT -= dt) <= 0) { m.moving = !m.moving; m.idleT = 2 + Math.random() * 4; m.wander = Math.random() * Math.PI * 2; }
       if (m.moving) { dirX = Math.cos(m.wander); dirZ = Math.sin(m.wander); speed = sp; }
     };
-    const hostile = m.type === 'crawler' || (m.type === 'boar' && m.aggro);
+    const hostile = !creative && (m.type === 'crawler' || m.type === 'markoman' || (m.type === 'boar' && m.aggro));
     if (m.type === 'sheep' && m.fleeT > 0) {
       m.fleeT -= dt; dirX = -dx / dist; dirZ = -dz / dist; speed = 5.5;
-    } else if (hostile && player.alive && dist < (m.type === 'boar' ? 30 : 26) && !(m.type === 'crawler' && playerSafe())) {
-      dirX = dx / dist; dirZ = dz / dist; speed = m.type === 'boar' ? 5.2 : 4.7;
+    } else if (hostile && player.alive && dist < (m.type === 'crawler' ? 26 : 30) && !(m.type !== 'boar' && shrineDist(player.pos.x, player.pos.z) < 11) && !(m.type === 'crawler' && playerSafe())) {
+      dirX = dx / dist; dirZ = dz / dist; speed = { boar: 5.2, crawler: 4.7, markoman: 4.4 }[m.type];
     } else {
       if (m.type === 'boar' && dist > 30) m.aggro = false;
       wander(m.type === 'crawler' ? 1.3 : 1.0);
     }
-    if (m.type === 'crawler') {
+    if (m.type === 'crawler' || m.type === 'markoman') {
       const sh = shrineOf(m.pos.x), sd = shrineDist(m.pos.x, m.pos.z);
       if (sd < 13) { dirX = (m.pos.x - sh.x) / sd; dirZ = (m.pos.z - sh.z) / sd; speed = 3; }
+    }
+    if (m.type === 'crawler') {
       for (const s of specials.values()) {
         if (!BLOCKS[s.type].light) continue;
         const lx = m.pos.x - (s.x + 0.5), lz = m.pos.z - (s.z + 0.5), ld = Math.hypot(lx, lz);
@@ -2734,6 +2959,13 @@ function updateMobs(dt, day) {
       hop = Math.abs(Math.sin(m.phase)) * (sp > 2 ? 0.5 : 0.18);
       const squash = 1 + Math.cos(m.phase * 2) * 0.12;
       m.body.scale.set(1 / Math.sqrt(squash), 0.8 * squash, 1.15 / Math.sqrt(squash));
+    } else if (m.type === 'markoman') {
+      const swing = Math.sin(m.phase * 1.6) * Math.min(sp / 2, 1) * 0.8;
+      m.legs[0].rotation.x = swing;
+      m.legs[1].rotation.x = -swing;
+      m.arms[0].rotation.x = -swing * 0.8;
+      m.atkT = Math.max(0, (m.atkT || 0) - dt);
+      m.arms[1].rotation.x = m.atkT > 0 ? -2.4 * Math.sin((1 - m.atkT / 0.35) * Math.PI) : swing * 0.6 - (dist < 6 ? 0.6 : 0);
     } else {
       const swing = Math.sin(m.phase * 2.2) * Math.min(sp / 2, 1) * 0.7;
       m.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
@@ -2746,15 +2978,17 @@ function updateMobs(dt, day) {
     m.flash = Math.max(0, m.flash - dt * 5);
     for (const mat of m.mats) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
     m.cd -= dt;
-    if (hostile && dist < 1.4 && m.cd <= 0 && player.alive) {
+    if (hostile && dist < (m.type === 'markoman' ? 1.7 : 1.4) && m.cd <= 0 && player.alive) {
       m.cd = 1.1;
+      m.atkT = 0.35;
+      if (m.type === 'markoman') Sound.swing();
       damagePlayer(m.def.dmg, dx / dist, dz / dist);
       m.vel.x -= (dx / dist) * 4;
       m.vel.z -= (dz / dist) * 4;
     }
     if ((m.soundT -= dt) <= 0) {
       m.soundT = 5 + Math.random() * 10;
-      if (dist < 25) m.type === 'sheep' ? Sound.baa() : m.type === 'boar' ? Sound.grunt() : Sound.growl();
+      if (dist < 25) m.type === 'sheep' ? Sound.baa() : m.type === 'crawler' ? Sound.growl() : Sound.grunt();
     }
   }
 }
@@ -2768,6 +3002,10 @@ function updateSpawns(dt, night) {
     const x = player.pos.x + Math.cos(a) * r, z = player.pos.z + Math.sin(a) * r;
     return shrineDist(x, z) < 35 || nearLight(x, z, 12) ? null : [x, z];
   };
+  if (isMark(player.pos.x)) { // v Markově dimenzi žijí jen Markomani
+    if (count('markoman') < (night > 0.5 ? 8 : 5)) { const p = spot(); if (p) spawnMob('markoman', ...p); }
+    return;
+  }
   if (night > 0.5 && count('crawler') < 7) { const p = spot(); if (p) spawnMob('crawler', ...p); }
   if (count('sheep') < 6) {
     const p = spot();
@@ -2776,9 +3014,88 @@ function updateSpawns(dt, night) {
   if (count('boar') < 3) { const p = spot(); if (p && forest(...p) > 0.45) spawnMob('boar', ...p); }
 }
 
+// ============================================================ ruiny s truhlami (Markova dimenze)
+const RUIN_CELL = 70;
+const ruinsBuilt = new Set(save?.ruins || []);
+const ruinsOpened = new Set(save?.ruinsOpened || []);
+// [předmět, min, max, šance]
+const LOOT = [
+  ['markorite', 1, 3, 0.55], ['markorite_raw', 2, 4, 0.5], ['shard', 1, 3, 0.6], ['iron', 2, 6, 0.6], ['meat', 2, 5, 0.5],
+  ['torch', 4, 12, 0.5], ['essence', 1, 4, 0.4], ['coal', 3, 8, 0.4], ['crystal_pick', 1, 1, 0.14], ['crystal_sword', 1, 1, 0.12],
+  ['iron_helmet', 1, 1, 0.15], ['iron_chestplate', 1, 1, 0.15], ['crystal_helmet', 1, 1, 0.08], ['crystal_boots', 1, 1, 0.08],
+  ['markorite_sword', 1, 1, 0.04], ['markorite_helmet', 1, 1, 0.03],
+];
+function rollLoot(rnd) {
+  const slots = Array(27).fill(null);
+  for (const [id, a, b, chance] of LOOT) {
+    if (rnd() >= chance) continue;
+    let i;
+    do i = Math.floor(rnd() * 27); while (slots[i]);
+    slots[i] = { id, n: a + Math.floor(rnd() * (b - a + 1)) };
+  }
+  if (!slots.some(Boolean)) slots[13] = { id: 'markorite', n: 1 };
+  return slots;
+}
+function ruinAt(cx, cz) {
+  if (hash2(cx + 333, cz - 77) > 0.5) return null;
+  const x = Math.floor((cx + 0.3 + hash2(cx, cz + 5) * 0.4) * RUIN_CELL), z = Math.floor((cz + 0.3 + hash2(cx + 5, cz) * 0.4) * RUIN_CELL);
+  if (!isMark(x) || shrineDist(x, z) < 40) return null;
+  return { key: `ru${cx},${cz}`, x, z };
+}
+const ruinsNear = (px, pz, R) => {
+  const out = [];
+  for (let cz = Math.floor((pz - R) / RUIN_CELL); cz <= Math.floor((pz + R) / RUIN_CELL); cz++)
+    for (let cx = Math.floor((px - R) / RUIN_CELL); cx <= Math.floor((px + R) / RUIN_CELL); cx++) {
+      const r = ruinAt(cx, cz);
+      if (r && (r.x - px) ** 2 + (r.z - pz) ** 2 < R * R) out.push(r);
+    }
+  return out;
+};
+// Zbořené zdi z markwood prken a cihel, uprostřed truhla s kořistí; ruinu hlídají Markomani.
+function buildRuin(r) {
+  ruinsBuilt.add(r.key);
+  const rnd = rng(1 + Math.floor(hash2(r.x, r.z) * 1e9));
+  for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) {
+    if (Math.abs(dx) !== 3 && Math.abs(dz) !== 3) continue;
+    if (dz === 3 && Math.abs(dx) <= 1) continue; // vchod
+    const x = r.x + dx, z = r.z + dz, base = topY(x, z);
+    const h = 1 + Math.floor(rnd() * 3);
+    for (let y = 0; y < h; y++) blocks.set(bkey(x, base + y, z), rnd() < 0.55 ? 'mark_planks' : 'bricks');
+  }
+  const ck = bkey(r.x, topY(r.x, r.z), r.z);
+  blocks.set(ck, 'chest');
+  chests.set(ck, rollLoot(rnd));
+  blocks.set(bkey(r.x + 2, topY(r.x + 2, r.z + 2), r.z + 2), 'torch');
+  rebuildBlocks();
+  for (let i = 0; i < 2; i++) spawnMob('markoman', r.x + 6 + i * 2, r.z + 6);
+}
+let ruinT = 0;
+function updateRuins(dt) {
+  if ((ruinT -= dt) > 0 || !isMark(player.pos.x)) return;
+  ruinT = 1;
+  for (const r of ruinsNear(player.pos.x, player.pos.z, 110)) if (!ruinsBuilt.has(r.key)) buildRuin(r);
+}
+
+// Markova dimenze: fialová obloha, modravé světlo a mlha.
+const MARK_FOG = new THREE.Color(0x5a3f96);
+const markTint = new THREE.Vector3(0.9, 0.88, 1.15), markAmb = new THREE.Vector3(0.75, 0.8, 1.3);
+function applyDimension() {
+  const mk = isMark(player.pos.x);
+  skyU.rayleigh.value = mk ? 3.4 : 1.4;
+  skyU.mieDirectionalG.value = mk ? 0.9 : 0.82;
+  if (!mk) return;
+  U.sunColor.value.multiply(markTint);
+  U.ambient.value.multiply(markAmb);
+  const sc = U.sunColor.value, am = U.ambient.value;
+  sunLight.color.setRGB(sc.x, sc.y, sc.z);
+  hemi.color.setRGB(am.x, am.y, am.z);
+  scene.fog.color.lerp(MARK_FOG, 0.55);
+}
+
 // ============================================================ přežití
 function damagePlayer(amount, dx, dz) {
-  if (!player.alive) return;
+  if (!player.alive || creative) return;
+  if (dx || dz) amount *= 1 - Math.min(0.8, armorPoints() * 0.035); // brnění tlumí útoky
   player.hp -= amount;
   player.lastHurt = gameTime;
   player.shake = 0.3;
@@ -2792,7 +3109,8 @@ function die() {
   player.hp = 0;
   $('fade').style.opacity = 1;
   setTimeout(() => {
-    player.pos.set(0, 0.45, 14);
+    const home = shrineOf(player.pos.x);
+    player.pos.set(home.x, 0.45, home.z + 14);
     player.vel.set(0, 0, 0);
     player.yaw = 0;
     player.hp = 100;
@@ -2805,6 +3123,7 @@ function die() {
 }
 let starveT = 0, hungerWarned = false;
 function updateSurvival(dt) {
+  if (creative) { player.hunger = 100; player.hp = 100; return; }
   player.hunger = Math.max(0, player.hunger - dt * (player.sprinting ? 0.3 : 0.11));
   if (player.hunger < 25 && !hungerWarned) { hungerWarned = true; toast('Máš hlad – sněz něco (pravé tlačítko)'); }
   if (player.hunger > 40) hungerWarned = false;
@@ -2904,6 +3223,7 @@ for (let i = 0; i < 24; i++) addCompass('<div class="tick"></div>', '', (i / 24)
 [['S', 0], ['V', -Math.PI / 2], ['J', Math.PI], ['Z', Math.PI / 2]].forEach(([t, a]) => addCompass(t, '', a));
 const shrineMark = addCompass('◆<small></small>', 'shrine', 0);
 const shardMark = addCompass('✦<small></small>', 'shard', 0);
+const ruinMark = addCompass('▣<small></small>', 'ruin', 0);
 function placeCompass(item) {
   const diff = wrapAngle(item.yaw - player.yaw);
   item.el.style.display = Math.abs(diff) < 1.75 ? '' : 'none';
@@ -2940,8 +3260,11 @@ const TIPS = [
   { text: 'Ulov ovci nebo kance, klikni pravým na táborák a vlož do něj maso.', done: () => crafted.meat },
   { text: 'Kopej do země (lopatou rychleji). Pod hlínou je kámen a uhlí – z uhlí a klacku vyrobíš 8 pochodní. V jeskyních je tma!', done: () => countItem('coal') > 0 || crafted.iron },
   { text: 'Hlouběji v podzemí (nebo v rezavých balvanech) je železná ruda. Vytěž ji kamenným krumpáčem a přetav v táboráku.', done: () => crafted.iron },
-  { text: 'Úlomky světla: zářící paprsky na obzoru (✦ na kompasu), nebo svítící krystalové žíly hluboko pod zemí (železný krumpáč).', done: () => countItem('shard') >= 3 || crafted.crystal_sword },
-  { text: 'Poraz stínožrouty v noci, získej jejich esenci a vyrob krystalový meč.', done: () => crafted.crystal_sword },
+  { text: 'Vyrob si železné brnění (E → políčka vlevo). Úlomky světla najdeš jako zářící paprsky (✦ na kompasu) nebo hluboko pod zemí.', done: () => countItem('shard') >= 3 || portalActive },
+  { text: 'Jdi do svatyně, namiř na portál a pravým tlačítkem vlož 3 úlomky světla. Otevře se portál do Markovy dimenze!', done: () => portalActive },
+  { text: 'Projdi portálem. V Markově dimenzi hledej ruiny s truhlami (▣ na kompasu). Pozor na Markomany!', done: () => ruinsOpened.size > 0 || crafted.markorite },
+  { text: 'Krystalovým krumpáčem vytěž markoritovou rudu pod markdirtem a přetav ji v táboráku.', done: () => crafted.markorite },
+  { text: 'Vyrob markoritové brnění a meč – nejlepší výbava v Říši.', done: () => crafted.markorite_sword || crafted.markorite_chestplate },
 ];
 let tipIndex = -1;
 function updateTips() {
@@ -2954,7 +3277,9 @@ function updateTips() {
 
 let vignette = 0, tipT = 0;
 function updateHUD(dt) {
-  for (const item of compassItems) if (item !== shrineMark && item !== shardMark) placeCompass(item);
+  for (const item of compassItems) if (item !== shrineMark && item !== shardMark && item !== ruinMark) placeCompass(item);
+  const ruin = isMark(player.pos.x) ? ruinsNear(player.pos.x, player.pos.z, 320).filter((r) => !ruinsOpened.has(r.key)).sort((a, b) => Math.hypot(a.x - player.pos.x, a.z - player.pos.z) - Math.hypot(b.x - player.pos.x, b.z - player.pos.z))[0] : null;
+  setMarker(ruinMark, ruin ? ruin.x : null, ruin ? ruin.z : null);
   let best = null, bd = Infinity;
   for (const s of shardObjs.values()) {
     const d = Math.hypot(s.x - player.pos.x, s.z - player.pos.z);
@@ -2963,9 +3288,10 @@ function updateHUD(dt) {
   setMarker(shrineMark, shrineOf(player.pos.x).x, 0);
   setMarker(shardMark, best ? best.x : null, best ? best.z : null);
   const h = Math.floor(dayTime * 24), mi = Math.floor((dayTime * 24 * 60) % 60);
-  $('clock').textContent = `Den ${dayCount} · ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`;
+  $('clock').textContent = `Den ${dayCount} · ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}${creative ? (player.flying ? ' · Kreativní ✈' : ' · Kreativní') : ''}`;
   $('hpfill').style.width = `${Math.max(0, player.hp)}%`;
   $('foodfill').style.width = `${player.hunger}%`;
+  $('armorfill').style.width = `${(armorPoints() / 23) * 100}%`;
   vignette = Math.max(0, vignette - dt * 1.5);
   $('vignette').style.opacity = Math.max(vignette, player.alive ? (1 - player.hp / 100) * 0.5 : 0);
   if (toastTimer > 0 && (toastTimer -= dt) <= 0) $('toast').classList.remove('show');
@@ -2980,6 +3306,7 @@ function saveGame() {
       inv: inv.slots, pos: player.pos.toArray(), yaw: player.yaw, hp: Math.max(player.hp, 1), hunger: player.hunger,
       dayTime, day: dayCount, blocks: [...blocks], removed: [...removed], crafted, placedAny, fires: Object.fromEntries(fires),
       vox: [...voxEdits.values()].flatMap((m) => [...m]),
+      creative, flying: player.flying, armor, chests: Object.fromEntries(chests), ruins: [...ruinsBuilt], ruinsOpened: [...ruinsOpened], portal: portalActive,
     }));
   } catch {}
 }
@@ -3018,15 +3345,19 @@ function tick(realDt) {
   const { night, day } = updateDay(dt);
   rebuildForest(player.pos.x, player.pos.z);
   updateVoxChunks(player.pos.x, player.pos.z);
+  applyDimension();
   applyUnderground();
+  updateRuins(realDt);
   if (playing) {
     if (player.alive) updateInteraction(dt);
     updateSurvival(dt);
     updateMobs(dt, day);
     updateSpawns(dt, night);
     updateShards(dt);
+    checkPortal(dt);
   }
   updateFires(realDt);
+  updatePortals(realDt);
   regrowGrass(realDt);
   updateLights(gameClock);
   if (Math.random() < realDt * 6) for (const s of specials.values()) if (s.type === 'campfire') sparks.emit(s.x + 0.5, s.ry + 0.4, s.z + 0.5, [1, 0.5, 0.15], 1, 0.6, 1.5);
@@ -3059,7 +3390,8 @@ function frame() {
 const game = window.game = {
   testMode: false, tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, spawnMob, blocks, rebuildBlocks, forestTrees, forestRocks,
   slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
-  get underground() { return underground; },
+  get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
+  get portalActive() { return portalActive; }, setCreative, get creative() { return creative; }, cellFree,
   setTime: (t) => (dayTime = t), get target() { return target; }, openInventory, closeInventory,
 };
 window.gameStarted = true;
