@@ -1,0 +1,39 @@
+name: 🐞 Chyba
+description: Něco ve hře nefunguje, jak má.
+labels: ["chyba"]
+body:
+  - type: textarea
+    id: co
+    attributes:
+      label: Co se stalo?
+      placeholder: Když jsem položil táborák na kámen, zmizel.
+    validations:
+      required: true
+  - type: textarea
+    id: jak
+    attributes:
+      label: Jak to zopakovat?
+      description: Krok za krokem, ať to můžeme zkusit taky.
+      placeholder: |
+        1. Vezmi do ruky táborák
+        2. Klikni pravým na položený kámen
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: cekal
+    attributes:
+      label: Co jsi čekal(a), že se stane?
+  - type: dropdown
+    id: kde
+    attributes:
+      label: Jak jsi hrál(a)?
+      options:
+        - Spolu (přes server)
+        - Sám (offline)
+        - Nevím
+  - type: textarea
+    id: obrazek
+    attributes:
+      label: Obrázek nebo chyba z konzole (F12)
+      description: Nepovinné, ale moc pomůže.

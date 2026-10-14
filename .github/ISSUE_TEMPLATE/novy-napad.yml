@@ -1,0 +1,31 @@
+name: 💡 Nový nápad
+description: Něco nového do hry – předmět, tvor, blok, recept…
+labels: ["nápad"]
+body:
+  - type: textarea
+    id: napad
+    attributes:
+      label: Co by ve hře mělo být?
+      placeholder: Liška, která v noci krade maso z táboráku.
+    validations:
+      required: true
+  - type: textarea
+    id: proc
+    attributes:
+      label: Proč je to fajn?
+      placeholder: V noci by bylo víc napětí a vyplatilo by se táborák hlídat.
+  - type: dropdown
+    id: druh
+    attributes:
+      label: Co to je?
+      options:
+        - Předmět nebo recept
+        - Blok
+        - Tvor
+        - Počasí, zvuk nebo vzhled
+        - Něco jiného
+  - type: textarea
+    id: jak
+    attributes:
+      label: Jak by se to dalo vyzkoušet?
+      placeholder: Postav táborák, počkej na noc a dívej se, jestli liška přijde.
