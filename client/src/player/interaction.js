@@ -1,8 +1,11 @@
 // ============================================================ těžba, útok, pokládání
-// Levé tlačítko: těžba / kácení / sekání trávy / útok. Pravé: položit blok, jíst, otevřít stůl / táborák.
+// Levé tlačítko: těžba / kácení / sekání trávy / útok (ve výskoku kritický zásah).
+// Pravé: položit blok, jíst, otevřít stůl / táborák (se Shiftem se místo otevření položí blok).
+// Pravé použije hlavní ruku; když v ní není nic k použití, použije druhou ruku (F).
 import * as THREE from 'three';
 import { ITEMS, TOOL_SPEED } from '@louka/shared/items.js';
-import { bkey } from '@louka/shared/blocks.js';
+import { BLOCKS, bkey } from '@louka/shared/blocks.js';
+import { OFFHAND } from '@louka/shared/constants.js';
 import { $ } from '../core/dom.js';
 import { scene } from '../render/renderer.js';
 import { debris } from '../render/particles.js';
@@ -11,10 +14,10 @@ import { startSwing } from '../render/held-item.js';
 import { Sound } from '../audio/sound.js';
 import { net } from '../net/net.js';
 import { blocks } from '../world/state.js';
-import { heldStack } from '../inventory/inventory.js';
+import { heldStack, inv } from '../inventory/inventory.js';
 import { openInventory } from '../inventory/inventory-ui.js';
 import { player } from './state.js';
-import { input } from './controls.js';
+import { input, move } from './controls.js';
 import { pickTarget } from './targeting.js';
 
 const outline = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.004, 1.004, 1.004)), new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.6 }));
@@ -41,6 +44,24 @@ function placementCell(t) {
 const mining = { key: null, p: 0 };
 const toolOf = (s) => (s && ITEMS[s.id].tool ? ITEMS[s.id] : null);
 
+/** Co se použije pravým tlačítkem: { s, off } – hlavní ruka, nebo druhá ruka, když hlavní nemá co použít. */
+function usable() {
+  const main = heldStack(), off = inv.slots[OFFHAND];
+  const useful = (s) => s && (ITEMS[s.id].food || ITEMS[s.id].block);
+  if (useful(main)) return { s: main, off: false };
+  if (useful(off)) return { s: off, off: true };
+  return { s: main, off: false };
+}
+
+/** Předmět, který dá prostřední tlačítko (pick block) za cíl: blok, kmen ze stromu, kámen z balvanu. */
+export function pickId(t) {
+  if (!t) return null;
+  if (t.kind === 'block') return BLOCKS[t.type]?.drop || null;
+  if (t.kind === 'tree') return 'log';
+  if (t.kind === 'rock') return t.rock.iron ? 'iron_ore' : 'stone';
+  return null;
+}
+
 /** Každý snímek: najde cíl, těží / útočí podle tlačítek a ukáže popisek a kroužek postupu. */
 export function updateInteraction(dt) {
   const target = act.target = pickTarget();
@@ -53,7 +74,7 @@ export function updateInteraction(dt) {
     groundRing.position.set(target.point[0], target.point[1] + 0.04, target.point[2]);
     groundRing.material.color.set(target.breakable ? 0xffffff : 0x999999);
   }
-  const held = heldStack();
+  const held = usable().s;
   const cell = held && ITEMS[held.id].block ? placementCell(target) : null;
   preview.visible = !!cell && !blocks.has(bkey(...cell));
   if (preview.visible) preview.position.set(cell[0] + 0.5, cell[1] + 0.5, cell[2] + 0.5);
@@ -61,7 +82,13 @@ export function updateInteraction(dt) {
   act.swingCd -= dt;
   act.useCd -= dt;
   if (input.lmb && target?.kind === 'mob') {
-    if (act.swingCd <= 0) { startSwing(); Sound.swing(); act.swingCd = 0.42; player.shake = 0.1; net.act({ t: 'hit', id: target.mob.id }); }
+    if (act.swingCd <= 0) {
+      // Kritický zásah: hráč padá (po výskoku) a neběží – jako v Minecraftu.
+      const crit = !player.onGround && player.vel.y < 0 && !player.sprinting;
+      startSwing(); Sound.swing(); act.swingCd = 0.42; player.shake = crit ? 0.18 : 0.1;
+      net.act(crit ? { t: 'hit', id: target.mob.id, crit } : { t: 'hit', id: target.mob.id });
+      move.sprint = false; // úder v běhu zastaví běh
+    }
     mining.key = null;
   } else if (input.lmb && target && target.kind !== 'mob' && target.breakable !== false) {
     if (mining.key !== target.key) { mining.key = target.key; mining.p = 0; }
@@ -108,19 +135,19 @@ function breakTarget(t) {
 // Pravé tlačítko.
 function useItem() {
   const target = act.target;
-  // Pravé tlačítko na pracovní stůl nebo táborák otevře jeho okno.
-  if (target?.kind === 'block' && (target.type === 'workbench' || target.type === 'campfire')) {
+  const { s, off } = usable();
+  const d = s && ITEMS[s.id];
+  // Pravé tlačítko na pracovní stůl nebo táborák otevře jeho okno (se Shiftem a blokem v ruce se položí blok).
+  if (target?.kind === 'block' && (target.type === 'workbench' || target.type === 'campfire') && !(player.sneaking && d?.block)) {
     openInventory(target.type === 'workbench' ? 'bench' : 'fire', bkey(...target.cell));
     return;
   }
-  const s = heldStack();
-  if (!s) return;
-  const d = ITEMS[s.id];
+  if (!d) return;
   if (d.food) {
     if (player.hunger < 100 || (d.heal && player.hp < 100)) act.useCd = 0.6;
-    net.act({ t: 'eat' });
+    net.act(off ? { t: 'eat', off } : { t: 'eat' });
     return;
   }
   const cell = d.block ? placementCell(target) : null;
-  if (cell && !blocks.has(bkey(...cell))) net.act({ t: 'place', cell });
+  if (cell && !blocks.has(bkey(...cell))) net.act(off ? { t: 'place', cell, off } : { t: 'place', cell });
 }

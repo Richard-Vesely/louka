@@ -3,6 +3,7 @@
 import { ITEMS } from '@louka/shared/items.js';
 import { Sound } from '../audio/sound.js';
 import { playFx } from '../render/effects.js';
+import { flyDrop } from '../render/drops.js';
 import { world } from '../world/state.js';
 import { rebuildBlocks } from '../world/blocks.js';
 import { rebuildForest } from '../world/forest.js';
@@ -15,7 +16,7 @@ import { onHurt, onDied, onRespawn } from '../player/survival.js';
 import { feed, toast } from '../ui/hud.js';
 
 // Zvuky, které smí hra přehrát zprávou { t: 'sound', name }.
-const SOUNDS = new Set(['eat', 'craft', 'place', 'crack', 'pickup', 'hit', 'kill', 'hurt']);
+const SOUNDS = new Set(['eat', 'craft', 'place', 'crack', 'pickup', 'hit', 'kill', 'hurt', 'pop']);
 
 /** Zpracuje jednu zprávu ze hry. */
 export function onEvent(ev) {
@@ -39,8 +40,19 @@ export function onEvent(ev) {
       if (ui.open && ui.mode === 'fire' && ui.fireKey === ev.k) renderInventory();
       break;
     case 'grass': cutGrass(ev.x, ev.z); break;
+    case 'drop': onDrop(ev); break;
     case 'hurt': onHurt(ev); break;
     case 'died': onDied(); break;
     case 'respawn': onRespawn(ev); break;
   }
+}
+
+// Věci na zemi. Offline je hra už změnila sama (sdílí stejný svět), proto se nic nepřidává dvakrát.
+function onDrop({ a, d, k, n, by }) {
+  const drops = world.drops;
+  if (a === 'add' && !drops.has(d[0])) {
+    const [key, id, cnt, x, y, z, vx, vy, vz] = d;
+    drops.set(key, { k: key, id, n: cnt, x, y, z, vx, vy, vz, age: 0, pickAt: 0 });
+  } else if (a === 'n' && drops.has(k)) drops.get(k).n = n;
+  else if (a === 'del') { drops.delete(k); if (by) flyDrop(k, by); }
 }

@@ -46,6 +46,9 @@ canvas { display: block; }
 #hotbar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; padding: 3px; background: rgba(28, 28, 33, 0.82);
   border: 3px solid #000; box-shadow: inset 2px 2px 0 #5a5a64, inset -2px -2px 0 #141417; pointer-events: none; }
 #hotbar .slot { background: rgba(36, 36, 42, 0.6); }
+#offhand { position: fixed; bottom: 15px; left: calc(50% - 247px); display: none; padding: 3px; background: rgba(28, 28, 33, 0.82); border: 3px solid #000;
+  box-shadow: inset 2px 2px 0 #5a5a64, inset -2px -2px 0 #141417; pointer-events: none; }
+#offhand .slot { background: rgba(36, 36, 42, 0.6); }
 #hotbar .slot.active { z-index: 1; outline: 3px solid #f2f2f2; outline-offset: -1px; box-shadow: inset 2px 2px 0 #121215, inset -2px -2px 0 #54545e, 0 0 0 4px #000; }
 
 #feed { position: fixed; right: 18px; bottom: 18px; display: flex; flex-direction: column-reverse; gap: 4px; align-items: flex-end; pointer-events: none; }
@@ -64,7 +67,7 @@ canvas { display: block; }
 
 #vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(170, 0, 0, 0.8)); opacity: 0; }
 #fade { position: fixed; inset: 0; display: grid; place-items: center; background: #120305; opacity: 0; pointer-events: none; transition: opacity 0.9s; font: 700 44px 'Cinzel', serif; color: #d9a3a3; letter-spacing: 0.1em; }
-#hint { position: fixed; left: 50%; bottom: 104px; transform: translateX(-50%); padding: 8px 16px; border-radius: 20px; font-size: 13px; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px); pointer-events: none; transition: opacity 0.6s; white-space: nowrap; }
+#hint { position: fixed; left: 50%; bottom: 104px; transform: translateX(-50%); padding: 8px 16px; border-radius: 20px; font-size: 13px; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px); pointer-events: none; transition: opacity 0.6s; width: max-content; max-width: min(92vw, 1100px); box-sizing: border-box; text-align: center; }
 #hint.hidden { opacity: 0; }
 
 #inventory { position: fixed; inset: 0; display: none; place-items: center; background: rgba(0, 0, 0, 0.55); font-family: 'Pixelify Sans', monospace; }
@@ -114,6 +117,22 @@ canvas { display: block; }
 #tooltip .sub { font-size: 13px; color: #a8a8b0; text-shadow: none; }
 #tooltip .t1 { color: #d9b07a; } #tooltip .t2 { color: #c8c8c8; } #tooltip .t3 { color: #ffffff; } #tooltip .t4 { color: #7ff3ff; }
 @media (max-width: 800px) { .mc-window { flex-direction: column; overflow: auto; } }
+
+/* ---------- triky z Minecraftu: tažení, druhá ruka, nápověda, F1/F3 ---------- */
+.slot.drag::after { content: ''; position: absolute; inset: 2px; background: rgba(255, 255, 255, 0.35); pointer-events: none; }
+.offrow { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px; font-size: 13px; color: #a9a9b2; }
+.mc-foot .btns { display: flex; gap: 6px; }
+#tooltip .adv { color: #6f6f78; }
+#controlsHelp { position: fixed; inset: 0; z-index: 12; display: none; place-content: center; padding: 16px; background: rgba(0, 0, 0, 0.7); font-size: 14px; }
+#controlsHelp.show { display: grid; }
+#controlsHelp .cols { display: flex; flex-wrap: wrap; gap: 8px 28px; max-width: 900px; padding: 12px 16px; background: #3a3a42; border: 3px solid #000;
+  box-shadow: inset 3px 3px 0 #66666f, inset -3px -3px 0 #1d1d22; }
+#controlsHelp dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; min-width: 300px; flex: 1; }
+#controlsHelp dt { color: #ffe680; text-shadow: 2px 2px 0 #18181b; white-space: nowrap; }
+#controlsHelp dd { margin: 0; color: #e6e6e6; }
+#debug { position: fixed; top: 64px; left: 18px; z-index: 5; display: none; padding: 6px 8px; background: rgba(0, 0, 0, 0.55); font: 14px/1.35 'Pixelify Sans', monospace; color: #e8e8e8; white-space: pre; pointer-events: none; }
+body.hud-off #compass, body.hud-off #clock, body.hud-off #tip, body.hud-off #crosshair, body.hud-off #bars, body.hud-off #hotbar, body.hud-off #offhand,
+body.hud-off #feed, body.hud-off #targetLabel, body.hud-off #progress, body.hud-off #hint, body.hud-off #notices { visibility: hidden; }
 #error { position: fixed; inset: 0; display: none; place-items: center; padding: 16px; background: #223; text-align: center; }
 
 /* ---------- multiplayer: přihlášení, stav spojení, kdo hraje ---------- */

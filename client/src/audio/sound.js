@@ -71,6 +71,7 @@ export const Sound = {
   rustle() { this.burst({ dur: 0.12, f0: 3000, f1: 1500, q: 0.6, vol: 0.12 }); },
   crack() { this.burst({ dur: 0.6, f0: 1500, f1: 120, q: 0.7, vol: 0.5, type: 'lowpass' }); this.tone(80, 0.4, 0.2, 'triangle', 0.05, 40); },
   pop() { this.tone(620, 0.08, 0.12, 'sine', 0, 990); },
+  crit() { this.tone(1500, 0.12, 0.1, 'square', 0, 2400); this.burst({ dur: 0.12, f0: 5000, f1: 2000, q: 2, vol: 0.25 }); },
   craft() { this.tone(523, 0.12, 0.12, 'triangle'); this.tone(784, 0.2, 0.12, 'triangle', 0.08); },
   place() { this.tone(120, 0.1, 0.3, 'sine', 0, 70); this.burst({ dur: 0.06, f0: 1200, f1: 400, vol: 0.2, type: 'lowpass' }); },
   eat() { for (let i = 0; i < 3; i++) this.burst({ dur: 0.07, f0: 1800, f1: 900, q: 2, vol: 0.2, delay: i * 0.13 }); },

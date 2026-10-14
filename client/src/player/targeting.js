@@ -1,10 +1,12 @@
 // ============================================================ míření (co je před hráčem)
 // Paprsek z očí hráče: najde nejbližší blok, strom, balvan, tvora nebo kus země.
+// Míří se z očí i ve 3. osobě (F5), jako v Minecraftu.
 import * as THREE from 'three';
 import { REACH } from '@louka/shared/constants.js';
 import { BLOCKS, bkey } from '@louka/shared/blocks.js';
 import { groundHeight } from '@louka/shared/terrain.js';
-import { camera } from '../render/renderer.js';
+import { lookDir } from '@louka/shared/game/player.js';
+import { player } from './state.js';
 import { blocks } from '../world/state.js';
 import { forestTrees, forestRocks } from '../world/forest.js';
 import { isCut } from '../world/grass.js';
@@ -36,8 +38,9 @@ function raycastBlocks(o, d, max) {
  * @returns {object|null} cíl: kind 'block' | 'tree' | 'rock' | 'mob' | 'ground', jméno, nápověda, tvrdost…
  */
 export function pickTarget() {
-  camera.getWorldPosition(rayO);
-  camera.getWorldDirection(rayD);
+  rayO.set(player.pos.x, player.pos.y + player.eyeH, player.pos.z);
+  const look = lookDir(player);
+  rayD.set(look.x, look.y, look.z);
   const o = rayO, d = rayD;
   let best = null, bt = REACH;
   const bh = raycastBlocks(o, d, REACH);

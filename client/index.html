@@ -19,6 +19,7 @@
     <div class="wrap">❤️<div class="bar"><i id="hpfill"></i></div></div>
     <div class="wrap">🍗<div class="bar"><i id="foodfill"></i></div></div>
   </div>
+  <div id="offhand"></div>
   <div id="hotbar"></div>
   <div id="feed"></div>
   <div id="toast"></div>
@@ -31,7 +32,8 @@
   </div>
   <div id="vignette"></div>
   <div id="fade">Padl jsi…</div>
-  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · 1–9 výběr</div>
+  <div id="hint">Klikni do hry · WASD · 2× W běh · Shift plížení · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · 1–9 výběr · Q vyhodit · F druhá ruka</div>
+  <div id="debug"></div>
   <div id="inventory">
     <div class="mc-window">
       <div class="mc-panel mc-book">
@@ -45,8 +47,42 @@
         <div class="mc-title">Batoh</div>
         <div class="grid" id="invGrid"></div>
         <div class="grid hot" id="invHot"></div>
-        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="newWorld">Nový svět</button></div>
+        <div class="offrow"><span>Druhá ruka (F)</span><div id="invOff"></div></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><span class="btns"><button class="mc-btn" id="controlsBtn">Ovládání</button><button class="mc-btn" id="newWorld">Nový svět</button></span></div>
       </div>
+    </div>
+    <div id="controlsHelp">
+      <div class="mc-title">Ovládání (jako v Minecraftu)</div>
+      <div class="cols">
+        <dl>
+          <dt>W A S D</dt><dd>chůze</dd>
+          <dt>2× W · Ctrl</dt><dd>běh (zorné pole se rozšíří)</dd>
+          <dt>Shift</dt><dd>plížení – z okraje bloku nespadneš; se Shiftem položíš blok i na stůl</dd>
+          <dt>Mezerník</dt><dd>skok (držený = skáče pořád)</dd>
+          <dt>Levé tl.</dt><dd>těžba, útok – ve výskoku kritický zásah ✦</dd>
+          <dt>Pravé tl.</dt><dd>položit, jíst, otevřít stůl / táborák</dd>
+          <dt>Prostřední tl.</dt><dd>vzít do ruky blok, na který míříš</dd>
+          <dt>1–9 · kolečko</dt><dd>výběr v hotbaru</dd>
+          <dt>Q · Ctrl+Q</dt><dd>vyhodit jeden kus · celou hromádku</dd>
+          <dt>F</dt><dd>prohodit ruce (druhá ruka: pochodeň, jídlo)</dd>
+          <dt>E · Esc</dt><dd>inventář</dd>
+          <dt>Tab</dt><dd>kdo hraje (spolu)</dd>
+        </dl>
+        <dl>
+          <dt>Shift + klik</dt><dd>přesunout hromádku</dd>
+          <dt>Dvojklik</dt><dd>posbírat stejné věci</dd>
+          <dt>Shift + dvojklik</dt><dd>přesunout všechny stejné</dd>
+          <dt>Tažení levým</dt><dd>rozdělit hromádku rovným dílem</dd>
+          <dt>Tažení pravým</dt><dd>dát do každého políčka jeden kus</dd>
+          <dt>1–9 / F nad políčkem</dt><dd>prohodit s hotbarem / druhou rukou</dd>
+          <dt>Q nad políčkem</dt><dd>vyhodit (Ctrl+Q celé)</dd>
+          <dt>Klik mimo okno</dt><dd>vyhodit, co držíš myší</dd>
+          <dt>Mezerník</dt><dd>znovu poslední recept (Shift = víc)</dd>
+          <dt>F1 · F2 · F3</dt><dd>schovat HUD · snímek obrazovky · ladicí údaje (F3+Q = další)</dd>
+          <dt>F5 · F11</dt><dd>pohled z očí / zezadu / zepředu · celá obrazovka</dd>
+        </dl>
+      </div>
+      <div class="mc-note">Klikni kamkoli pro zavření.</div>
     </div>
   </div>
   <div id="notices"></div>
