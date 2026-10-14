@@ -12,6 +12,10 @@ How it was checked (14.10.2026):
 
 ## Controls
 
+> **Changed on purpose (Minecraft controls, branch `v1-controls`):** sprint moved from Shift to
+> **Ctrl or double-tap W**, and Shift is now **sneak**, as in Minecraft. The play-test checks sprint with
+> Ctrl. Everything else below still holds. The new controls have their own test: `tests/playtest/controls.mjs`.
+
 | Key / button | What it does | Checked |
 |---|---|---|
 | Click into the game | Locks the mouse (pointer lock), starts sound | manual |
