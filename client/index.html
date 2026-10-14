@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Říše</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <div id="compass"></div>
+  <div id="clock"></div>
+  <div id="tip"><div class="title">Rada</div><div class="text" id="tipText"></div></div>
+  <div id="crosshair"></div>
+  <div id="progress"></div>
+  <div id="targetLabel"></div>
+  <div id="bars">
+    <div class="wrap">❤️<div class="bar"><i id="hpfill"></i></div></div>
+    <div class="wrap">🍗<div class="bar"><i id="foodfill"></i></div></div>
+  </div>
+  <div id="hotbar"></div>
+  <div id="feed"></div>
+  <div id="toast"></div>
+  <div id="intro" style="display:none">
+    <div>
+      <h1>ŘÍŠE</h1>
+      <h2>Přežij · Sbírej · Stav · Objevuj</h2>
+      <p>Probouzíš se u pradávné svatyně. Kolem se rozkládá divoký svět plný lesů, zvěře a pokladů.<br>A až padne noc, přijdou stínožrouti.</p>
+    </div>
+  </div>
+  <div id="vignette"></div>
+  <div id="fade">Padl jsi…</div>
+  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · 1–9 výběr</div>
+  <div id="inventory">
+    <div class="mc-window">
+      <div class="mc-panel mc-book">
+        <div class="mc-title" id="bookTitle">Recepty</div>
+        <label class="mc-toggle"><input type="checkbox" id="onlyCraftable"> Jen co můžu vyrobit</label>
+        <div class="rgrid" id="recipes"></div>
+        <div class="mc-note" id="bookHint"></div>
+      </div>
+      <div class="mc-panel">
+        <div id="craftArea"></div>
+        <div class="mc-title">Batoh</div>
+        <div class="grid" id="invGrid"></div>
+        <div class="grid hot" id="invHot"></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="newWorld">Nový svět</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="cursorItem"></div>
+  <div id="tooltip"></div>
+  <div id="error">Hru se nepodařilo načíst. Je potřeba připojení k internetu (stahuje se knihovna Three.js).</div>
+
+<script>
+  setTimeout(() => { if (!window.gameStarted) document.getElementById('error').style.display = 'grid'; }, 10000);
+</script>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
