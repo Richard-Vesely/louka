@@ -2,6 +2,7 @@
 // Svět se generuje sám ze semínka (stromy, balvany, úlomky – viz worldgen.js).
 // Tady je jen to, co hráči změnili: položené bloky, pokácené stromy, táboráky a čas.
 import { BLOCKS, bkey } from '../blocks.js';
+import { r2 } from '../protocol.js';
 
 /**
  * @typedef {object} WorldState
@@ -9,6 +10,7 @@ import { BLOCKS, bkey } from '../blocks.js';
  * @property {Set<string>} removed pokácené stromy "t…", vytěžené balvany "r…", sebrané úlomky "s…"
  * @property {Map<string,string>} blocks položené bloky: "x,y,z" -> typ bloku
  * @property {Map<string,{slots:Array, t:number, by?:string}>} fires táboráky: klíč bloku -> obsah
+ * @property {Map<number,object>} drops věci ležící na zemi (viz drops.js)
  * @property {{dayTime:number, dayCount:number}} time denní doba 0..1 a kolikátý je den
  * @property {number} rev zvýší se při každé změně bloků
  */
@@ -19,19 +21,23 @@ import { BLOCKS, bkey } from '../blocks.js';
  * @returns {WorldState}
  */
 export function createWorld(data = {}) {
+  const drops = new Map((data.drops || []).map((d) => [d.k, { ...d, vx: 0, vy: 0, vz: 0, pickAt: 0 }]));
   return {
     seed: data.seed ?? 1,
     removed: new Set(data.removed || []),
     blocks: new Map(data.blocks || []),
     fires: new Map(Object.entries(data.fires || {})),
+    drops,
+    nextDrop: Math.max(0, ...drops.keys()) + 1,
     time: { dayTime: data.dayTime ?? 0.3, dayCount: data.day ?? 1 },
     rev: 0,
   };
 }
 
-/** Stav světa jako obyčejný objekt pro JSON (stejný formát jako původní uložená hra). */
+/** Stav světa jako obyčejný objekt pro JSON (formát původní uložené hry + věci na zemi). */
 export function worldToSave(w) {
-  return { seed: w.seed, blocks: [...w.blocks], removed: [...w.removed], fires: Object.fromEntries(w.fires), dayTime: w.time.dayTime, day: w.time.dayCount };
+  const drops = [...w.drops.values()].map(({ k, id, n, x, y, z, age }) => ({ k, id, n, x: r2(x), y: r2(y), z: r2(z), age: Math.round(age) }));
+  return { seed: w.seed, blocks: [...w.blocks], removed: [...w.removed], fires: Object.fromEntries(w.fires), dayTime: w.time.dayTime, day: w.time.dayCount, drops };
 }
 
 /** Položí blok (nebo ho smaže, když `type` je null). */

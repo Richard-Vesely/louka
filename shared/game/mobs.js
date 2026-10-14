@@ -23,13 +23,17 @@ export function spawnMob(game, type, x, z) {
   return m;
 }
 
-/** Hráč `p` zasáhl tvora za `dmg` životů. */
-export function hitMob(game, p, m, dmg) {
+/**
+ * Hráč `p` zasáhl tvora za `dmg` životů.
+ * @param {number} [kb] síla odhození (úder v běhu odhodí dál)
+ * @param {boolean} [crit] kritický zásah (při pádu) – jiný efekt
+ */
+export function hitMob(game, p, m, dmg, kb = 1, crit = false) {
   const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
   m.hp -= dmg;
-  m.vel.x += fx * 8;
-  m.vel.z += fz * 8;
-  game.broadcast({ t: 'fx', k: 'mobhit', id: m.id, mt: m.type, x: m.pos.x, y: m.pos.y + m.def.cy, z: m.pos.z }, m.pos);
+  m.vel.x += fx * 8 * kb;
+  m.vel.z += fz * 8 * kb;
+  game.broadcast({ t: 'fx', k: 'mobhit', id: m.id, mt: m.type, x: m.pos.x, y: m.pos.y + m.def.cy, z: m.pos.z, ...(crit && { crit: 1 }) }, m.pos);
   if (m.type === 'sheep') m.fleeT = 5;
   if (m.type === 'boar') m.aggro = true;
   if (m.hp <= 0) killMob(game, m, p);

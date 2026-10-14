@@ -11,13 +11,18 @@ import { randInt } from '../math.js';
 import { terrainH } from '../terrain.js';
 import { treeAt, rockAt } from '../worldgen.js';
 import { setBlock } from './world.js';
+import { OFFHAND } from '../constants.js';
 import { heldStack, toolOf, playerIntersects, eyeDist } from './player.js';
-import { addItem, consumeSelected } from './inventory.js';
-import { slotClick, takeResult, fillRecipe, fillCooking, openWindow, closeWindow } from './crafting.js';
+import { addItem, consumeSelected, pickItem } from './inventory.js';
+import { slotClick, takeResult, fillRecipe, fillCooking, openWindow, closeWindow, container, swapSlot, collectToCursor, spreadCursor, quickMoveAll } from './crafting.js';
 import { hitMob } from './mobs.js';
+import { throwDrop } from './drops.js';
 
-/** Akce okna inventáře: prohlížeč je hned provede sám a server to potvrdí. */
-export const PREDICTED = new Set(['select', 'open', 'close', 'slot', 'take', 'fill', 'cook']);
+/** Kritický zásah (úder při pádu, jako v Minecraftu) dává 1,5× víc. Úder v běhu odhodí 1,7× dál. */
+export const CRIT = 1.5, SPRINT_KNOCKBACK = 1.7;
+
+// Smí hráč sáhnout do políčka c/i otevřeného okna? (táborák jen v okně táboráku, mřížka jen do její velikosti)
+const windowSlotOk = (p, c, i) => p.ui.open && !(c === 'fire' && p.ui.mode !== 'fire') && !(c === 'craft' && (p.ui.mode === 'fire' || i >= p.ui.size * p.ui.size));
 
 const SLACK = 1.5; // tolerance dosahu (pozice z internetu jsou trochu zpožděné)
 
@@ -51,7 +56,7 @@ export const ACTIONS = {
    * Kde hráč je (posílá prohlížeč 10× za sekundu; pohyb počítá prohlížeč).
    * Server jen hlídá, že hráč neletí rychleji, než se dá běžet; jinak ho vrátí zprávou 'correct'.
    */
-  move(game, p, { p: [x, y, z], yaw, pitch, sp }) {
+  move(game, p, { p: [x, y, z], yaw, pitch, sp, sn }) {
     if (!p.alive) return;
     const el = Math.max(game.gameTime - p.lastMoveT, 0.05);
     const ok = !game.validate || (Math.hypot(x - p.pos.x, z - p.pos.z) <= 14 * el + 1.5 && Math.abs(y - p.pos.y) <= 42 * el + 2);
@@ -60,7 +65,7 @@ export const ACTIONS = {
       return;
     }
     p.pos.x = x; p.pos.y = y; p.pos.z = z;
-    p.yaw = yaw; p.pitch = pitch; p.sprinting = sp;
+    p.yaw = yaw; p.pitch = pitch; p.sprinting = sp; p.sneaking = !!sn;
     p.lastMoveT = game.gameTime;
   },
 
@@ -100,20 +105,20 @@ export const ACTIONS = {
     fireChanged(game, p);
   },
 
-  /** Sníst, co hráč drží. */
-  eat(game, p) {
-    const s = heldStack(p), d = s && ITEMS[s.id];
+  /** Sníst, co hráč drží (off = z druhé ruky). */
+  eat(game, p, { off } = {}) {
+    const s = heldStack(p, off), d = s && ITEMS[s.id];
     if (!d?.food) return;
     if (p.hunger >= 100 && !(d.heal && p.hp < 100)) { game.send(p, { t: 'toast', text: 'Nemáš hlad' }); return; }
     p.hunger = Math.min(100, p.hunger + d.food);
     if (d.heal) p.hp = Math.min(100, p.hp + d.heal);
-    consumeSelected(p);
+    consumeSelected(p, off);
     game.send(p, { t: 'sound', name: 'eat' });
   },
 
-  /** Položit blok z ruky na políčko `cell` [x, y, z]. */
-  place(game, p, { cell }) {
-    const w = game.world, s = heldStack(p), d = s && ITEMS[s.id];
+  /** Položit blok z ruky (off = z druhé ruky) na políčko `cell` [x, y, z]. */
+  place(game, p, { cell, off }) {
+    const w = game.world, s = heldStack(p, off), d = s && ITEMS[s.id];
     if (!d?.block) return;
     const k = bkey(...cell);
     if (w.blocks.has(k)) return;
@@ -121,7 +126,7 @@ export const ACTIONS = {
     if (BLOCKS[d.block].solid) for (const q of game.players.values()) if (q.alive && playerIntersects(q, ...cell)) return;
     setBlock(w, k, d.block);
     p.placedAny[d.block] = true;
-    consumeSelected(p);
+    consumeSelected(p, off);
     game.broadcast({ t: 'block', k, b: d.block });
     game.broadcast({ t: 'fx', k: 'place', x: cell[0] + 0.5, y: cell[1] + 0.5, z: cell[2] + 0.5 }, { x: cell[0], z: cell[2] });
   },
@@ -170,8 +175,8 @@ export const ACTIONS = {
     }
   },
 
-  /** Udeřit tvora číslo `id` tím, co hráč drží. */
-  hit(game, p, { id }) {
+  /** Udeřit tvora číslo `id` tím, co hráč drží. crit = hráč padal (po výskoku) a neběžel. */
+  hit(game, p, { id, crit }) {
     const m = game.mobs.find((q) => q.id === id);
     if (!m || m.dead) return;
     if (game.validate) {
@@ -179,7 +184,52 @@ export const ACTIONS = {
       if (game.gameTime - p.lastHit < 0.3) return;
     }
     p.lastHit = game.gameTime;
-    const tool = toolOf(heldStack(p));
-    hitMob(game, p, m, tool ? tool.dmg : 1);
+    const tool = toolOf(heldStack(p)), dmg = tool ? tool.dmg : 1;
+    crit = !!crit && !p.sprinting;
+    hitMob(game, p, m, crit ? dmg * CRIT : dmg, p.sprinting ? SPRINT_KNOCKBACK : 1, crit);
+  },
+
+  /**
+   * Vyhodit věci na zem (Q, Ctrl+Q = celou hromádku).
+   * Bez `c`: z ruky. c = 'inv' | 'craft' | 'fire' + i: z políčka v okně. c = 'cur': z kurzoru (klik mimo okno).
+   */
+  drop(game, p, { c, i, all }) {
+    let arr = p.inv.slots, idx = p.inv.sel;
+    if (c === 'cur') { arr = p.inv; idx = 'cursor'; }
+    else if (c) { if (!windowSlotOk(p, c, i)) return; arr = container(p, game.world, c); idx = i; }
+    const s = arr[idx];
+    if (!s) return;
+    const n = all ? s.n : 1;
+    if (!(s.n -= n)) arr[idx] = null;
+    p.invDirty = true;
+    throwDrop(game, p, s.id, n);
+    if (c === 'fire') fireChanged(game, p);
+    if (c === 'craft') p.ui.ghost = null;
+  },
+
+  /** Prostřední tlačítko: vzít do ruky předmět `id` (z hotbaru nebo z batohu). */
+  pick(game, p, { id }) { pickItem(p, id); },
+
+  /** Klávesa 1–9 / F nad políčkem v okně: prohodit s hotbarem `h` (36 = druhá ruka). Bez `c`: F prohodí ruce. */
+  swap(game, p, { c, i, h }) {
+    if (c === undefined) { swapSlot(p, game.world, 'inv', p.inv.sel, OFFHAND); return; }
+    if (!windowSlotOk(p, c, i)) return;
+    swapSlot(p, game.world, c, i, h);
+    fireChanged(game, p);
+  },
+
+  /** Dvojklik: posbírat stejné věci do kurzoru. */
+  collect(game, p) { if (p.ui.open) collectToCursor(p); },
+
+  /** Tažení s věcí v kurzoru přes víc políček: rozdělit (button 0) nebo po jednom (button 2). */
+  spread(game, p, { cells, button }) {
+    if (!p.ui.open) return;
+    spreadCursor(p, game.world, cells, button);
+    fireChanged(game, p);
+  },
+
+  /** Shift + dvojklik: přesunout všechny hromádky předmětu `id`. */
+  moveall(game, p, { c, i, id }) {
+    if (windowSlotOk(p, c, i)) quickMoveAll(p, game.world, c, i, id);
   },
 };

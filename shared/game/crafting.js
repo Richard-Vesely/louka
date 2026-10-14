@@ -4,14 +4,15 @@
 import { ITEMS } from '../items.js';
 import { findRecipe, recipeNeeds } from '../recipes.js';
 import { COOKING } from '../cooking.js';
+import { OFFHAND } from '../constants.js';
 import { fireOf } from './world.js';
 import { countItem, insertInto, addItem, removeItem } from './inventory.js';
 
 /** Recept, který teď leží v mřížce výroby (nebo null). */
 export const currentResult = (p) => (p.ui.mode === 'fire' ? null : findRecipe(p.ui.craft, p.ui.size));
 
-// Políčka podle jména: 'inv' batoh, 'craft' mřížka výroby, 'fire' otevřený táborák.
-const container = (p, w, c) => (c === 'inv' ? p.inv.slots : c === 'craft' ? p.ui.craft : fireOf(w, p.ui.fireKey).slots);
+/** Políčka podle jména: 'inv' batoh, 'craft' mřížka výroby, 'fire' otevřený táborák. */
+export const container = (p, w, c) => (c === 'inv' ? p.inv.slots : c === 'craft' ? p.ui.craft : fireOf(w, p.ui.fireKey).slots);
 
 /**
  * Klik na políčko: vzít / položit / prohodit / sloučit, pravé = půlka nebo po jednom, Shift = rychlý přesun.
@@ -27,7 +28,7 @@ export function slotClick(p, w, c, i, button, shift) {
   p.invDirty = true;
   if (c === 'fire' && i === 1) { // výstup táboráku se jen vybírá
     if (!s) return;
-    if (shift) { arr[1] = null; const left = insertInto(p, s, 0, 36); if (left) arr[1] = { id: s.id, n: left }; }
+    if (shift) { arr[1] = null; const left = insertInto(p, s, 0, OFFHAND); if (left) arr[1] = { id: s.id, n: left }; }
     else if (!inv.cursor) { inv.cursor = s; arr[1] = null; }
     else if (inv.cursor.id === s.id) { const k = Math.min(ITEMS[s.id].stack - inv.cursor.n, s.n); inv.cursor.n += k; if (!(s.n -= k)) arr[1] = null; }
     return;
@@ -35,12 +36,12 @@ export function slotClick(p, w, c, i, button, shift) {
   if (shift && s && !inv.cursor) {
     arr[i] = null;
     let left = s.n;
-    if (c !== 'inv') left = insertInto(p, s, 0, 36);
+    if (c !== 'inv') left = insertInto(p, s, 0, OFFHAND);
     else if (ui.mode === 'fire' && COOKING[s.id]) {
       const f = fireOf(w, ui.fireKey);
       if (!f.slots[0]) { f.slots[0] = s; left = 0; }
       else if (f.slots[0].id === s.id) { const k = Math.min(ITEMS[s.id].stack - f.slots[0].n, s.n); f.slots[0].n += k; left = s.n - k; }
-    } else left = i < 9 ? insertInto(p, s, 9, 36) : insertInto(p, s, 0, 9);
+    } else left = i === OFFHAND ? insertInto(p, s, 0, OFFHAND) : i < 9 ? insertInto(p, s, 9, OFFHAND) : insertInto(p, s, 0, 9);
     if (left) arr[i] = { id: s.id, n: left };
   } else if (button === 2) {
     if (inv.cursor) {
@@ -67,6 +68,83 @@ export function slotClick(p, w, c, i, button, shift) {
   if (c === 'craft') ui.ghost = null;
 }
 
+/**
+ * Klávesa 1–9 (nebo F) nad políčkem: prohodí ho s políčkem hotbaru `h` (0–8, nebo 36 = druhá ruka).
+ * Z výstupu táboráku se jen bere (do prázdného nebo stejného políčka).
+ */
+export function swapSlot(p, w, c, i, h) {
+  const arr = container(p, w, c), slots = p.inv.slots;
+  if (arr === slots && i === h) return;
+  p.invDirty = true;
+  if (c === 'fire' && i === 1) {
+    const s = arr[1], t = slots[h];
+    if (!s) return;
+    if (!t) { slots[h] = s; arr[1] = null; }
+    else if (t.id === s.id) { const k = Math.min(ITEMS[s.id].stack - t.n, s.n); t.n += k; if (!(s.n -= k)) arr[1] = null; }
+    return;
+  }
+  [arr[i], slots[h]] = [slots[h], arr[i]];
+  if (c === 'craft') p.ui.ghost = null;
+}
+
+/** Dvojklik: posbírá do kurzoru stejné předměty z batohu a mřížky (nejdřív neúplné hromádky). */
+export function collectToCursor(p) {
+  const cur = p.inv.cursor;
+  if (!cur) return;
+  const max = ITEMS[cur.id].stack;
+  const arrs = [p.ui.craft, p.inv.slots];
+  for (const full of [false, true]) {
+    for (const arr of arrs) {
+      for (let i = 0; i < arr.length && cur.n < max; i++) {
+        const s = arr[i];
+        if (!s || s.id !== cur.id || (s.n >= max) !== full) continue;
+        const k = Math.min(max - cur.n, s.n);
+        cur.n += k;
+        if (!(s.n -= k)) arr[i] = null;
+      }
+    }
+  }
+  p.invDirty = true;
+}
+
+/**
+ * Tažení myší s předmětem v kurzoru přes víc políček (cells = [[c, i], ...]).
+ * Levé tlačítko rozdělí hromádku rovným dílem, pravé dá do každého políčka jeden kus.
+ */
+export function spreadCursor(p, w, cells, button) {
+  const cur = p.inv.cursor;
+  if (!cur) return;
+  const max = ITEMS[cur.id].stack, seen = new Set(), targets = [];
+  for (const [c, i] of cells) {
+    if (seen.has(c + i) || (c === 'fire' && (i === 1 || p.ui.mode !== 'fire')) || (c === 'craft' && (p.ui.mode === 'fire' || i >= p.ui.size * p.ui.size))) continue;
+    seen.add(c + i);
+    const arr = container(p, w, c), s = arr[i];
+    if (!s || (s.id === cur.id && s.n < max)) targets.push([arr, i]);
+  }
+  const use = targets.slice(0, cur.n);
+  if (!use.length) return;
+  const each = button === 2 ? 1 : Math.floor(cur.n / use.length);
+  for (const [arr, i] of use) {
+    const s = arr[i], k = Math.min(each, max - (s?.n || 0));
+    if (s) s.n += k; else arr[i] = { id: cur.id, n: k };
+    cur.n -= k;
+  }
+  if (cur.n <= 0) p.inv.cursor = null;
+  if (cells.some(([c]) => c === 'craft')) p.ui.ghost = null;
+  p.invDirty = true;
+}
+
+/** Shift + dvojklik: rychlý přesun všech hromádek předmětu `id` ze stejné části okna jako políčko (c, i). */
+export function quickMoveAll(p, w, c, i, id) {
+  if (p.inv.cursor) return;
+  let range;
+  if (c === 'craft') range = [...p.ui.craft.keys()];
+  else if (c === 'inv') range = i === OFFHAND ? [OFFHAND] : i < 9 ? [...Array(9).keys()] : [...Array(27).keys()].map((k) => k + 9);
+  else return;
+  const arr = container(p, w, c);
+  for (const j of range) if (arr[j]?.id === id) slotClick(p, w, c, j, 0, true);
+}
+
 /** Vybrání výsledku z výstupního políčka spotřebuje po jednom kusu z každého políčka mřížky. Shift = co nejvíc. */
 export function takeResult(p, shift, fx = null) {
   const inv = p.inv, ui = p.ui;
@@ -74,7 +152,7 @@ export function takeResult(p, shift, fx = null) {
   if (!r) return;
   let made = 0;
   do {
-    if (shift) { if (insertInto(p, { id: r.out, n: r.n }, 0, 36)) break; }
+    if (shift) { if (insertInto(p, { id: r.out, n: r.n }, 0, OFFHAND)) break; }
     else if (!inv.cursor) inv.cursor = { id: r.out, n: r.n };
     else if (inv.cursor.id === r.out && inv.cursor.n + r.n <= ITEMS[r.out].stack) inv.cursor.n += r.n;
     else break;

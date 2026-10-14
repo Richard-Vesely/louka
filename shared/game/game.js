@@ -4,7 +4,7 @@
 //
 // Zprávy pro hráče (události) jdou přes game.onEvent(idHráče, zpráva):
 //   inv (změnil se inventář), feed, toast, sound, fx (efekty), block, removed, fire, grass,
-//   hurt, died, respawn – viz shared/protocol.js.
+//   drop (věci na zemi), hurt, died, respawn – viz shared/protocol.js.
 import { createWorld } from './world.js';
 import { daylight, advanceDay } from './day.js';
 import { ACTIONS } from './actions.js';
@@ -12,6 +12,7 @@ import { spawnMob, updateMobs, updateSpawns } from './mobs.js';
 import { updateSurvival, updateRespawn } from './survival.js';
 import { updateFires } from './fires.js';
 import { pickShards } from './shards.js';
+import { updateDrops, spillAt } from './drops.js';
 
 export class Game {
   /**
@@ -55,8 +56,8 @@ export class Game {
   /** Pošle zprávu jednomu hráči. */
   send(p, ev) { this.onEvent(p.id, ev); }
 
-  /** Funkce, která posílá zprávy hráči `p` (pro inventář: feed, toast). */
-  tell(p) { return (ev) => this.send(p, ev); }
+  /** Funkce, která posílá zprávy hráči `p` (pro inventář: feed, toast). Co se nevešlo do batohu ('spill'), spadne na zem. */
+  tell(p) { return (ev) => (ev.t === 'spill' ? spillAt(this, p, ev.id, ev.n) : this.send(p, ev)); }
 
   /** Pošle zprávu všem hráčům (nebo jen těm do 80 m od bodu `near`). */
   broadcast(ev, near = null) {
@@ -93,7 +94,7 @@ export class Game {
   act(id, msg) {
     const p = this.players.get(id), handler = ACTIONS[msg?.t];
     if (!p || !handler) return;
-    if (!p.alive && ['eat', 'place', 'break', 'hit'].includes(msg.t)) return;
+    if (!p.alive && ['eat', 'place', 'break', 'hit', 'drop'].includes(msg.t)) return;
     handler(this, p, msg);
     this.flush();
   }
@@ -112,6 +113,7 @@ export class Game {
       updateMobs(this, dt, day);
       updateSpawns(this, dt, night);
       for (const p of this.players.values()) if (p.alive) pickShards(this, p);
+      updateDrops(this, dt);
     }
     for (const p of this.players.values()) updateRespawn(this, p);
     updateFires(this, realDt);
