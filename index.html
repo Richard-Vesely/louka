@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Říše</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -186,6 +186,63 @@
     .prow .pname small { color: #a9a9b2; }
     .prow .mc-btn { padding: 2px 8px; font-size: 13px; }
     .prow .mc-btn.on { background: #3d6b3a; }
+    /* ---------- nastavení ---------- */
+    #settings { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; padding: 12px; background: rgba(0, 0, 0, 0.6); overflow: auto; }
+    .set-panel { width: min(520px, 100%); box-sizing: border-box; color: #e6e6e6; max-height: calc(100vh - 24px); overflow: auto; }
+    .set-row { margin-bottom: 10px; }
+    .set-label { margin-bottom: 4px; font-size: 14px; color: #d0d0d8; }
+    .set-label small { color: #9a9aa4; }
+    .set-label b { color: var(--gold); font-weight: 600; }
+    .seg { display: flex; flex-wrap: wrap; gap: 4px; }
+    .seg .mc-btn { flex: 1; padding: 6px 8px; font-size: 14px; }
+    .mc-btn.on { background: #3d6b3a; }
+    .set-row input[type=range] { width: 100%; accent-color: #e8c66a; }
+    .menu-box { max-height: calc(100vh - 32px); overflow: auto; }
+
+    /* ---------- dotykové ovládání ---------- */
+    :root { --tb: 64px; }
+    body.touch { touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; }
+    body.touch canvas { touch-action: none; }
+    #touch { position: fixed; inset: 0; z-index: 4; touch-action: none; }
+    #touch.hidden { display: none; }
+    #touch.paused > :not(#tTap) { display: none; }
+    #tTap { display: none; position: absolute; left: 50%; top: 58%; transform: translateX(-50%); padding: 10px 22px; font: 18px 'Pixelify Sans', monospace; color: #fff;
+      background: rgba(16, 2, 16, 0.8); border: 2px solid #25084f; text-shadow: 2px 2px 0 #222; pointer-events: none; }
+    #touch.paused #tTap { display: block; }
+    .tbtn { position: absolute; width: var(--tb); height: var(--tb); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(20, 20, 26, 0.45); border: 2px solid rgba(255, 255, 255, 0.35); color: #fff; font-family: 'Pixelify Sans', monospace; text-shadow: 1px 1px 0 #000; }
+    .tbtn span { font-size: calc(var(--tb) * 0.4); line-height: 1; }
+    .tbtn small { font-size: calc(var(--tb) * 0.17); margin-top: 2px; opacity: 0.9; }
+    .tbtn.on { background: rgba(232, 198, 106, 0.45); border-color: #e8c66a; }
+    .tbtn[hidden] { display: none; }
+    .tbtn.big { width: calc(var(--tb) * 1.2); height: calc(var(--tb) * 1.2); }
+    .tbtn.small { position: static; width: calc(var(--tb) * 0.78); height: calc(var(--tb) * 0.78); border-radius: 10px; }
+    .tbtn.small span { font-size: calc(var(--tb) * 0.3); }
+    .tbtn.small small { font-size: calc(var(--tb) * 0.14); }
+    #tJump { right: calc(16px + env(safe-area-inset-right)); bottom: 18px; }
+    #tLmb { right: calc(16px + var(--tb) * 1.35 + env(safe-area-inset-right)); bottom: calc(18px + var(--tb) * 0.55); }
+    #tRmb { right: calc(16px + env(safe-area-inset-right)); bottom: calc(26px + var(--tb) * 1.3); }
+    #tSprint, #tDown { right: calc(16px + var(--tb) * 1.45 + env(safe-area-inset-right)); bottom: calc(24px + var(--tb) * 1.95); }
+    .tcol { position: absolute; right: calc(10px + env(safe-area-inset-right)); top: calc(8px + env(safe-area-inset-top)); display: flex; gap: 6px; }
+    #tJoy { position: absolute; left: calc(26px + env(safe-area-inset-left)); bottom: 26px; width: calc(var(--tb) * 2); height: calc(var(--tb) * 2); border-radius: 50%;
+      background: rgba(20, 20, 26, 0.3); border: 2px solid rgba(255, 255, 255, 0.25); opacity: 0.55; pointer-events: none; }
+    #tJoy.on { opacity: 1; }
+    #tKnob { position: absolute; left: 50%; top: 50%; width: calc(var(--tb) * 0.8); height: calc(var(--tb) * 0.8); margin: calc(var(--tb) * -0.4) 0 0 calc(var(--tb) * -0.4);
+      border-radius: 50%; background: rgba(255, 255, 255, 0.35); border: 2px solid rgba(255, 255, 255, 0.6); }
+    body.touch #hotbar { pointer-events: auto; z-index: 5; }
+    body.touch #tip { max-width: 230px; padding: 5px 9px; top: calc(var(--tb) * 0.78 + 16px); right: 10px; }
+    body.touch #tip .title { font-size: 10px; }
+    body.touch #tip .text { font-size: 11px; line-height: 1.3; }
+    body.touch #compass { width: min(300px, 34vw); left: 150px; transform: none; }
+    body.touch #compass, body.touch #clock { top: 8px; }
+    body.touch #tooltip { display: none !important; }
+    body.touch #bars { bottom: 66px; width: min(420px, 50vw); }
+    body.touch .mc-window { flex-direction: row; overflow: visible; transform-origin: 0 0; max-height: none; width: max-content; flex-shrink: 0; }
+    body.touch #inventory { overflow: hidden; }
+    body.touch.inv-open #hotbar { visibility: hidden; }
+    body.touch #netbox { z-index: 5; }
+    #rotate { display: none; position: fixed; inset: 0; z-index: 50; place-items: center; text-align: center; background: #0b0f16; color: #f3ead2; font: 20px 'Pixelify Sans', monospace; }
+    @media (orientation: portrait) { body.touch #rotate { display: grid; } }
     #error { position: fixed; inset: 0; z-index: 40; display: none; place-items: center; padding: 16px; background: #223; text-align: center; }
   </style>
   <script type="importmap">
@@ -277,7 +334,7 @@
         <div class="mc-title">Batoh</div>
         <div class="grid" id="invGrid"></div>
         <div class="grid hot" id="invHot"></div>
-        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="guideBtn">Návod (H)</button> <button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="guideBtn">Návod (H)</button> <button class="mc-btn" id="settingsBtn">Nastavení</button> <button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
       </div>
     </div>
   </div>
@@ -296,6 +353,7 @@
         <button class="mc-btn big" id="mSolo">Hra pro jednoho</button>
         <button class="mc-btn big" id="mHost">Vytvořit server</button>
         <button class="mc-btn big" id="mJoin">Připojit se</button>
+        <button class="mc-btn" id="mSettings">Nastavení</button>
       </div>
       <div class="menu-page" id="pgHost" hidden>
         <div class="mc-title">Nastavení serveru</div>
@@ -316,6 +374,55 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" async></script>
   <script>
+  // Nastavení (grafika, ovládání, tlačítka, citlivost) – používá ho hlavní menu i hra (window.RiseSettings).
+  (() => {
+    const KEY = 'rise-nastaveni';
+    const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+    const store = (p) => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} dispatchEvent(new Event('rise-prefs')); };
+    const touchAuto = matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0;
+    const OPTS = {
+      quality: [['', 'Automaticky'], ['low', 'Nízká'], ['medium', 'Střední'], ['high', 'Vysoká']],
+      controls: [['', 'Automaticky'], ['touch', 'Dotykové'], ['mouse', 'Myš a klávesnice']],
+    };
+    let box = null;
+    function open(opts = {}) {
+      box?.remove();
+      box = document.createElement('div');
+      box.id = 'settings';
+      const render = () => {
+        const p = load();
+        const seg = (k) => `<div class="seg">${OPTS[k].map(([v, t]) => `<button class="mc-btn ${(p[k] || '') === v ? 'on' : ''}" data-k="${k}" data-v="${v}">${t}</button>`).join('')}</div>`;
+        const autoQ = touchAuto ? 'nízká' : 'vysoká', autoC = touchAuto ? 'dotykové' : 'myš a klávesnice';
+        box.innerHTML = `<div class="mc-panel set-panel px">
+          <div class="mc-title">Nastavení</div>
+          <div class="set-row"><div class="set-label">Grafika <small>(automaticky: ${autoQ})</small></div>${seg('quality')}</div>
+          <div class="set-row"><div class="set-label">Ovládání <small>(automaticky: ${autoC})</small></div>${seg('controls')}</div>
+          <div class="set-row"><div class="set-label">Velikost dotykových tlačítek <b>${Math.round((p.btnScale || 1) * 100)} %</b></div><input type="range" min="60" max="150" step="5" value="${Math.round((p.btnScale || 1) * 100)}" data-r="btnScale"></div>
+          <div class="set-row"><div class="set-label">Citlivost otáčení <b>${Math.round((p.sens || 1) * 100)} %</b></div><input type="range" min="40" max="250" step="10" value="${Math.round((p.sens || 1) * 100)}" data-r="sens"></div>
+          <p class="mc-note">${opts.inGame ? 'Grafika a typ ovládání se projeví po restartu hry' + (opts.restart ? '.' : ' (při příštím spuštění).') : 'Grafika a ovládání se použijí při spuštění hry.'} Velikost tlačítek a citlivost platí hned.</p>
+          <div class="menu-row">${opts.restart ? '<button class="mc-btn" data-restart>Použít a restartovat</button>' : ''}<button class="mc-btn" data-close>Zavřít</button></div>
+        </div>`;
+      };
+      render();
+      box.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        if (b.dataset.close !== undefined) { box.remove(); box = null; return; }
+        if (b.dataset.restart !== undefined) { opts.onRestart?.(); return; }
+        if (b.dataset.k) { const p = load(); if (b.dataset.v) p[b.dataset.k] = b.dataset.v; else delete p[b.dataset.k]; store(p); render(); }
+      });
+      box.addEventListener('input', (e) => {
+        const r = e.target.closest('[data-r]');
+        if (!r) return;
+        const p = load();
+        p[r.dataset.r] = +r.value / 100;
+        store(p);
+        r.previousElementSibling.querySelector('b').textContent = `${r.value} %`;
+      });
+      document.body.append(box);
+    }
+    window.RiseSettings = { open };
+  })();
   // Hlavní menu: hra pro jednoho, vytvoření serveru (hostitel), připojení ke kódu. Hra (modul níže) čeká na window.bootPromise.
   (() => {
     const $m = (id) => document.getElementById(id);
@@ -358,6 +465,8 @@
     };
 
     $m('mSolo').addEventListener('click', () => finish({ mode: 'sp' }));
+    $m('mSettings').addEventListener('click', () => window.RiseSettings.open());
+    try { if (sessionStorage.getItem('rise-autostart') === 'sp') { sessionStorage.removeItem('rise-autostart'); finish({ mode: 'sp' }); } } catch {}
     $m('mHost').addEventListener('click', () => { msg(''); show('pgHost'); });
     $m('mJoin').addEventListener('click', () => { msg(''); show('pgJoin'); setTimeout(() => $m('mCode').focus(), 0); });
     $m('mCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') startJoin(); });
@@ -471,16 +580,30 @@ class SyncSet extends Set {
 }
 
 
+// ============================================================ nastavení zařízení: grafika a ovládání
+// Ukládá je menu (Nastavení) do localStorage; kvalita a typ ovládání se použijí při spuštění hry.
+const PREFS = (() => { try { return JSON.parse(localStorage.getItem('rise-nastaveni')) || {}; } catch { return {}; } })();
+const TOUCH = PREFS.controls === 'touch' || (PREFS.controls !== 'mouse' && matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0);
+const QUALITY = ['low', 'medium', 'high'].includes(PREFS.quality) ? PREFS.quality : TOUCH ? 'low' : 'high';
+const GFX = {
+  // pr = max. hustota pixelů, grass = počet stébel ve dvou vrstvách, gs = velikost trávníku kolem hráče, trees/rocks = dohled lesa a balvanů
+  low: { pr: 1, aa: false, grass: [40000, 22000], gs: 0.75, trees: 110, rocks: 90, lights: 3, particles: 0.45, fog: 0.0085 },
+  medium: { pr: 1.25, aa: true, grass: [80000, 50000], gs: 0.9, trees: 150, rocks: 120, lights: 4, particles: 0.7, fog: 0.0068 },
+  high: { pr: 1.5, aa: true, grass: [150000, 100000], gs: 1, trees: 190, rocks: 150, lights: 6, particles: 1, fog: 0.0058 },
+}[QUALITY];
+const prefNum = (k, d) => (Number.isFinite(+PREFS[k]) && +PREFS[k] > 0 ? +PREFS[k] : d);
+let lookSens = prefNum('sens', 1); // citlivost otáčení (myš i dotyk)
+
 // ============================================================ nastavení
 const DAY_LENGTH = 480;        // délka dne v sekundách (noc ubíhá dvakrát rychleji)
 const EYE = 1.62, WALK = 4.3, RUN = 8, JUMP = 7.0, GRAVITY = 18, PW = 0.3, PH = 1.8;
 const REACH = 5.5;
-const TREE_CELL = 8, TREE_RADIUS = 190, ROCK_CELL = 11, SHARD_CELL = 110;
+const TREE_CELL = 8, TREE_RADIUS = GFX.trees, ROCK_CELL = 11, SHARD_CELL = 110;
 // Hra pro jednoho má svoje uložení; svět serveru i hráč na cizím serveru se ukládají zvlášť.
 const SAVE_KEY = NET.host ? 'rise-server-v1' : NET.client ? `rise-klient-${BOOT.code}` : 'rise-svet-v2';
 const GRASS_LAYERS = [
-  { area: 32, count: 150000, seg: 4, width: [0.007, 0.016], height: [0.25, 0.6], fadeIn: [0, 0], fadeOut: [7, 15.5], flowers: 0.006 },
-  { area: 96, count: 100000, seg: 2, width: [0.022, 0.04], height: [0.25, 0.6], fadeIn: [5, 14], fadeOut: [26, 46], flowers: 0.01 },
+  { area: 32 * GFX.gs, count: GFX.grass[0], seg: 4, width: [0.007, 0.016], height: [0.25, 0.6], fadeIn: [0, 0], fadeOut: [7 * GFX.gs, 15.5 * GFX.gs], flowers: 0.006 },
+  { area: 96 * GFX.gs, count: GFX.grass[1], seg: 2, width: [0.022, 0.04], height: [0.25, 0.6], fadeIn: [5 * GFX.gs, 14 * GFX.gs], fadeOut: [26 * GFX.gs, 46 * GFX.gs], flowers: 0.01 },
 ];
 
 // ============================================================ předměty a recepty
@@ -906,15 +1029,15 @@ if (NET.client) { // svět dodá hostitel, z vlastního uložení se vezme jen b
 }
 
 // ============================================================ renderer, scéna
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+const renderer = new THREE.WebGLRenderer({ antialias: GFX.aa, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, GFX.pr));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.55;
 document.body.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0xc4d3de, 0.0058);
+scene.fog = new THREE.FogExp2(0xc4d3de, GFX.fog); // hustší mlha při nižší grafice skryje kratší dohled
 const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 12000);
 camera.rotation.order = 'YXZ';
 scene.add(camera);
@@ -2104,7 +2227,7 @@ function rebuildForest(px, pz, force = false) {
       }
     }
   }
-  const RR = 150;
+  const RR = GFX.rocks;
   for (let cz = Math.floor((pz - RR) / ROCK_CELL); cz <= Math.floor((pz + RR) / ROCK_CELL); cz++) {
     for (let cx = Math.floor((px - RR) / ROCK_CELL); cx <= Math.floor((px + RR) / ROCK_CELL); cx++) {
       const key = `r${cx},${cz}`;
@@ -2545,7 +2668,7 @@ function rebuildBlocks() {
 }
 
 // Světla pochodní a táboráků: pevný počet světel se přiděluje těm nejbližším.
-const lightPool = Array.from({ length: 6 }, () => { const l = new THREE.PointLight(0xff9440, 0, 16, 1.7); scene.add(l); return l; });
+const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(0xff9440, 0, 16, 1.7); scene.add(l); return l; });
 function updateLights(time) {
   const list = [...specials.values()].filter((s) => BLOCKS[s.type].light);
   const p = player.pos;
@@ -2744,6 +2867,7 @@ function makeParticles(blending) {
   let next = 0;
   return {
     emit(x, y, z, color, n, speed = 4, up = 2) {
+      n = Math.max(1, Math.round(n * GFX.particles)); // méně částic při nižší grafice
       for (let k = 0; k < n; k++) {
         const i = next;
         next = (next + 1) % N;
@@ -3042,6 +3166,7 @@ function renderInventory() {
   renderBook();
   cursorEl.innerHTML = inv.cursor ? slotHTML(inv.cursor, -1, '', 'cursor') : '';
   cursorEl.style.display = inv.cursor ? 'block' : 'none';
+  fitInventory();
 }
 
 // Tooltip s názvem a popisem předmětu (jako v Minecraftu).
@@ -3191,27 +3316,27 @@ function fillCooking(id) {
 invEl.addEventListener('mousedown', (e) => {
   if (inv.cursor && !e.target.closest('.mc-window')) { // klik mimo okno = vyhodit
     const c = inv.cursor;
-    const n = e.button === 2 ? 1 : c.n;
+    const n = btnOf(e) === 2 ? 1 : c.n;
     if ((c.n -= n) <= 0) inv.cursor = null;
     throwItem(c.id, n);
     return refreshUI();
   }
   const out = e.target.closest('[data-out]');
-  if (out) return takeResult(e.shiftKey);
+  if (out) return takeResult(shiftOf(e));
   const sl = e.target.closest('.slot[data-c][data-i]');
-  if (sl && sl.dataset.c !== 'cursor') return slotClick(sl.dataset.c, +sl.dataset.i, e.button, e.shiftKey);
+  if (sl && sl.dataset.c !== 'cursor') return slotClick(sl.dataset.c, +sl.dataset.i, btnOf(e), shiftOf(e));
   const kr = e.target.closest('[data-k]');
   if (kr) { ui.kSel = +kr.dataset.k; return refreshUI(); }
   if (e.target.closest('[data-cook-start]')) return startCooking();
   const gv = e.target.closest('[data-give]');
   if (gv) {
     const id = gv.dataset.give;
-    if (e.shiftKey) addItem(id, ITEMS[id].stack, true);
+    if (shiftOf(e)) addItem(id, ITEMS[id].stack, true);
     else inv.cursor = { id, n: ITEMS[id].stack };
     return refreshUI();
   }
   const rc = e.target.closest('[data-r]');
-  if (rc) return fillRecipe(RECIPES[+rc.dataset.r], e.shiftKey);
+  if (rc) return fillRecipe(RECIPES[+rc.dataset.r], shiftOf(e));
   const ck = e.target.closest('[data-cook]');
   if (ck) fillCooking(ck.dataset.cook);
 });
@@ -3224,7 +3349,7 @@ function openInventory(mode = 'inv', fireKey = null) {
   ui.ghost = null;
   invOpen = true;
   input.lmb = input.rmb = false;
-  document.exitPointerLock?.();
+  unlockPointer();
   invEl.style.display = 'grid';
   renderInventory();
 }
@@ -3236,7 +3361,7 @@ function closeInventory() {
   cursorEl.style.display = 'none';
   tooltip.style.display = 'none';
   renderHotbar();
-  canvas.requestPointerLock?.()?.catch?.(() => {});
+  lockPointer();
 }
 $('modeBtn').addEventListener('click', () => setCreative(!creative));
 $('newWorld').addEventListener('click', () => {
@@ -3408,7 +3533,17 @@ function buildCropModel(g, type, stage) {
 
 // ============================================================ hráč a ovládání
 const canvas = renderer.domElement;
-const isLocked = () => document.pointerLockElement === canvas;
+let touchLocked = false;
+const isLocked = () => (TOUCH ? touchLocked : document.pointerLockElement === canvas);
+// Na počítači Pointer Lock, na dotyku jen přepnutí stavu (ostatní kód poslouchá stejnou událost pointerlockchange).
+function lockPointer() {
+  if (!TOUCH) { canvas.requestPointerLock?.()?.catch?.(() => {}); return; }
+  if (!touchLocked) { touchLocked = true; document.dispatchEvent(new Event('pointerlockchange')); }
+}
+function unlockPointer() {
+  if (!TOUCH) { document.exitPointerLock?.(); return; }
+  if (touchLocked) { touchLocked = false; document.dispatchEvent(new Event('pointerlockchange')); }
+}
 const player = {
   pos: new THREE.Vector3(...(save?.pos || [0, 0.45, 14])), vel: new THREE.Vector3(),
   yaw: save?.yaw ?? 0, pitch: -0.05, onGround: true, bob: 0,
@@ -3428,7 +3563,7 @@ function toggleGuide() {
   guideOpen = !guideOpen;
   if (guideOpen && invOpen) closeInventory();
   $('guide').style.display = guideOpen ? 'grid' : 'none';
-  if (guideOpen) document.exitPointerLock?.(); else canvas.requestPointerLock?.()?.catch?.(() => {});
+  if (guideOpen) unlockPointer(); else lockPointer();
 }
 $('guideBtn').addEventListener('click', toggleGuide);
 $('modeBtn').textContent = `Režim: ${creative ? 'Kreativní' : 'Přežití'}`;
@@ -3470,7 +3605,7 @@ addEventListener('blur', () => { keys.clear(); input.lmb = input.rmb = false; })
 addEventListener('wheel', (e) => { if (!isLocked()) return; inv.sel = (inv.sel + Math.sign(e.deltaY) + 9) % 9; renderHotbar(); }, { passive: true });
 canvas.addEventListener('mousedown', (e) => {
   Sound.init();
-  if (!isLocked()) { if (!invOpen) canvas.requestPointerLock?.()?.catch?.(() => {}); return; }
+  if (!isLocked()) { if (!invOpen) lockPointer(); return; }
   if (e.button === 0) input.lmb = true;
   if (e.button === 2) { input.rmb = true; useCd = 0; }
 });
@@ -3482,8 +3617,8 @@ document.addEventListener('pointerlockchange', () => {
 });
 addEventListener('mousemove', (e) => {
   if (!isLocked()) return;
-  player.yaw -= e.movementX * 0.0022;
-  player.pitch = clamp(player.pitch - e.movementY * 0.0022, -1.5, 1.5);
+  player.yaw -= e.movementX * 0.0022 * lookSens;
+  player.pitch = clamp(player.pitch - e.movementY * 0.0022 * lookSens, -1.5, 1.5);
 });
 
 // Kolize hráče s položenými bloky (osa po ose, jako v Minecraftu).
@@ -3524,7 +3659,8 @@ function updatePlayer(dt) {
   if (keys.has('KeyS') || keys.has('ArrowDown')) f -= 1;
   if (keys.has('KeyD') || keys.has('ArrowRight')) s += 1;
   if (keys.has('KeyA') || keys.has('ArrowLeft')) s -= 1;
-  const len = Math.hypot(f, s) || 1;
+  if (input.joy) { f -= input.joy.y; s += input.joy.x; } // dotykový joystick
+  const len = Math.max(1, Math.hypot(f, s));
   if (player.flyT > 0) player.flyT = Math.max(0, player.flyT - dt);
   const set = fullSet();
   const flying = (creative && player.flying) || player.flyT > 0;
@@ -5818,7 +5954,7 @@ function applyUnderground() {
   hemi.intensity *= 1 - 0.93 * u;
   scene.environmentIntensity *= 1 - 0.9 * u;
   scene.fog.color.lerp(CAVE_FOG, u);
-  scene.fog.density = lerp(0.0058, 0.028, u);
+  scene.fog.density = lerp(GFX.fog, 0.028, u);
   renderer.toneMappingExposure = lerp(renderer.toneMappingExposure, 0.95, u);
 }
 
@@ -5946,6 +6082,194 @@ function saveGame() {
 setInterval(saveGame, 10000);
 addEventListener('beforeunload', saveGame);
 
+// ============================================================ dotykové ovládání (telefony a tablety)
+// Levá půlka obrazovky = joystick (objeví se tam, kam položíš prst), pravá = otáčení kamery.
+// Tlačítka posílají stejné vstupy jako myš a klávesnice (input.lmb / input.rmb / klávesy), takže herní logika je jedna.
+const touchUI = (() => {
+  if (!TOUCH) return { update() {} };
+  document.body.classList.add('touch');
+  const root = document.createElement('div');
+  root.id = 'touch';
+  root.innerHTML = `
+    <div id="tJoy"><div id="tKnob"></div></div>
+    <div class="tbtn big" data-hold="lmb" id="tLmb"><span>⛏</span><small>Těžit</small></div>
+    <div class="tbtn big" data-hold="rmb" id="tRmb"><span>✋</span><small>Použít</small></div>
+    <div class="tbtn big" data-key="Space" id="tJump"><span>⤒</span><small>Skok</small></div>
+    <div class="tbtn" data-toggle="sprint" id="tSprint"><span>»</span><small>Běh</small></div>
+    <div class="tbtn" data-key="ShiftLeft" id="tDown" hidden><span>⤓</span><small>Dolů</small></div>
+    <div class="tcol">
+      <div class="tbtn small" data-act="inv"><span>🎒</span><small>Batoh</small></div>
+      <div class="tbtn small" data-act="craft"><span>🔨</span><small>Výroba</small></div>
+      <div class="tbtn small" data-act="drop"><span>⇣</span><small>Hodit</small></div>
+      <div class="tbtn small" data-act="guide"><span>📖</span><small>Návod</small></div>
+      ${MP ? '<div class="tbtn small" data-act="chat"><span>💬</span><small>Chat</small></div>' : ''}
+      <div class="tbtn small" data-act="menu"><span>⏸</span><small>${MP ? 'Menu' : 'Pauza'}</small></div>
+    </div>
+    <div id="tTap">Klepni pro hraní</div>`;
+  document.body.append(root);
+  const rotate = document.createElement('div');
+  rotate.id = 'rotate';
+  rotate.innerHTML = '<div><div style="font-size:46px">⟳</div>Otoč telefon na šířku</div>';
+  document.body.append(rotate);
+  $('hint').style.display = 'none';
+  const el = (id) => root.querySelector('#' + id);
+  const joy = el('tJoy'), knob = el('tKnob');
+  const JR = () => joy.offsetWidth / 2; // poloměr joysticku podle velikosti tlačítek
+  let joyId = null, joyX = 0, joyY = 0, lookId = null, lookX = 0, lookY = 0, sprint = false;
+  const held = new Map(); // id dotyku -> tlačítko
+  const key = (code, down) => dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code }));
+  const setScale = (s) => document.documentElement.style.setProperty('--tb', `${Math.round(64 * s)}px`);
+  setScale(prefNum('btnScale', 1));
+  addEventListener('rise-prefs', () => { setScale(prefNum('btnScale', 1)); });
+  // Celá obrazovka a natočení na šířku (Android; iPhone celou obrazovku pro stránky nepovoluje)
+  const fullscreen = () => {
+    if (document.fullscreenElement || !document.documentElement.requestFullscreen) return;
+    document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation?.lock?.('landscape').catch(() => {}), () => {});
+  };
+  const nearBench = () => {
+    const p = player.pos;
+    for (let y = Math.floor(p.y) - 2; y <= Math.floor(p.y) + 2; y++) for (let z = Math.floor(p.z) - 4; z <= Math.floor(p.z) + 4; z++) for (let x = Math.floor(p.x) - 4; x <= Math.floor(p.x) + 4; x++)
+      if (blocks.get(bkey(x, y, z)) === 'workbench') return bkey(x, y, z);
+    return null;
+  };
+  function press(b, down) {
+    b.classList.toggle('on', down || (b.dataset.toggle === 'sprint' && sprint));
+    if (b.dataset.hold) { input[b.dataset.hold] = down; if (down && b.dataset.hold === 'rmb') useCd = 0; return; }
+    if (b.dataset.key) { key(b.dataset.key, down); return; }
+    if (!down) return;
+    if (b.dataset.toggle === 'sprint') { sprint = !sprint; b.classList.toggle('on', sprint); return; }
+    const a = b.dataset.act;
+    if (a === 'inv') openInventory();
+    else if (a === 'craft') { const k = nearBench(); openInventory(k ? 'bench' : 'inv', k); if (!k) toast('Velký recept 3×3 vyrobíš u pracovního stolu'); }
+    else if (a === 'drop') dropHeld(false);
+    else if (a === 'guide') toggleGuide();
+    else if (a === 'chat') openChat();
+    else if (a === 'menu') unlockPointer();
+  }
+  root.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    Sound.init();
+    if (!isLocked()) { fullscreen(); lockPointer(); return; } // první klepnutí spustí hru
+    for (const t of e.changedTouches) {
+      const b = t.target.closest?.('.tbtn');
+      if (b) { held.set(t.identifier, b); press(b, true); continue; }
+      if (t.clientX < innerWidth * 0.42 && joyId === null) {
+        joyId = t.identifier; joyX = t.clientX; joyY = t.clientY;
+        joy.style.left = `${joyX - JR()}px`; joy.style.top = `${joyY - JR()}px`; joy.style.bottom = 'auto';
+        joy.classList.add('on');
+      } else if (lookId === null) { lookId = t.identifier; lookX = t.clientX; lookY = t.clientY; }
+    }
+  }, { passive: false });
+  root.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier === joyId) {
+        let dx = t.clientX - joyX, dy = t.clientY - joyY;
+        const r = JR(), d = Math.hypot(dx, dy);
+        if (d > r) { dx *= r / d; dy *= r / d; }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        input.joy = { x: dx / r, y: dy / r };
+      } else if (t.identifier === lookId) {
+        player.yaw -= (t.clientX - lookX) * 0.0055 * lookSens;
+        player.pitch = clamp(player.pitch - (t.clientY - lookY) * 0.0055 * lookSens, -1.5, 1.5);
+        lookX = t.clientX; lookY = t.clientY;
+      }
+    }
+  }, { passive: false });
+  const end = (e) => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier === joyId) { joyId = null; input.joy = null; knob.style.transform = ''; joy.classList.remove('on'); joy.style.left = joy.style.top = joy.style.bottom = ''; }
+      if (t.identifier === lookId) lookId = null;
+      const b = held.get(t.identifier);
+      if (b) { held.delete(t.identifier); press(b, false); }
+    }
+  };
+  root.addEventListener('touchend', end, { passive: false });
+  root.addEventListener('touchcancel', end, { passive: false });
+  // Hotbar: klepnutím vybereš políčko
+  $('hotbar').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const s = e.target.closest('.slot');
+    if (!s) return;
+    inv.sel = [...$('hotbar').children].indexOf(s);
+    renderHotbar();
+  }, { passive: false });
+  $('guide').addEventListener('click', () => guideOpen && toggleGuide()); // návod se zavře klepnutím
+  const releaseAll = () => {
+    for (const [, b] of held) press(b, false);
+    held.clear(); joyId = lookId = null; input.joy = null; knob.style.transform = '';
+  };
+  document.addEventListener('pointerlockchange', () => { if (!isLocked()) releaseAll(); });
+  let labelT = 0;
+  const label = (b, icon, text) => { const h = `<span>${icon}</span><small>${text}</small>`; if (b.innerHTML !== h) b.innerHTML = h; };
+  return {
+    update(dt) {
+      const ui = invOpen || guideOpen || (MP && (chatOpen || pauseOpen));
+      root.classList.toggle('hidden', ui);
+      document.body.classList.toggle('inv-open', invOpen);
+      root.classList.toggle('paused', !ui && !isLocked());
+      if (ui) { if (held.size || input.joy) releaseAll(); return; }
+      // Běh (přepínač) a Dolů (jen při létání) sdílejí klávesu Shift
+      const flying = (creative && player.flying) || player.flyT > 0;
+      el('tDown').hidden = !flying;
+      el('tSprint').hidden = flying;
+      const wantShift = flying ? [...held.values()].some((b) => b.id === 'tDown') : sprint;
+      if (wantShift) keys.add('ShiftLeft'); else keys.delete('ShiftLeft');
+      if ((labelT -= dt) > 0) return;
+      labelT = 0.2;
+      const s = heldStack(), d = s && ITEMS[s.id];
+      label(el('tLmb'), target?.kind === 'mob' ? '⚔' : '⛏', target?.kind === 'mob' ? 'Útok' : 'Těžit');
+      if (dining) label(el('tRmb'), '🍴', 'Krájet');
+      else if (target?.kind === 'block' && ['workbench', 'campfire', 'chest', 'stove', 'table', 'chair', 'well'].includes(target.type)) label(el('tRmb'), '✋', 'Použít');
+      else if (d?.food) label(el('tRmb'), '🍖', 'Jíst');
+      else if (d?.block) label(el('tRmb'), '🧱', 'Položit');
+      else label(el('tRmb'), '✋', 'Použít');
+    },
+  };
+})();
+
+// Inventář na malé obrazovce: celé okno se zmenší tak, aby se vešlo (na šířku vedle sebe).
+function fitInventory() {
+  if (!TOUCH || !invOpen) return;
+  const w = invEl.querySelector('.mc-window');
+  w.style.transform = 'none';
+  const r = w.getBoundingClientRect(), k = Math.min(1, (innerWidth - 12) / r.width, (innerHeight - 12) / r.height);
+  if (k >= 1) { w.style.transform = ''; return; }
+  // zmenšit od levého horního rohu a posunout doprostřed obrazovky
+  w.style.transform = `translate(${(innerWidth - r.width * k) / 2 - r.left}px, ${(innerHeight - r.height * k) / 2 - r.top}px) scale(${k})`;
+}
+addEventListener('resize', fitInventory);
+// Klepnutí v inventáři: vzít celý stack / půlku (po jednom) / rychle přesunout – místo pravého tlačítka a Shiftu
+let tapMode = 'take';
+const TAP_MODES = { take: 'Klepnutí: vzít', half: 'Klepnutí: půlka', move: 'Klepnutí: přesunout' };
+const btnOf = (e) => (TOUCH && tapMode === 'half' ? 2 : e.button);
+const shiftOf = (e) => e.shiftKey || (TOUCH && tapMode === 'move');
+if (TOUCH) {
+  const foot = invEl.querySelector('.mc-foot');
+  foot.querySelector('span').style.display = 'none';
+  const tb = document.createElement('button');
+  tb.className = 'mc-btn';
+  tb.textContent = TAP_MODES[tapMode];
+  tb.addEventListener('click', () => { const m = Object.keys(TAP_MODES); tapMode = m[(m.indexOf(tapMode) + 1) % m.length]; tb.textContent = TAP_MODES[tapMode]; });
+  const close = document.createElement('button');
+  close.className = 'mc-btn';
+  close.textContent = '✕ Zavřít';
+  close.addEventListener('click', closeInventory);
+  foot.prepend(tb);
+  foot.append(close);
+}
+
+// Nastavení ve hře (tlačítko v inventáři): stejné okno jako v hlavním menu
+$('settingsBtn').addEventListener('click', () => {
+  window.RiseSettings.open({
+    inGame: true,
+    restart: !MP, // ve hře pro jednoho jde hra rovnou restartovat s novou grafikou
+    onRestart: () => { saveGame(); try { sessionStorage.setItem('rise-autostart', 'sp'); } catch {} resetting = true; location.reload(); },
+  });
+});
+addEventListener('rise-prefs', () => { try { Object.assign(PREFS, JSON.parse(localStorage.getItem('rise-nastaveni')) || {}); } catch {} lookSens = prefNum('sens', 1); });
+
 // ============================================================ herní smyčka
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
@@ -6023,6 +6347,7 @@ function tick(realDt) {
     fpsTimer = 0;
   }
   updateHUD(realDt);
+  touchUI.update(realDt);
   NET.update(realDt);
   if (performance.now() - lastFrameAt < 300) renderer.render(scene, camera); // na pozadí se nevykresluje
 }
@@ -6400,7 +6725,7 @@ let chatOpen = false;
 function openChat() {
   chatOpen = true;
   chatEl.style.display = 'block';
-  document.exitPointerLock?.();
+  unlockPointer();
   setTimeout(() => chatEl.focus(), 0);
 }
 function closeChat(relock = true) {
@@ -6408,7 +6733,7 @@ function closeChat(relock = true) {
   chatEl.value = '';
   chatEl.style.display = 'none';
   chatEl.blur();
-  if (relock) canvas.requestPointerLock?.()?.catch?.(() => {});
+  if (relock) lockPointer();
 }
 function sendChat(text) {
   text = text.trim().slice(0, 200);
@@ -6448,7 +6773,7 @@ function renderPause() {
 pauseEl.addEventListener('click', (e) => {
   const b = e.target.closest('button, input');
   if (!b) return;
-  if (b.dataset.resume !== undefined) { hidePause(); canvas.requestPointerLock?.()?.catch?.(() => {}); }
+  if (b.dataset.resume !== undefined) { hidePause(); lockPointer(); }
   else if (b.dataset.leave !== undefined) leaveGame();
   else if (b.dataset.copy !== undefined) copyCode(b);
   else if (b.dataset.perm) { const P = others.get(b.dataset.perm); if (P) setPerm(P, !P.perm); }
@@ -6565,7 +6890,7 @@ const game = window.game = {
   slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
   get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
   get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
-  NET, others, worldState, saveGame, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => (dayTime = t), get target() { return target; }, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite,
+  NET, others, worldState, saveGame, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => (dayTime = t), get target() { return target; }, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite,
 };
 window.gameStarted = true;
 frame();
