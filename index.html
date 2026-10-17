@@ -138,6 +138,10 @@
     .cat-tabs { display: flex; flex-wrap: wrap; gap: 3px; margin: 0 0 8px; max-height: 76px; overflow-y: auto; }
     .cat-tabs .mc-btn { padding: 2px 6px; font-size: 12px; }
     .parrow.fuelbar { width: 40px; height: 8px; }
+    #vehHud { display: none; position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); padding: 5px 14px; font: 16px 'Pixelify Sans', monospace; color: #fff; background: rgba(16, 2, 16, 0.75); border: 2px solid #25084f; text-shadow: 2px 2px 0 #222; white-space: nowrap; pointer-events: none; }
+    #vehHud .warn { color: #ff6a5a; }
+    body.touch #vehHud { bottom: 92px; font-size: 13px; }
+    .car-ui { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
     .power-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; padding: 8px; font-size: 14px; color: #e8e2d0; background: #2a2a30; box-shadow: inset 2px 2px 0 #18181c, inset -2px -2px 0 #4a4a54; }
     .power-stats b { color: #ffe08a; font-weight: 600; }
     .parrow.fuelbar i { background: #ff8a2a; }
@@ -209,6 +213,106 @@
     :root { --tb: 64px; }
     body.touch { touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; }
     body.touch canvas { touch-action: none; }
+    /* počítač (ŘíšeOS) */
+    #pc { position: fixed; inset: 0; z-index: 8; display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.6); font: 14px system-ui, sans-serif; color: #e8eef8; }
+    .pc-mon { width: min(96vw, calc((94vh - 46px) * 1.6)); background: #26262c; border-radius: 12px; padding: 12px 12px 0; box-shadow: 0 10px 40px #000; box-sizing: border-box; }
+    .pc-scr { position: relative; aspect-ratio: 16 / 10; background: #050608; border-radius: 4px; overflow: hidden; user-select: none; }
+    .pc-bez { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 4px; color: #8a8a96; }
+    .pc-brand { font-weight: 600; letter-spacing: 1px; }
+    .pc-led { width: 8px; height: 8px; border-radius: 50%; background: #3a3a40; }
+    .pc-led.on { background: #3aff5a; box-shadow: 0 0 6px #3aff5a; }
+    .pc-pwr { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #5a5a66; background: #34343c; color: #cfd6e4; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+    .pc-pwr:hover { background: #44444e; }
+    .pc-hint { flex: 1; font-size: 12px; }
+    .pc-leave { border: 0; border-radius: 6px; background: #44444e; color: #e8eef8; padding: 4px 10px; cursor: pointer; }
+    .pc-off, .pc-boot { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 16px; }
+    .pc-boot { background: #0a1424; }
+    .pc-err { color: #ff9a8a; margin-bottom: 10px; }
+    .pc-dim { color: #8a96a8; font-size: 12px; }
+    .pc-logo { font-size: 34px; font-weight: 700; letter-spacing: 2px; }
+    .pc-logo.sm { font-size: 20px; margin-bottom: 6px; }
+    .pc-prog { width: 180px; height: 6px; background: #22324a; border-radius: 3px; overflow: hidden; }
+    .pc-prog i { display: block; height: 100%; width: 0; background: #4a9ae8; animation: pcprog 2.3s linear forwards; }
+    @keyframes pcprog { to { width: 100%; } }
+    .pc-desk { position: absolute; inset: 0; }
+    .pc-icons { position: absolute; left: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .pc-ic { width: 84px; padding: 6px 2px; border: 0; border-radius: 6px; background: transparent; color: #fff; text-shadow: 0 1px 3px #000; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .pc-ic span { font-size: 26px; }
+    .pc-ic:hover { background: rgba(255, 255, 255, 0.18); }
+    .pc-winl { position: absolute; inset: 0 0 32px 0; overflow: hidden; pointer-events: none; }
+    .pc-win { position: absolute; display: flex; flex-direction: column; background: #f2f2f4; color: #1a1a22; border-radius: 8px; overflow: hidden; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); pointer-events: auto; min-width: 200px; }
+    .pc-win.max { inset: 0; border-radius: 0; }
+    .pc-wt { display: flex; align-items: center; justify-content: space-between; height: 28px; padding: 0 4px 0 10px; background: #c8ccd6; cursor: move; font-weight: 600; font-size: 13px; flex: none; touch-action: none; }
+    .pc-win.active .pc-wt { background: #4a7ad8; color: #fff; }
+    .pc-wt button { border: 0; background: transparent; color: inherit; font-size: 15px; cursor: pointer; width: 26px; height: 24px; border-radius: 4px; }
+    .pc-wt button:hover { background: #d84a3a; color: #fff; }
+    .pc-wb { flex: 1; min-height: 0; overflow: auto; }
+    .pc-startm { position: absolute; left: 4px; bottom: 36px; z-index: 9999; display: flex; flex-direction: column; min-width: 200px; padding: 6px; background: rgba(20, 24, 34, 0.96); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); }
+    .pc-startm[hidden] { display: none; }
+    .pc-startm button { text-align: left; border: 0; background: transparent; color: #e8eef8; padding: 7px 10px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+    .pc-startm button:hover { background: #3a4a6a; }
+    .pc-startm hr { border: 0; border-top: 1px solid #3a4250; margin: 4px 0; width: 100%; }
+    .pc-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 6px; background: rgba(16, 20, 30, 0.9); }
+    .pc-bar button { border: 0; border-radius: 5px; background: #2a3448; color: #e8eef8; padding: 4px 10px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+    .pc-bar .pc-startb { background: #4a7ad8; font-weight: 600; }
+    .pc-bar button.on { background: #3a5a8a; }
+    .pc-tasks { flex: 1; display: flex; gap: 4px; overflow: hidden; }
+    .pc-clock { font-size: 12px; white-space: nowrap; }
+    .pc-info { padding: 12px 14px; line-height: 1.7; }
+    .pc-walls { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; padding: 12px; }
+    .pc-walls button { height: 60px; border: 2px solid #fff; border-radius: 6px; cursor: pointer; color: #fff; text-shadow: 0 1px 3px #000; display: flex; align-items: flex-end; padding: 4px 6px; }
+    .pc-win .pc-dim { padding: 0 12px 10px; color: #5a6270; }
+    /* textový editor */
+    .ed { display: flex; height: 100%; background: #fff; }
+    .ed-side { width: 170px; flex: none; display: flex; flex-direction: column; gap: 4px; padding: 6px; background: #e8eaf0; border-right: 1px solid #c8ccd6; }
+    .ed-side > button { border: 0; border-radius: 5px; background: #4a7ad8; color: #fff; padding: 6px; cursor: pointer; font-size: 12px; }
+    .ed-list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+    .ed-list button { text-align: left; border: 0; border-radius: 4px; background: transparent; padding: 5px 6px; cursor: pointer; font-size: 12px; color: #1a1a22; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ed-list button small { display: block; color: #6a7280; font-size: 10px; }
+    .ed-list button:hover { background: #d8dce6; } .ed-list button.on { background: #c8d8f8; }
+    .ed-empty, .ed-disk { font-size: 11px; color: #6a7280; padding: 4px; }
+    .ed-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .ed-bar { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid #d8dce6; flex-wrap: wrap; }
+    .ed-name { flex: 1; min-width: 120px; border: 1px solid #c8ccd6; border-radius: 4px; padding: 4px 6px; font: 600 13px system-ui, sans-serif; user-select: text; }
+    .ed-bar button, .ed-print button { border: 0; border-radius: 4px; background: #e2e6ee; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+    .ed-bar button:hover, .ed-print button:hover { background: #ccd4e2; }
+    .ed-text { flex: 1; min-height: 0; resize: none; border: 0; padding: 10px 12px; font: 14px/1.5 Georgia, serif; color: #1a1a22; outline: none; user-select: text; }
+    .ed-print { padding: 6px; background: #fff6d8; border-top: 1px solid #e8d898; font-size: 12px; }
+    .ed-print select, .ed-print input { font-size: 12px; } .ed-print input { width: 44px; }
+    .ed-status { padding: 3px 8px; font-size: 11px; color: #4a5260; border-top: 1px solid #e2e6ee; min-height: 16px; }
+    .ed-status .bad { color: #c8302a; }
+    @media (max-width: 760px) { .ed-side { width: 120px; } }
+    /* čtení dokumentu */
+    #docView { position: fixed; inset: 0; z-index: 8; display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.55); padding: 12px; box-sizing: border-box; }
+    .doc-paper { position: relative; width: min(560px, 100%); max-height: 100%; overflow: auto; box-sizing: border-box; padding: 34px 38px 26px; background: #fbf8ee; color: #1a1a2a; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); font: 16px/1.6 Georgia, serif; }
+    .doc-paper h2 { margin: 0 0 14px; font-size: 22px; }
+    .doc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .doc-meta { margin-top: 18px; font-size: 12px; font-style: italic; color: #7a7a82; }
+    .doc-x { position: absolute; right: 8px; top: 8px; border: 0; background: transparent; font-size: 18px; cursor: pointer; color: #5a5a62; }
+    /* Tanky 2D */
+    .tk { display: flex; flex-direction: column; height: 100%; background: #2a2a30; color: #e8eef8; }
+    .tk-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; flex-wrap: wrap; }
+    .tk-score { font-size: 15px; }
+    .tk-score .p1 { color: #7ad86a; } .tk-score .p2 { color: #ff8a7a; }
+    .tk-btns { display: flex; gap: 4px; }
+    .tk-btns button, .tk-btns select, .tk-msg button { border: 0; border-radius: 5px; background: #44444e; color: #e8eef8; padding: 3px 9px; cursor: pointer; font-size: 12px; }
+    .tk-btns button.on { background: #4a7ad8; }
+    .tk-view { position: relative; flex: 1; min-height: 0; }
+    .tk-view canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: crosshair; }
+    .tk-msg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 12px 20px; background: rgba(0, 0, 0, 0.75); border-radius: 8px; text-align: center; font-size: 16px; line-height: 1.6; }
+    .tk-msg[hidden] { display: none; }
+    .tk-msg button { margin-top: 6px; background: #4a7ad8; font-size: 14px; padding: 5px 14px; }
+    .tk-help { font-size: 11px; color: #9aa2b0; padding: 3px 8px; }
+    .tk-pad { display: none; position: absolute; left: 6px; bottom: 6px; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 44px); gap: 4px; }
+    .tk-pad button { border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.22); color: #fff; font-size: 18px; touch-action: none; user-select: none; }
+    .tk-pad button[data-key="KeyW"] { grid-column: 2; grid-row: 1; }
+    .tk-pad button[data-key="KeyA"] { grid-column: 1; grid-row: 2; }
+    .tk-pad button[data-key="KeyS"] { grid-column: 2; grid-row: 2; }
+    .tk-pad button[data-key="KeyD"] { grid-column: 3; grid-row: 2; }
+    .tk-pad.r { left: auto; right: 6px; grid-template-rows: 44px; }
+    .tk.touch .tk-pad { display: grid; }
+    .tk.touch .tk-help { display: none; }
+    @media (max-height: 520px) { .pc-mon { width: 100vw; border-radius: 0; padding: 4px 4px 0; } .pc-scr { aspect-ratio: auto; height: calc(100vh - 38px); } }
     #touch { position: fixed; inset: 0; z-index: 4; touch-action: none; }
     #touch.hidden { display: none; }
     #touch.paused > :not(#tTap) { display: none; }
@@ -230,6 +334,10 @@
     #tRmb { right: calc(16px + env(safe-area-inset-right)); bottom: calc(26px + var(--tb) * 1.3); }
     #tSprint, #tDown { right: calc(16px + var(--tb) * 1.45 + env(safe-area-inset-right)); bottom: calc(24px + var(--tb) * 1.95); }
     .tcol { position: absolute; right: calc(10px + env(safe-area-inset-right)); top: calc(8px + env(safe-area-inset-top)); display: flex; gap: 6px; }
+    .tcar { position: absolute; left: calc(10px + env(safe-area-inset-left)); top: calc(50px + env(safe-area-inset-top)); display: none; gap: 6px; }
+    #touch.incar .tcar { display: flex; }
+    #touch.incar #tLmb, #touch.incar #tRmb, #touch.incar #tSprint, #touch.incar:not(.inplane) #tDown, #touch.inplane [data-act=vhorn] { display: none; }
+    #tEnter { right: calc(16px + var(--tb) * 1.45 + env(safe-area-inset-right)); bottom: calc(24px + var(--tb) * 1.95); }
     #tJoy { position: absolute; left: calc(26px + env(safe-area-inset-left)); bottom: 26px; width: calc(var(--tb) * 2); height: calc(var(--tb) * 2); border-radius: 50%;
       background: rgba(20, 20, 26, 0.3); border: 2px solid rgba(255, 255, 255, 0.25); opacity: 0.55; pointer-events: none; }
     #tJoy.on { opacity: 1; }
@@ -242,6 +350,7 @@
     body.touch #compass { width: min(300px, 34vw); left: 150px; transform: none; }
     body.touch #compass, body.touch #clock { top: 8px; }
     body.touch #tooltip { display: none !important; }
+    body.touch #toast { white-space: normal; width: max-content; max-width: 70vw; font-size: 15px; text-align: center; top: 96px; }
     body.touch #bars { bottom: 66px; width: min(420px, 50vw); }
     body.touch .mc-window { flex-direction: row; overflow: visible; transform-origin: 0 0; max-height: none; width: max-content; flex-shrink: 0; }
     body.touch #inventory { overflow: hidden; }
@@ -300,6 +409,24 @@
         <p>♜ Strážní věž (schody uvnitř, truhla nahoře) · ⛺ Opuštěný tábor · ☠ Kobka pod zemí (vchod pod cihlovým obloukem, schody dolů) · ▣ Ruiny · ⛫ Markomanská pevnost.</p>
         <h4>🐾 Tvorové</h4>
         <p>Ovce, kanec, <b>jelen</b> (plachý) a <b>vlk</b> (v noci v lesích loví) · stínožrout (noc) · Markoman a <b>krystalový golem</b> (pomalý, ale silný; padají z něj úlomky a markorit).</p>
+        <h4>🧱 Stavební bloky</h4>
+        <p><b>Schody</b> a <b>půlbloky</b> se natočí podle toho, odkud se díváš; po schodech se dá plynule chodit. Půlblok položený do horní půlky bloku zůstane nahoře, dva půlbloky na sobě dají celý blok. Dále mříže, zábradlí, sklo, tabule skla, tašky, beton v 8 barvách.</p>
+        <h4>🌍 Biomy</h4>
+        <p>Dál od začátku se louka mění: <b>třešňový les</b>, <b>poušť</b> (písek, kaktusy, pyramidy), <b>džungle</b>, <b>tundra</b> (sníh, iglú), <b>savana</b> (akácie), <b>sopka</b> (láva v kráteru – pozor!) a <b>houbový les</b> (svítivé houby). Název biomu je vidět u hodin.</p>
+        <h4>⚙ Technologie</h4>
+        <p><b>Pec</b> (8 kamenů) taví rudy na ingoty: měď, zlato, křemen → křemík, železo → ocel, pryskyřice → kaučuk. Měď, zlato a křemen najdeš pod zemí. <b>Dílna</b> (pokročilý pracovní stůl) vyrábí složité díly – elektroniku, motory, vozidla a počítače. Recepty jsou v inventáři rozdělené do kategorií.</p>
+        <h4>⚡ Elektřina</h4>
+        <p>Zdroje: <b>uhelný generátor</b> (palivo), <b>solární panel</b> (jen ve dne a na povrchu), <b>baterie</b> (uloží přebytek). Spotřebiče: lampy, žárovky, elektromotor, elektrická pec, nabíječka, počítač, tiskárna. Spojuj je <b>kabely</b> (měděný unese 200 W, zlatý 1000 W) nebo přiložením k sobě; <b>vypínač</b> síť rozpojí. Pravé tlačítko na zařízení ukáže výrobu, spotřebu a baterie celé sítě.</p>
+        <h4>🚗 Auto</h4>
+        <p>Polož ho pravým tlačítkem, do kufru dej <b>nabitou autobaterii</b> (nabije ji nabíječka) a natankuj <b>kanystrem</b> (pravé tl. s kanystrem na auto). F nastoupit/vystoupit · W/S plyn a brzda (couvání) · A/D řízení · Mezerník ruční brzda · L světla · B klakson · V kamera.</p>
+        <h4>✈ Dvouplošník</h4>
+        <p>Potřebuje volné místo asi 10 × 8 m a ke vzletu rovinu bez stromů (asi 100 m). Mezerník / Shift = plyn +/− · S nos nahoru · W nos dolů · A/D náklon (na zemi řízení) · L světla · V kamera · F vystoupit (jen na zemi). Pod pádovou rychlostí ztratí vztlak – potlač nos a nabírej rychlost. Tvrdé přistání zraňuje.</p>
+        <h4>🖥 Počítač</h4>
+        <p>Připoj ho k elektrické síti, klikni na něj pravým a zapni tlačítkem ⏻ (bere 60 W). Na ploše: <b>Tanky 2D</b> (proti počítači nebo 2 hráči na jedné klávesnici), <b>Textový editor</b>, informace o systému a pozadí plochy. Esc = odejít od počítače.</p>
+        <h4>📄 Dokumenty a tiskárna</h4>
+        <p>V editoru dokument napiš a ulož. <b>Tisk</b> pošle dokument do <b>tiskárny</b> ve stejné síti – do tiskárny dej <b>papír</b>. S vytištěným dokumentem v ruce: pravé tl. na zem/stůl = položit, na stěnu bloku = pověsit, na <b>rámeček</b> = zarámovat, na hráče = předat, do vzduchu = přečíst. Položený dokument přečteš pravým tlačítkem, sebereš držením levého.</p>
+        <h4>👥 Multiplayer</h4>
+        <p>Hostitel je server – svět se ukládá u něj. Truhlu nebo stroj může mít otevřený jen jeden hráč naráz. T chat · Esc seznam hráčů.</p>
         <h4>⌨ Ovládání</h4>
         <p>E inventář · G vyhodit předmět z ruky (Shift + G = celý stack, v inventáři klik mimo okno) · C kreativní režim (2× Mezerník = létání) · H návod · pravé tlačítko na zem při skoku = stavění pod sebe.</p>
       </div>
@@ -555,6 +682,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 window.gameModuleLoaded = true;
 const BOOT = await window.bootPromise; // čeká na volbu v hlavním menu
 const MP = BOOT.mode !== 'sp';
+// Okna strojů a truhel otevřená hráči v multiplayeru: hostitel je mezitím nesimuluje (klíč -> do kdy), aby se změny nepřepsaly a předměty nezdvojily
+const uiBusy = new Map();
+const isBusy = (k) => (uiBusy.get(k) || 0) > performance.now();
 // Síťová vrstva. Tady je jen základ, který potřebují herní systémy; spojení samotné je na konci skriptu.
 const NET = {
   mode: BOOT.mode, host: BOOT.mode === 'host', client: BOOT.mode === 'client', name: BOOT.welcome?.name || BOOT.name || 'Hráč',
@@ -1281,19 +1411,24 @@ const SMELT_TIME = 3;
   item('seat', 'Sedadlo', 'vehicles', ['seat', '#5a3a2a']);
   R('seat', 1, ['W  ', 'WWW', 'P P'], { W: 'wool', P: 'steel_plate' });
   item('chassis', 'Podvozek auta', 'vehicles', ['chassis', '#5a5a62']);
-  R('chassis', 1, ['RRR', 'PSP', 'RRR'], { R: 'steel_rod', P: 'steel_plate', S: 'spring' }, ADV);
+  R('chassis', 1, ['RTR', 'PSP', 'RRR'], { R: 'steel_rod', T: 'fuel_tank', P: 'steel_plate', S: 'spring' }, ADV); // podvozek nese palivovou nádrž
   item('car_body', 'Karoserie', 'vehicles', ['body', '#c82a2a']);
-  R('car_body', 1, ['PGP', 'PPP'], { P: 'steel_plate', G: 'glass' }, ADV);
+  R('car_body', 1, ['PGP', 'PSP'], { P: 'steel_plate', G: 'glass', S: 'seat' }, ADV); // karoserie s kabinou a sedadly
   item('fuel_tank', 'Palivová nádrž', 'vehicles', ['tank', '#5a5a62']);
   R('fuel_tank', 1, ['PPP', 'P P', 'PPP'], { P: 'iron_plate' }, ADV);
   item('headlight', 'Světlomet', 'vehicles', ['headlight', '#fff6c0']);
   R('headlight', 2, ['PBL'], { P: 'steel_plate', B: 'light_bulb', L: 'lens' });
   item('car_horn', 'Klakson', 'vehicles', ['horn', '#c8ccd4']);
   R('car_horn', 1, ['P', 'K'], { P: 'steel_plate', K: 'speaker' });
+  item('axle', 'Náprava', 'vehicles', ['axle', '#5a5a62']);
+  R('axle', 1, ['WRW'], { W: 'wheel', R: 'steel_rod' });
   item('car_battery', 'Autobaterie', 'vehicles', ['battery', '#2e2e30']);
   R('car_battery', 1, ['CCC', 'PEP'], { C: 'battery_cell', P: 'plastic', E: 'electric_contact' }, ADV);
   item('fuel_canister', 'Kanystr s palivem', 'vehicles', ['canister', '#c82a2a']);
   R('fuel_canister', 1, ['PEP', 'PEP'], { P: 'iron_plate', E: 'ethanol' });
+  // Auto: karoserie (se sedadly), podvozek (s nádrží), motor, převodovka, volant, 2 nápravy (4 kola), světlomety a klakson
+  item('car', 'Auto', 'vehicles', ['car', '#c82a2a'], { stack: 1, vehicle: 'car' });
+  R('car', 1, ['HBK', 'SEG', 'ACA'], { H: 'headlight', B: 'car_body', K: 'car_horn', S: 'steering_wheel', E: 'combustion_engine', G: 'gearbox', A: 'axle', C: 'chassis' }, ADV);
 
   // ---------- díly letadel
   item('canvas', 'Plátno', 'aircraft', ['cloth', '#e8dcc0']);
@@ -1303,7 +1438,7 @@ const SMELT_TIME = 3;
   item('tail_unit', 'Ocasní plochy', 'aircraft', ['tail', '#e8dcc0']);
   R('tail_unit', 1, ['C C', 'CRC', ' R '], { C: 'canvas', R: 'iron_rod' }, ADV);
   item('fuselage', 'Trup letadla', 'aircraft', ['fuselage', '#c8b080']);
-  R('fuselage', 1, ['PPP', 'CRC', 'PPP'], { P: 'planks', C: 'canvas', R: 'steel_rod' }, ADV);
+  R('fuselage', 1, ['PTP', 'CRC', 'PPP'], { P: 'planks', T: 'fuel_tank', C: 'canvas', R: 'steel_rod' }, ADV); // v trupu je nádrž
   item('instrument_panel', 'Přístrojová deska', 'aircraft', ['panel', '#2e2e30']);
   R('instrument_panel', 1, ['LLL', 'EBE'], { L: 'led', E: 'electronic_circuit', B: 'circuit_board' }, ADV);
   item('control_stick', 'Řídicí páka', 'aircraft', ['stick2', '#2e2e30']);
@@ -1314,6 +1449,9 @@ const SMELT_TIME = 3;
   R('propeller', 1, ['P P', ' R ', 'P P'], { P: 'planks', R: 'steel_rod' });
   item('landing_gear', 'Podvozek letadla', 'aircraft', ['landing', '#5a5a62']);
   R('landing_gear', 1, ['R R', 'W W'], { R: 'steel_rod', W: 'wheel' }, ADV);
+  // Dvouplošník: 2 křídla, kokpit, vrtule, letecký motor, trup (s nádrží), 2 podvozky, ocasní plochy
+  item('biplane', 'Dvouplošník', 'aircraft', ['plane', '#8a2a22'], { stack: 1, vehicle: 'plane' });
+  R('biplane', 1, ['WCW', 'PEF', 'LTL'], { W: 'wing', C: 'cockpit', P: 'propeller', E: 'aircraft_engine', F: 'fuselage', L: 'landing_gear', T: 'tail_unit' }, ADV);
 
   // ---------- počítače (sestaví se ve fázi s počítačem)
   item('screen', 'Displej', 'computers', ['screen', '#2a3a5a']);
@@ -1421,6 +1559,14 @@ const SMELT_TIME = 3;
   R('electric_furnace', 1, ['PPP', 'HEH', 'PFP'], { P: 'steel_plate', H: 'heating_coil', E: 'electronic_circuit', F: 'furnace' }, ADV);
   block('charger', 'Nabíječka', 'machines', { ...MACH, facing: true, elec: { use: 30 } });
   R('charger', 1, ['PCP', 'EBE', 'PPP'], { P: 'plastic', C: 'copper_coil', E: 'electric_contact', B: 'circuit_board' }, ADV);
+  // Počítač: monitor, klávesnice, myš, skříň, základní deska, procesor, zdroj, disk a ventilátor (OS a hry v 14d)
+  block('computer', 'Počítač', 'computers', { ...MACH, facing: true, elec: { use: 60 } }, { art: ['pc', '#2e2e30', '#4a9ae8'] });
+  R('computer', 1, ['FMH', 'PCB', 'SKO'], { F: 'cooling_fan', M: 'monitor', H: 'hard_drive', P: 'processor', C: 'computer_case', B: 'motherboard', S: 'power_supply', K: 'keyboard', O: 'computer_mouse' }, ADV);
+  // Tiskárna: tiskne dokumenty z počítače ve stejné síti na papír (14e); rámeček na pověšení dokumentu na zeď
+  block('printer', 'Tiskárna', 'office', { ...MACH, facing: true, elec: { use: 40 } }, { art: ['printer', '#e0dcd4', '#3a3a42'] });
+  R('printer', 1, ['PHP', 'CMC', 'PPP'], { P: 'plastic', H: 'printer_head', C: 'circuit_board', M: 'electric_motor' }, ADV);
+  ITEMS.picture_frame = { name: 'Rámeček', stack: 16, cat: 'office', art: ['frame', '#9a6a3a', '#3a3028'] };
+  R('picture_frame', 2, ['SPS', 'S S', 'SPS'], { S: 'stick', P: 'planks' });
   // Autobaterie se vyrobí vybitá, nabije ji nabíječka (použije ji auto)
   ITEMS.car_battery.name = 'Autobaterie (nabitá)';
   ITEMS.car_battery_empty = { name: 'Autobaterie (vybitá)', stack: 16, cat: 'vehicles', art: ['battery', '#5a5a62'] };
@@ -1656,10 +1802,12 @@ const U = {
   time: { value: 0 },
   cam: { value: new THREE.Vector3() },
   night: { value: 0 },
+  // světlomety auta, které řídíš (terén a tráva mají vlastní osvětlení, tak se kužel počítá v jejich shaderu)
+  headPos: { value: new THREE.Vector3() }, headDir: { value: new THREE.Vector3(0, 0, -1) }, headOn: { value: 0 },
 };
 const shaderUniforms = (extra = {}) => ({
   ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
-  uSunDir: U.sunDir, uSunColor: U.sunColor, uAmbient: U.ambient, uTime: U.time, uCam: U.cam, uNight: U.night,
+  uSunDir: U.sunDir, uSunColor: U.sunColor, uAmbient: U.ambient, uTime: U.time, uCam: U.cam, uNight: U.night, uHeadPos: U.headPos, uHeadDir: U.headDir, uHeadOn: U.headOn,
   ...extra,
 });
 
@@ -2427,6 +2575,12 @@ function isoBoxes(top, side, boxes) {
     case: (x, y) => (inR(x, y, 4, 1, 12, 15) ? (inR(x, y, 6, 3, 10, 4) ? 'A' : inE(x, y, 8, 7, 1) ? 'L' : x > 11 ? 'D' : 'M') : null),
     cartridge: (x, y) => (inR(x, y, 3, 4, 13, 12) ? (inR(x, y, 5, 6, 8, 10) ? 'K' : 'M') : null),
     pencil: (x, y) => (Math.abs(x + y - 16) < 1.5 ? (x < 4 ? 'K' : x < 5.5 ? 'W' : x > 12 ? 'A' : 'M') : null),
+    car: (x, y) => (inR(x, y, 1, 7, 15, 11) || (inR(x, y, 4, 4, 11, 7) && x - 4 > (7 - y) * 0.8 - 0.6) ? (inR(x, y, 6, 4.5, 10, 6.8) ? 'W' : y < 8 ? 'L' : 'M') : inE(x, y, 4, 11.5, 2.2) || inE(x, y, 12, 11.5, 2.2) ? (inE(x, y, 4, 11.5, 0.9) || inE(x, y, 12, 11.5, 0.9) ? 'W' : 'K') : null),
+    plane: (x, y) => (inR(x, y, 1, 4, 15, 5.5) || inR(x, y, 1, 9, 15, 10.5) ? 'L' : (inR(x, y, 3, 5.5, 3.8, 9) || inR(x, y, 12.2, 5.5, 13, 9)) ? 'D' : inE(x, y, 8, 7.5, 5.5, 1.6) ? 'M' : inR(x, y, 13, 5, 15, 8) ? 'M' : x < 2 && y > 5 && y < 10 ? 'K' : inE(x, y, 6, 12, 1.2) || inE(x, y, 10, 12, 1.2) ? 'K' : null),
+    axle: (x, y) => (Math.abs(y - 8) < 0.8 && x > 3 && x < 13 ? 'M' : inE(x, y, 3, 8, 2.5, 4) || inE(x, y, 13, 8, 2.5, 4) ? 'K' : null),
+    pc: (x, y) => (inR(x, y, 1, 4, 4, 14) ? (inR(x, y, 2, 5, 3, 5) ? 'A' : 'D') : inR(x, y, 5, 2, 15, 10) ? (inR(x, y, 6, 3, 14, 9) ? (x + y < 13 ? 'L' : 'A') : 'M') : inR(x, y, 9, 11, 11, 11) ? 'M' : inR(x, y, 6, 12, 15, 14) ? 'W' : null),
+    printer: (x, y) => (inR(x, y, 4, 2, 12, 6) ? 'W' : inR(x, y, 1, 6, 15, 12) ? (inR(x, y, 3, 10, 13, 10) ? 'K' : inR(x, y, 12, 7, 13, 8) ? 'G' : 'M') : inR(x, y, 3, 12, 13, 14) ? 'W' : null),
+    frame: (x, y) => (inR(x, y, 2, 1, 14, 15) ? (inR(x, y, 4, 3, 12, 13) ? (inR(x, y, 5, 4, 11, 12) ? (Math.floor(y) % 2 && y > 5 ? 'G' : 'W') : 'A') : 'M') : null),
     book: (x, y) => (inR(x, y, 3, 2, 13, 14) ? (x < 5 ? 'D' : inR(x, y, 12, 3, 13, 13) ? 'W' : 'M') : null),
   };
   for (const [id, it] of Object.entries(ITEMS)) {
@@ -2479,6 +2633,36 @@ function isoBoxes(top, side, boxes) {
   icon('bulb_lamp', face((x, y) => (Math.abs(x - 7.5) < 0.6 && y < 6 ? '#2a2a30' : x > 6 && x < 9 && y >= 6 && y < 8 ? '#5a5a62' : Math.hypot(x - 7.5, y - 11) < 3.6 ? (Math.hypot(x - 6.5, y - 10) < 1.2 ? '#ffffff' : '#fff0b0') : null)));
 })();
 
+// ============================================================ dokumenty: evidence vytištěných papírů
+// Každý tisk vytvoří záznam v `papers` (název, text, autor) a předmět s id 'doc_<id>' (stack 1). Text se při tisku zkopíruje,
+// pozdější úpravy v počítači vytištěný papír nezmění. Záznamy se ukládají se světem a v multiplayeru synchronizují (kv mapa).
+const papers = new Map(Object.entries(save?.papers || {}));
+const DOC_ICON = (() => { // list papíru s nadpisem a řádky textu
+  const c = document.createElement('canvas');
+  c.width = c.height = 16;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(24,16,12,0.9)';
+  g.fillRect(2, 0, 12, 16);
+  g.fillStyle = '#fbf8ee';
+  g.fillRect(3, 1, 10, 14);
+  g.fillStyle = '#2a3a8a';
+  g.fillRect(4, 2, 7, 2);
+  g.fillStyle = '#6a6a72';
+  for (let y = 6; y < 14; y += 2) g.fillRect(4, y, y === 12 ? 5 : 8, 1);
+  return { canvas: c, url: c.toDataURL() };
+})();
+// Předmět dokumentu vznikne až při prvním použití id (i když záznam ještě nedorazil od hostitele).
+function ensureDoc(id) {
+  if (Object.prototype.hasOwnProperty.call(ITEMS, id)) return ITEMS[id];
+  const pid = id.slice(4), it = { stack: 1, cat: 'office', doc: pid, hidden: true };
+  Object.defineProperty(it, 'name', { enumerable: true, get: () => `Dokument: ${papers.get(pid)?.title || '…'}` });
+  ITEMS[id] = it;
+  return it;
+}
+// Neznámé id 'doc_…' se dohledá přes prototyp (ITEMS i ICONS jsou obyčejné objekty, vlastní klíče zůstávají beze změny).
+Object.setPrototypeOf(ITEMS, new Proxy({}, { get: (_, key) => (typeof key === 'string' && key.startsWith('doc_') ? ensureDoc(key) : undefined) }));
+Object.setPrototypeOf(ICONS, new Proxy({}, { get: (_, key) => (typeof key === 'string' && key.startsWith('doc_') ? DOC_ICON : undefined) }));
+for (const pid of papers.keys()) ensureDoc('doc_' + pid);
 // ============================================================ podzemí – data (hlína, kámen, rudy, jeskyně)
 // Pod realistickým povrchem je svět z bloků 1×1 m. Horní blok každého sloupce leží pod hladkým terénem;
 // když ho vykopeš, terén v tom místě zmizí a otevře se díra do podzemí.
@@ -2971,8 +3155,10 @@ const groundMat = new THREE.ShaderMaterial({
     #include <fog_pars_fragment>
     uniform sampler2D uDetail, uDig;
     uniform vec3 uSunDir, uSunColor, uAmbient, uCam;
-    uniform float uTime;
+    uniform float uTime, uHeadOn;
+    uniform vec3 uHeadPos, uHeadDir;
     varying vec3 vWorld, vN;
+    vec3 headlight(vec3 p) { vec3 L = p - uHeadPos; float d = length(L); return vec3(1.0, 0.94, 0.78) * smoothstep(0.8, 0.95, dot(L / max(d, 0.001), uHeadDir)) * (1.0 - smoothstep(8.0, 38.0, d)) * uHeadOn * 2.2; }
     varying vec4 vWa, vWb;
     varying float vLava;
     ${NOISE_GLSL}
@@ -2994,6 +3180,7 @@ const groundMat = new THREE.ShaderMaterial({
       vec3 lit = col * (uAmbient * 0.9 + uSunColor * diff);
       // Láva v kráteru sopky svítí sama (pulzuje)
       if (vLava > 0.001) lit = mix(lit, vec3(1.0, 0.3, 0.04) * (1.4 + 0.5 * sin(uTime * 1.3 + p.x * 0.4) * sin(uTime * 0.9 + p.y * 0.3)) * (0.7 + fine * 0.6), vLava);
+      if (uHeadOn > 0.0) lit += col * headlight(vWorld);
       gl_FragColor = vec4(lit, 1.0);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -3111,7 +3298,9 @@ function makeGrass(layer) {
     fragmentShader: /* glsl */`
       #include <common>
       #include <fog_pars_fragment>
-      uniform vec3 uSunDir, uSunColor, uAmbient;
+      uniform vec3 uSunDir, uSunColor, uAmbient, uHeadPos, uHeadDir;
+      uniform float uHeadOn;
+      vec3 headlight(vec3 p) { vec3 L = p - uHeadPos; float d = length(L); return vec3(1.0, 0.94, 0.78) * smoothstep(0.8, 0.95, dot(L / max(d, 0.001), uHeadDir)) * (1.0 - smoothstep(8.0, 38.0, d)) * uHeadOn * 2.2; }
       varying float vT, vVar, vFlower, vMeadow;
       varying vec3 vNormal, vWorld;
       varying vec4 vWa, vWb;
@@ -3138,6 +3327,7 @@ function makeGrass(layer) {
         vec3 lit = col * (uAmbient + uSunColor * diff) * ao;
         vec3 view = normalize(vWorld - cameraPosition);
         lit += col * uSunColor * pow(max(dot(view, uSunDir), 0.0), 5.0) * vT * 0.9;
+        if (uHeadOn > 0.0) lit += col * headlight(vWorld);
         if (glow) lit = col * 1.6;
         gl_FragColor = vec4(lit, 1.0);
         #include <tonemapping_fragment>
@@ -4292,7 +4482,7 @@ const chests = new Map(Object.entries(save?.chests || {})); // klíč bloku -> 2
 const chestOf = (k) => { if (!chests.has(k)) chests.set(k, Array(27).fill(null)); return chests.get(k); };
 const fires = new Map(Object.entries(save?.fires || {})); // klíč bloku -> { slots: [vstup, výstup], t }
 const fireOf = (k) => { if (!fires.has(k)) fires.set(k, { slots: [null, null], t: 0 }); return fires.get(k); };
-const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots, furnace: () => furnaceOf(ui.fireKey).slots, power: () => powerOf(ui.fireKey).slots || [], kitchen: () => stoveOf(ui.fireKey).slots })[c]();
+const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots, furnace: () => furnaceOf(ui.fireKey).slots, power: () => powerOf(ui.fireKey).slots || [], car: () => vehicles.get(ui.fireKey)?.slots || [], kitchen: () => stoveOf(ui.fireKey).slots })[c]();
 
 const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
 function slotHTML(s, i, cls = '', c = 'inv') {
@@ -4311,6 +4501,7 @@ function renderCraftArea() {
   if (ui.mode === 'kitchen') return renderKitchen(area);
   if (ui.mode === 'furnace') return renderFurnace(area);
   if (ui.mode === 'power') return renderPowerUI(area);
+  if (ui.mode === 'car') return renderCarUI(area);
   if (ui.mode === 'chest') {
     const c = chestOf(ui.fireKey);
     area.innerHTML = `<div class="mc-title">Truhla</div><div class="grid">${c.map((s, i) => slotHTML(s, i, '', 'chest')).join('')}</div><div class="mc-note">Shift + klik přesune předmět mezi truhlou a batohem.</div>`;
@@ -4360,8 +4551,8 @@ function renderCatTabs(show) {
   if (el.innerHTML !== html) el.innerHTML = html;
 }
 function renderBook() {
-  document.querySelector('.mc-book').style.display = ui.mode === 'chest' || ui.mode === 'power' ? 'none' : '';
-  if (ui.mode === 'power') return;
+  document.querySelector('.mc-book').style.display = ui.mode === 'chest' || ui.mode === 'power' || ui.mode === 'car' ? 'none' : '';
+  if (ui.mode === 'power' || ui.mode === 'car') return;
   renderCatTabs(['inv', 'bench', 'adv'].includes(ui.mode) && !(creative && ui.mode === 'inv'));
   if (ui.mode === 'chest') return;
   if (ui.mode === 'kitchen') {
@@ -4389,7 +4580,7 @@ function renderBook() {
   if (creative && ui.mode === 'inv') {
     $('onlyCraftable').parentElement.style.display = 'none';
     $('bookTitle').textContent = 'Všechny předměty';
-    $('recipes').innerHTML = Object.keys(ITEMS).map((id) => `<div class="slot" data-give="${id}" data-item="${id}">${iconImg(id)}</div>`).join('');
+    $('recipes').innerHTML = Object.keys(ITEMS).filter((id) => !ITEMS[id].hidden).map((id) => `<div class="slot" data-give="${id}" data-item="${id}">${iconImg(id)}</div>`).join('');
     $('bookHint').textContent = 'Kreativní režim: klik = vezmi plný stack, Shift + klik = rovnou do batohu.';
     return;
   }
@@ -4463,7 +4654,7 @@ $('onlyCraftable').addEventListener('change', (e) => { onlyCraftable = e.target.
 function slotClick(c, i, button, shift) {
   const arr = container(c);
   const s = arr[i];
-  if ((c === 'fire' && i === 1) || c === 'kitchen' || (c === 'furnace' && i === 2) || (c === 'power' && i === 1)) { // výstup táboráku, pece a sporáku se jen vybírá
+  if ((c === 'fire' && i === 1) || c === 'kitchen' || (c === 'furnace' && i === 2) || (c === 'power' && i >= 1)) { // výstup táboráku, pece a sporáku se jen vybírá
     if (c === 'kitchen') i = 0;
     if (!s) return;
     if (shift) { arr[i] = null; const left = insertInto(s, 0, 36); if (left) arr[i] = { id: s.id, n: left }; }
@@ -4472,6 +4663,8 @@ function slotClick(c, i, button, shift) {
     return refreshUI();
   }
   if (c === 'armor' && inv.cursor && ITEMS[inv.cursor.id].armor?.slot !== i) return; // do políčka jen správný kus brnění
+  if (c === 'power' && i === 0 && inv.cursor && blocks.get(ui.fireKey) === 'printer' && inv.cursor.id !== 'paper') return; // do tiskárny jen papír
+  if (c === 'car' && i === 0 && inv.cursor && !['car_battery', 'car_battery_empty'].includes(inv.cursor.id)) return; // místo na autobaterii
   if (shift && s && !inv.cursor) {
     arr[i] = null;
     let left = s.n;
@@ -4479,9 +4672,16 @@ function slotClick(c, i, button, shift) {
     if (c !== 'inv') left = insertInto(s, 0, 36);
     else if (ui.mode === 'inv' && piece && !armor[piece.slot]) { armor[piece.slot] = s; left = 0; }
     else if (ui.mode === 'chest') left = insertStack(chestOf(ui.fireKey), s);
-    else if (ui.mode === 'power' && powerOf(ui.fireKey).slots) { // palivo do generátoru, surovina do el. pece, vybitá baterie do nabíječky
+    else if (ui.mode === 'car' && vehicles.get(ui.fireKey)) { // do kufru (autobaterie do jejího místa)
+      const sl = vehicles.get(ui.fireKey).slots;
+      if (!sl[0] && (s.id === 'car_battery' || s.id === 'car_battery_empty')) { sl[0] = s; left = 0; }
+      else {
+        for (let j = 1; j < sl.length && left; j++) if (sl[j]?.id === s.id) { const k = Math.min(ITEMS[s.id].stack - sl[j].n, left); sl[j].n += k; left -= k; }
+        for (let j = 1; j < sl.length && left; j++) if (!sl[j]) { sl[j] = { id: s.id, n: left }; left = 0; }
+      }
+    } else if (ui.mode === 'power' && powerOf(ui.fireKey).slots) { // palivo do generátoru, surovina do el. pece, vybitá baterie do nabíječky
       const st = powerOf(ui.fireKey), t = blocks.get(ui.fireKey);
-      const ok = t === 'coal_generator' ? FUEL[s.id] : t === 'electric_furnace' ? smeltResult(s.id) : s.id === 'car_battery_empty';
+      const ok = t === 'coal_generator' ? FUEL[s.id] : t === 'electric_furnace' ? smeltResult(s.id) : t === 'printer' ? s.id === 'paper' : s.id === 'car_battery_empty';
       if (ok && !st.slots[0]) { st.slots[0] = s; left = 0; }
       else if (ok && st.slots[0].id === s.id) { const k = Math.min(ITEMS[s.id].stack - st.slots[0].n, s.n); st.slots[0].n += k; left = s.n - k; }
     } else if (ui.mode === 'furnace' && (smeltResult(s.id) || FUEL[s.id])) { // surovina nahoru, palivo dolů
@@ -4602,6 +4802,7 @@ invEl.addEventListener('mousedown', (e) => {
   if (rc) return fillRecipe(RECIPES[+rc.dataset.r], shiftOf(e));
   const ck = e.target.closest('[data-cook]');
   if (ck) fillCooking(ck.dataset.cook);
+  if (e.target.closest('[data-car-enter]')) { const id = ui.fireKey; closeInventory(); enterVehicle(id); return; }
   const fu = e.target.closest('[data-fur]');
   if (fu) return fillFurnace(fu.dataset.fur);
   const ct = e.target.closest('[data-cat]');
@@ -4610,6 +4811,11 @@ invEl.addEventListener('mousedown', (e) => {
 invEl.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function openInventory(mode = 'inv', fireKey = null) {
+  if (MP && fireKey != null) { // truhlu nebo stroj může mít otevřený jen jeden hráč
+    const who = [...others.values()].find((P) => P.pose?.ui === String(fireKey));
+    if (who) { toast(`Tohle teď používá ${who.name}`); return; }
+  }
+  if (NET.client && !openInventory.told && ['fire', 'furnace', 'kitchen', 'power'].includes(mode) && (mode !== 'power' || powerOf(fireKey).slots)) { openInventory.told = true; toast('Stroj u hostitele pracuje dál, až okno zavřeš (ochrana proti zdvojení předmětů)'); }
   ui.mode = mode;
   ui.size = mode === 'bench' || mode === 'adv' ? 3 : 2;
   ui.fireKey = fireKey;
@@ -4642,7 +4848,7 @@ $('newWorld').addEventListener('click', () => {
 let fireRenderT = 0;
 function updateFires(dt) {
   for (const [k, f] of fires) {
-    if (!blocks.has(k)) continue;
+    if (!blocks.has(k) || isBusy(k)) continue;
     const [inp, out] = f.slots;
     const res = inp && COOKING[inp.id];
     if (!res || (out && (out.id !== res || out.n >= ITEMS[res].stack))) { f.t = 0; continue; }
@@ -4697,7 +4903,7 @@ function updateStoves(dt) {
     }
     if (st.recipe === null) continue;
     const r = KITCHEN[st.recipe];
-    if (!NET.client) st.t += dt;
+    if (!NET.client && !isBusy(k)) st.t += dt;
     const s = specials.get(k);
     if (s && r.heat && Math.random() < dt * 6) debris.emit(s.x + 0.5, s.ry + 1.05, s.z + 0.5, [0.85, 0.85, 0.85], 1, 0.4, 1.2); // pára
     if (NET.client || st.t < r.time) continue;
@@ -4806,6 +5012,7 @@ let furnaceRenderT = 0;
 function updateFurnaces(dt) {
   for (const [k, f] of furnaces) {
     if (blocks.get(k) !== 'furnace') { furnaces.delete(k); continue; }
+    if (isBusy(k)) continue; // pec má otevřenou hráč
     const [inp, fuel, out] = f.slots;
     const res = inp && smeltResult(inp.id);
     const can = res && (!out || (out.id === res && out.n < ITEMS[res].stack));
@@ -4877,7 +5084,7 @@ function powerOf(k) {
   if (!power.has(k)) {
     const t = blocks.get(k), e = elecOf(t) || {};
     power.set(k, e.gen ? { slots: [null], burn: 0, burnMax: 0, pw: 0 } : e.store ? { e: 0, pw: 0 } : e.switch ? { on: true }
-      : t === 'electric_furnace' || t === 'charger' ? { slots: [null, null], t: 0, pw: 0 } : { pw: 0 });
+      : t === 'electric_furnace' || t === 'charger' ? { slots: [null, null], t: 0, pw: 0 } : t === 'printer' ? { slots: [null, null, null, null], q: [], t: 0, pw: 0 } : { pw: 0 });
   }
   return power.get(k);
 }
@@ -4922,6 +5129,8 @@ function rebuildNets() {
 function demandOf(k, t) {
   const st = powerOf(k), use = elecOf(t).use;
   if (t === 'electric_furnace') { const [i, o] = st.slots, r = i && smeltResult(i.id); return r && (!o || (o.id === r && o.n < ITEMS[r].stack)) ? use : 0; }
+  if (t === 'computer') return st.pc ? use : 0;
+  if (t === 'printer') return printerReady(st) ? use : 0; // jen při tisku // počítač bere proud jen zapnutý
   if (t === 'charger') { const [i, o] = st.slots; return i?.id === 'car_battery_empty' && (!o || (o.id === 'car_battery' && o.n < ITEMS.car_battery.stack)) ? use : 0; }
   return use;
 }
@@ -4948,7 +5157,7 @@ function simulateNet(net, step, sun) {
   for (const g of net.gens) {
     const st = powerOf(g);
     if (st.burn > 0) st.burn = Math.max(0, st.burn - step);
-    if (st.burn <= 0 && wantGen) { const f = st.slots[0]; if (f && FUEL[f.id]) { st.burn = st.burnMax = FUEL[f.id] * GEN_FUEL_MUL; if (!--f.n) st.slots[0] = null; } }
+    if (st.burn <= 0 && wantGen && !isBusy(g)) { const f = st.slots[0]; if (f && FUEL[f.id]) { st.burn = st.burnMax = FUEL[f.id] * GEN_FUEL_MUL; if (!--f.n) st.slots[0] = null; } }
     st.pw = st.burn > 0 ? 1 : 0;
     if (st.pw) gen += elecOf('coal_generator').gen;
   }
@@ -4969,7 +5178,9 @@ function simulateNet(net, step, sun) {
   // práce spotřebičů
   for (const [k] of demands) {
     const t = blocks.get(k), st = powerOf(k);
-    if (!st.pw || !st.slots) continue;
+    if (t === 'computer' && st.pc) { st.lost = st.pw ? 0 : (st.lost || 0) + step; if (st.lost > 1.5) { st.pc = false; st.lost = 0; st.cut = 1; } } // bez proudu se vypne
+    if (!st.pw || !st.slots || isBusy(k)) continue; // okno zařízení má otevřené hráč
+    if (t === 'printer') { printStep(st, step); continue; }
     const [i, o] = st.slots;
     st.t = (st.t || 0) + step;
     if (t === 'electric_furnace' && st.t >= EFURNACE_TIME) {
@@ -5131,7 +5342,8 @@ function buildElecModel(type, g) {
     box(0.7, 0.45, 0.6, M({ color: 0xe8e4dc, roughness: 0.6 }), 0, 0.225, 0);
     box(0.4, 0.04, 0.2, dark, 0, 0.46, -0.05);
     U.led = box(0.08, 0.06, 0.02, glowMat(0xffa020), 0.22, 0.32, 0.305).material;
-  }
+  } else if (type === 'computer') buildComputerModel(g);
+  else if (type === 'printer') buildPrinterModel(g);
 }
 // Vzhled zařízení podle stavu (svítí, točí se, ukazuje nabití)
 function updatePowerVisuals(dt, time) {
@@ -5144,6 +5356,8 @@ function updatePowerVisuals(dt, time) {
     if (U.bars) U.bars.forEach((b, i) => (b.material.emissiveIntensity = (st?.e || 0) / BAT_CAP > i / 5 + 0.01 ? 1.6 : 0));
     if (U.lever) U.lever.rotation.x = st?.on === false ? 0.6 : -0.6;
     if (U.led) { U.led.emissiveIntensity = on ? 1.6 : 0.2; }
+    if (U.screen) drawPCScreen(k, U.screen, st);
+    if (U.sheet) { U.sheet.visible = on; if (on) U.sheet.position.z = 0.24 + ((time * 0.33) % 1) * 0.12; } // list vyjíždí z tiskárny
   }
 }
 // Pravé tlačítko na vypínač: zapnout / vypnout (síť se hned přepočítá)
@@ -5167,6 +5381,7 @@ function renderPowerUI(area) {
       <div>${bar(st.burnMax ? (st.burn / st.burnMax) * 100 : 0, 'fuelbar')}<div class="mc-note">${st.pw ? `Vyrábí ${e.gen} W` : st.slots[0] ? 'Stojí – síť teď energii nepotřebuje' : 'Stojí – vlož palivo (uhlí, dřevo, líh)'}</div></div></div>`;
   else if (e.solar) { const [x, y, z] = k.split(',').map(Number), lit = y >= topY(x, z); dev = `<div class="mc-note">Výkon teď: ${lit ? Math.round(e.solar * sunLevel) : 0} W z ${e.solar} W ${lit ? `(slunce ${Math.round(sunLevel * 100)} %)` : '– pod zemí nesvítí slunce'}</div>`; }
   else if (e.store) dev = `<div>${bar((st.e / BAT_CAP) * 100)}<div class="mc-note">Nabití: ${kj(st.e)} / ${kj(BAT_CAP)} kJ · nabíjí a vybíjí max. ${BAT_RATE} W</div></div>`;
+  else if (t === 'printer') dev = printerDev(st);
   else if (t === 'electric_furnace' || t === 'charger') {
     const time = t === 'charger' ? CHARGE_TIME : EFURNACE_TIME;
     dev = `<div class="fire-ui">${slotHTML(st.slots[0], 0, '', 'power')}${bar(((st.t || 0) / time) * 100)}${slotHTML(st.slots[1], 1, 'out', 'power')}</div>
@@ -5182,6 +5397,1015 @@ function renderPowerUI(area) {
     <div class="mc-note">Kabely spojují zařízení, která se dotýkají. Vypínač síť rozpojí. Měděný kabel unese ${elecOf('cable_copper').cap} W, zlatý ${elecOf('cable_gold').cap} W.</div>`;
 }
 
+// ============================================================ počítač: model, operační systém ŘíšeOS a hra Tanky 2D
+// Zapnutí je společné pro všechny hráče (power[k].pc, ukládá se a synchronizuje jako stav ostatních zařízení),
+// obrazovku systému (okna, hra) má každý hráč u sebe. Zapnutý počítač bere ze sítě 60 W; když energie dojde, vypne se.
+let pcOpen = false;
+const PC_WALLS = [['Louka', '#4a9ae8', '#8ad87a'], ['Západ slunce', '#ff9a4a', '#6a2a8a'], ['Noc', '#0a1a3a', '#4a2a7a'], ['Les', '#1a4a2a', '#7ab84a'], ['Poušť', '#f0c87a', '#c8683a']];
+// Změna stavu počítače: u hráče v multiplayeru se na chvíli ignoruje stav od hostitele, dokud změna neodejde (jinak by ji přepsal)
+function pcSet(k, fields) {
+  Object.assign(powerOf(k), fields);
+  if (NET.client) NET.pend.set('power|' + k, performance.now() + 1500);
+}
+const pcWall = (st) => PC_WALLS[st?.wall || 0] || PC_WALLS[0];
+
+// ---------- 3D model: skříň, monitor s obrazovkou (canvas), klávesnice a myš; přední strana je +z
+function buildComputerModel(g) {
+  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.55, ...o });
+  const box = (w, h, d, m, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); g.add(me); return me; };
+  const dark = M({ color: 0x2a2a30 }), light = M({ color: 0xdcd8d0 });
+  box(0.24, 0.5, 0.5, dark, -0.35, 0.25, -0.08); // skříň
+  box(0.2, 0.03, 0.01, M({ color: 0x5a5a62 }), -0.35, 0.4, 0.175);
+  g.userData.led = box(0.03, 0.03, 0.01, M({ color: 0x222222, emissive: 0x3aff5a, emissiveIntensity: 0 }), -0.29, 0.45, 0.176).material;
+  box(0.2, 0.02, 0.15, dark, 0.12, 0.01, -0.14); // podstavec monitoru
+  box(0.05, 0.2, 0.04, dark, 0.12, 0.12, -0.16);
+  box(0.64, 0.42, 0.04, dark, 0.12, 0.43, -0.14);
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 160;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.36), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  scr.position.set(0.12, 0.44, -0.119);
+  g.add(scr);
+  box(0.46, 0.025, 0.15, light, 0.06, 0.0125, 0.2); // klávesnice
+  for (let r = 0; r < 3; r++) box(0.42, 0.008, 0.03, M({ color: 0xb8b4ac }), 0.06, 0.029, 0.15 + r * 0.04);
+  box(0.06, 0.025, 0.09, light, 0.38, 0.0125, 0.22); // myš
+  g.userData.screen = { ctx: c.getContext('2d'), tex, key: '' };
+}
+// Obraz na monitoru ve světě (vidí ho i ostatní hráči): vypnuto, start, plocha
+function drawPCScreen(k, S, st) {
+  const local = pc.k === k && (pc.phase === 'boot' || pc.phase === 'shut') ? pc.phase : null;
+  const mode = local || (st?.pc && st.pw ? 'desk' : 'off');
+  const key = mode + (st?.wall || 0);
+  if (S.key === key) return;
+  S.key = key;
+  const x = S.ctx, W = 256, H = 160;
+  x.fillStyle = '#050608';
+  x.fillRect(0, 0, W, H);
+  if (mode === 'boot' || mode === 'shut') {
+    x.fillStyle = '#0a1424';
+    x.fillRect(0, 0, W, H);
+    x.fillStyle = '#e8eef8';
+    x.font = 'bold 26px sans-serif';
+    x.textAlign = 'center';
+    x.fillText('ŘíšeOS', W / 2, 78);
+    x.font = '13px sans-serif';
+    x.fillText(mode === 'boot' ? 'Spouštění…' : 'Vypínání…', W / 2, 104);
+  } else if (mode === 'desk') {
+    const [, a, b] = pcWall(st), gr = x.createLinearGradient(0, 0, W, H);
+    gr.addColorStop(0, a);
+    gr.addColorStop(1, b);
+    x.fillStyle = gr;
+    x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 3; i++) { x.fillStyle = 'rgba(255,255,255,0.85)'; x.fillRect(10, 10 + i * 34, 22, 22); x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(8, 34 + i * 34, 26, 4); }
+    x.fillStyle = 'rgba(16,20,30,0.85)';
+    x.fillRect(0, H - 16, W, 16);
+    x.fillStyle = '#4a9ae8';
+    x.fillRect(3, H - 13, 26, 10);
+  }
+  S.tex.needsUpdate = true;
+}
+
+// ---------- obrazovka operačního systému (HTML přes celou obrazovku)
+const pcEl = document.createElement('div');
+pcEl.id = 'pc';
+pcEl.innerHTML = `<div class="pc-mon"><div class="pc-scr"></div>
+  <div class="pc-bez"><span class="pc-brand">ŘíšeTech</span><span class="pc-led"></span><button class="pc-pwr" data-pc="power" title="Zapnout / vypnout">⏻</button>
+  <span class="pc-hint"></span><button class="pc-leave" data-pc="leave">✕ Odejít <small>(Esc)</small></button></div></div>`;
+document.body.appendChild(pcEl);
+const pcScr = pcEl.querySelector('.pc-scr');
+const pc = { k: null, phase: null, t: 0, lostT: 0, wins: [], z: 10, active: null, clockT: 0 };
+
+function openPC(k) {
+  if (pc.k !== k) { closeAllWins(); pc.k = k; pc.phase = null; }
+  pcOpen = true;
+  keys.clear();
+  input.lmb = input.rmb = false;
+  unlockPointer();
+  pcEl.style.display = 'flex';
+  const st = powerOf(k), on = !!(st.pc && st.pw);
+  if (!pc.phase || (pc.phase === 'desk') !== on && pc.phase !== 'boot' && pc.phase !== 'shut') setPhase(on ? 'desk' : 'off');
+  updateBezel();
+}
+function closePC() {
+  pcOpen = false;
+  pcEl.style.display = 'none';
+  for (const w of pc.wins) w.app.blur?.(w);
+  lockPointer();
+}
+function setPhase(p, msg = '') {
+  pc.phase = p;
+  pc.t = pc.lostT = 0;
+  if (p !== 'desk') closeAllWins();
+  const lines = (s) => s.split('\n').map((l) => `<div>${l}</div>`).join('');
+  if (p === 'off') pcScr.innerHTML = `<div class="pc-off">${msg ? `<div class="pc-err">${lines(msg)}</div>` : ''}<div>Počítač je vypnutý.</div><div class="pc-dim">Zapni ho tlačítkem ⏻ dole na monitoru.</div></div>`;
+  else if (p === 'boot' || p === 'shut') pcScr.innerHTML = `<div class="pc-boot"><div class="pc-logo">ŘíšeOS</div><div class="pc-dim">${p === 'boot' ? 'Spouštění systému…' : 'Vypínání…'}</div>${p === 'boot' ? '<div class="pc-prog"><i></i></div>' : ''}</div>`;
+  else if (p === 'desk') renderDesk();
+}
+const pcCanShut = () => pc.wins.every((w) => !w.app.canClose || w.app.canClose(w)); // vypnutí zahodí neuložené dokumenty
+function updateBezel() {
+  const st = power.get(pc.k) || {}, on = !!(st.pc && st.pw);
+  pcEl.querySelector('.pc-led').classList.toggle('on', on);
+  pcEl.querySelector('.pc-hint').textContent = on ? `Napájeno · odběr ${elecOf('computer').use} W` : pc.phase === 'boot' ? 'Spouští se…' : 'Vypnuto';
+}
+function pcPower() {
+  Sound.init();
+  if (pc.phase === 'desk' || pc.phase === 'boot') { if (pcCanShut()) setPhase('shut'); return; }
+  if (pc.phase === 'shut') return;
+  const net = netOf.get(pc.k);
+  if (!net || !(net.gens.length + net.solars.length + net.bats.length)) {
+    setPhase('off', 'Počítač není připojený ke zdroji elektřiny.\nPropoj ho kabelem s generátorem, solárním panelem nebo baterií.');
+    return;
+  }
+  pcSet(pc.k, { pc: true, cut: 0 });
+  Sound.tone(660, 0.12, 0.08, 'sine');
+  setPhase('boot');
+}
+// Volá herní smyčka: start, vypnutí, výpadek napájení, hodiny, aplikace
+function updatePC(dt) {
+  if (!pc.k) return;
+  const k = pc.k;
+  if (blocks.get(k) !== 'computer') { if (pcOpen) closePC(); closeAllWins(); pc.k = null; return; }
+  if (pcOpen) {
+    const [x, , z] = k.split(',').map(Number);
+    if (!player.alive || Math.hypot(x + 0.5 - player.pos.x, z + 0.5 - player.pos.z) > 7) closePC();
+  }
+  const st = power.get(k) || {};
+  pc.t += dt;
+  if (pc.phase === 'boot') {
+    // u hráče v multiplayeru přichází stav napájení od hostitele se zpožděním, proto čeká déle
+    if (pc.t > 2.4 && st.pw) { setPhase('desk'); Sound.craft(); }
+    else if (pc.t > (NET.client ? 6 : 2.6)) { pcSet(k, { pc: false }); setPhase('off', 'Síť nemá dost energie – počítač potřebuje 60 W.'); }
+  } else if (pc.phase === 'shut') {
+    if (pc.t > 1.2) {
+      pcSet(k, { pc: false });
+      setPhase('off');
+      if (pc.restart) { pc.restart = false; pcPower(); } // restart = vypnout a znovu zapnout
+    }
+  } else if (pc.phase === 'desk') {
+    if (!st.pc) setPhase('off', st.cut ? 'Výpadek napájení – počítač se vypnul.' : 'Počítač vypnul jiný hráč.');
+    else if (!st.pw) { if ((pc.lostT += dt) > (NET.client ? 4 : 1.2)) { pcSet(k, { pc: false, cut: 1 }); setPhase('off', 'Výpadek napájení – počítač se vypnul.'); } }
+    else pc.lostT = 0;
+  } else if (st.pc && st.pw && pc.phase === 'off') setPhase('desk'); // zapnul ho jiný hráč
+  if (!pcOpen) return;
+  updateBezel();
+  if (pc.phase === 'desk') {
+    if ((pc.clockT -= dt) <= 0) {
+      pc.clockT = 1;
+      const h = Math.floor(dayTime * 24), mi = Math.floor((dayTime * 24 * 60) % 60), el = pcScr.querySelector('.pc-clock');
+      if (el) el.textContent = `Den ${dayCount} · ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`;
+      for (const w of pc.wins) w.app.slow?.(w);
+    }
+    for (const w of pc.wins) w.app.tick?.(w, Math.min(dt, 0.05));
+  }
+}
+
+// ---------- plocha, nabídka Start, okna
+const PC_APPS = {
+  tanks: { title: 'Tanky 2D', icon: '🎮', w: 700, h: 500, init: (w) => tanksInit(w), tick: (w, dt) => w.game.step(dt), blur: (w) => w.game.keys.clear() },
+  sys: {
+    title: 'O počítači', icon: '🖥️', w: 440, h: 340,
+    init: (w) => PC_APPS.sys.slow(w),
+    slow(w) {
+      const st = power.get(pc.k) || {}, s = netStats(pc.k), tk = st.tk || [0, 0];
+      w.body.innerHTML = `<div class="pc-info">
+        <div class="pc-logo sm">ŘíšeOS 1.0</div>
+        <div>Procesor: <b>ŘíšeTech R1 · 1 jádro, 800 MHz</b></div>
+        <div>Paměť: <b>64 MB</b> · Disk: <b>2 GB</b></div>
+        <div>Napájení: <b>${st.pw ? 'v pořádku' : 'chybí'}</b> · příkon <b>${elecOf('computer').use} W</b></div>
+        ${s ? `<div>Síť: výroba <b>${s[0]} W</b>, spotřeba <b>${s[1]} W</b>, baterie <b>${(s[3] / 1000).toFixed(1)} kJ</b></div>` : ''}
+        <div>Tanky 2D proti počítači: <b>${tk[0]}</b> výher · <b>${tk[1]}</b> proher</div>
+      </div>`;
+    },
+  },
+  wall: {
+    title: 'Pozadí plochy', icon: '🎨', w: 440, h: 260,
+    init(w) {
+      w.body.innerHTML = `<div class="pc-walls">${PC_WALLS.map(([n, a, b], i) => `<button data-wall="${i}" style="background:linear-gradient(135deg,${a},${b})"><span>${n}</span></button>`).join('')}</div>
+        <div class="pc-dim">Pozadí se uloží v počítači a vidí ho i ostatní hráči na monitoru.</div>`;
+    },
+  },
+};
+function renderDesk() {
+  const [, a, b] = pcWall(power.get(pc.k));
+  pcScr.innerHTML = `<div class="pc-desk" style="background:linear-gradient(135deg,${a},${b})">
+    <div class="pc-icons">${Object.entries(PC_APPS).map(([id, A]) => `<button class="pc-ic" data-app="${id}"><span>${A.icon}</span>${A.title}</button>`).join('')}</div>
+    <div class="pc-winl"></div>
+    <div class="pc-startm" hidden>${Object.entries(PC_APPS).map(([id, A]) => `<button data-app="${id}">${A.icon} ${A.title}</button>`).join('')}
+      <hr><button data-pc="restart">↻ Restartovat</button><button data-pc="power">⏻ Vypnout</button></div>
+    <div class="pc-bar"><button class="pc-startb" data-pc="start">◆ Start</button><div class="pc-tasks"></div><span class="pc-clock"></span></div>
+  </div>`;
+  pc.clockT = 0;
+}
+function renderTasks() {
+  const el = pcScr.querySelector('.pc-tasks');
+  if (el) el.innerHTML = pc.wins.map((w) => `<button data-task="${w.id}" class="${w === pc.active ? 'on' : ''}">${w.app.icon} ${w.app.title}</button>`).join('');
+}
+function focusWin(w) {
+  pc.active = w;
+  w.el.style.zIndex = ++pc.z;
+  for (const o of pc.wins) o.el.classList.toggle('active', o === w);
+  renderTasks();
+}
+function openApp(id) {
+  const ex = pc.wins.find((w) => w.id === id);
+  if (ex) return focusWin(ex);
+  const layer = pcScr.querySelector('.pc-winl');
+  if (!layer) return;
+  const A = PC_APPS[id], el = document.createElement('div');
+  el.className = 'pc-win';
+  el.innerHTML = `<div class="pc-wt"><span>${A.icon} ${A.title}</span><button data-close="${id}" title="Zavřít">✕</button></div><div class="pc-wb"></div>`;
+  layer.appendChild(el);
+  const LW = layer.clientWidth, LH = layer.clientHeight, n = pc.wins.length;
+  if (LW < 720 || LH < 440) el.classList.add('max'); // malá obrazovka: okno přes celou plochu
+  else {
+    const w = Math.min(A.w, LW - 20), h = Math.min(A.h, LH - 20);
+    Object.assign(el.style, { width: w + 'px', height: h + 'px', left: Math.max(4, (LW - w) / 2 + n * 26 - 26) + 'px', top: Math.max(4, (LH - h) / 2 + n * 22 - 22) + 'px' });
+  }
+  const win = { id, app: A, el, body: el.querySelector('.pc-wb') };
+  pc.wins.push(win);
+  A.init?.(win);
+  focusWin(win);
+  pcScr.querySelector('.pc-startm').hidden = true;
+}
+function closeWin(id, force) {
+  const i = pc.wins.findIndex((w) => w.id === id);
+  if (i < 0) return;
+  if (!force && pc.wins[i].app.canClose && !pc.wins[i].app.canClose(pc.wins[i])) return; // neuložený dokument
+  const [w] = pc.wins.splice(i, 1);
+  w.app.blur?.(w);
+  w.el.remove();
+  if (pc.active === w) pc.active = pc.wins[pc.wins.length - 1] || null;
+  if (pc.active) focusWin(pc.active); else renderTasks();
+}
+function closeAllWins() {
+  for (const w of [...pc.wins]) closeWin(w.id, true);
+}
+pcEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) { const sm = pcScr.querySelector('.pc-startm'); if (sm && !e.target.closest('.pc-startm')) sm.hidden = true; return; }
+  const sm = pcScr.querySelector('.pc-startm');
+  if (sm && b.dataset.pc !== 'start') sm.hidden = true;
+  if (b.dataset.pc === 'leave') return closePC();
+  if (b.dataset.pc === 'power') return pcPower();
+  if (b.dataset.pc === 'restart') { if (pcCanShut()) { setPhase('shut'); pc.restart = true; } return; }
+  if (b.dataset.pc === 'start') { sm.hidden = !sm.hidden; return; }
+  if (b.dataset.app) return openApp(b.dataset.app);
+  if (b.dataset.close) return closeWin(b.dataset.close);
+  if (b.dataset.task) { const w = pc.wins.find((o) => o.id === b.dataset.task); if (w) focusWin(w); return; }
+  if (b.dataset.wall) { pcSet(pc.k, { wall: Number(b.dataset.wall) }); const [, a, c] = pcWall(power.get(pc.k)); pcScr.querySelector('.pc-desk').style.background = `linear-gradient(135deg,${a},${c})`; }
+});
+// Okno se dá přesunout za titulek a kliknutím se dá dopředu
+pcEl.addEventListener('pointerdown', (e) => {
+  const wEl = e.target.closest('.pc-win');
+  if (!wEl) return;
+  const w = pc.wins.find((o) => o.el === wEl);
+  if (w && w !== pc.active) focusWin(w);
+  const bar = e.target.closest('.pc-wt');
+  if (!bar || e.target.closest('button') || wEl.classList.contains('max')) return;
+  const sx = e.clientX - wEl.offsetLeft, sy = e.clientY - wEl.offsetTop, layer = wEl.parentElement;
+  const move = (ev) => {
+    wEl.style.left = clamp(ev.clientX - sx, -wEl.offsetWidth + 60, layer.clientWidth - 60) + 'px';
+    wEl.style.top = clamp(ev.clientY - sy, 0, layer.clientHeight - 30) + 'px';
+  };
+  const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); };
+  addEventListener('pointermove', move);
+  addEventListener('pointerup', up);
+});
+// Klávesnice patří počítači, dokud je otevřený (hra ji nedostane); Esc zavře nabídku nebo odejde od počítače
+addEventListener('keydown', (e) => {
+  if (!pcOpen) return;
+  e.stopImmediatePropagation();
+  if (e.code === 'Escape') {
+    const sm = pcScr.querySelector('.pc-startm');
+    if (sm && !sm.hidden) sm.hidden = true; else closePC();
+    e.preventDefault();
+    return;
+  }
+  if (pc.active?.game?.key(e.code, true)) e.preventDefault();
+}, true);
+addEventListener('keyup', (e) => {
+  if (!pcOpen) return;
+  e.stopImmediatePropagation();
+  pc.active?.game?.key(e.code, false);
+}, true);
+
+// ============================================================ Tanky 2D
+// Bludiště 20 × 12 polí (ocel se nedá zničit, cihly vydrží 2 zásahy), dva tanky se 3 životy, střely se jednou odrazí od oceli.
+// Kolo končí zničením tanku, zápas vyhrává, kdo má první 5 bodů. Režim proti počítači (3 obtížnosti) nebo 2 hráči na jedné klávesnici.
+const TK = { W: 20, H: 12, C: 32, R: 12, SPEED: 95, ROT: 2.8, TROT: 3, CD: 0.75, BSPD: 290, HP: 3, WIN: 5 };
+const TK_DIFF = {
+  easy: { name: 'Snadná', err: 0.22, cd: 1.7, trot: 0.55, lead: 0, keep: 260 },
+  normal: { name: 'Normální', err: 0.1, cd: 1.15, trot: 0.85, lead: 0.6, keep: 220 },
+  hard: { name: 'Těžká', err: 0.035, cd: 0.85, trot: 1.15, lead: 1, keep: 180 },
+};
+const TK_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Comma', 'Period', 'Enter', 'KeyR']);
+const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+function tanksInit(win) {
+  win.body.innerHTML = `<div class="tk">
+    <div class="tk-top"><div class="tk-score"></div>
+      <div class="tk-btns"><button data-tk="ai">1 hráč</button><button data-tk="pvp">2 hráči</button>
+      <select data-tk="diff">${Object.entries(TK_DIFF).map(([id, d]) => `<option value="${id}"${id === 'normal' ? ' selected' : ''}>${d.name}</option>`).join('')}</select>
+      <button data-tk="restart">↻ Restart</button></div></div>
+    <div class="tk-view"><canvas width="${TK.W * TK.C}" height="${TK.H * TK.C}"></canvas><div class="tk-msg" hidden></div>
+      <div class="tk-pad">${[['KeyW', '▲'], ['KeyA', '◀'], ['KeyS', '▼'], ['KeyD', '▶']].map(([c, t]) => `<button data-key="${c}">${t}</button>`).join('')}</div>
+      <div class="tk-pad r">${[['KeyQ', '↺'], ['KeyE', '↻'], ['Space', '💥']].map(([c, t]) => `<button data-key="${c}">${t}</button>`).join('')}</div></div>
+    <div class="tk-help"></div></div>`;
+  const root = win.body.firstChild, cv = root.querySelector('canvas'), g = cv.getContext('2d');
+  const msgEl = root.querySelector('.tk-msg'), scoreEl = root.querySelector('.tk-score'), helpEl = root.querySelector('.tk-help');
+  const keysT = new Set();
+  const C = TK.C, W = TK.W, H = TK.H;
+  let G = null, mode = 'ai', diff = 'normal';
+  const idx = (x, y) => y * W + x;
+  const solid = (cx, cy) => cx < 0 || cy < 0 || cx >= W || cy >= H || G.map[idx(cx, cy)] > 0;
+  const cellOf = (t) => [Math.floor(t.x / C), Math.floor(t.y / C)];
+  const SPAWN = [[2, 9], [W - 3, H - 10]];
+
+  // Bludiště je souměrné podle středu (oba hráči mají stejné podmínky) a vždy průjezdné
+  function bfs(m, from, to, through = (v) => v === 0) {
+    const prev = new Int16Array(W * H).fill(-1), q = [idx(...from)];
+    prev[q[0]] = q[0];
+    for (let i = 0; i < q.length; i++) {
+      const c = q[i];
+      if (c === idx(...to)) {
+        const path = [];
+        for (let p = c; ; p = prev[p]) { path.unshift([p % W, Math.floor(p / W)]); if (p === prev[p]) break; }
+        return path;
+      }
+      const cx = c % W, cy = Math.floor(c / W);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = cx + dx, ny = cy + dy, n = idx(nx, ny);
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev[n] >= 0 || !through(m[n])) continue;
+        prev[n] = c;
+        q.push(n);
+      }
+    }
+    return null;
+  }
+  function genMap() {
+    for (let tries = 0; tries < 60; tries++) {
+      const m = new Array(W * H).fill(0);
+      const set = (x, y, v) => { m[idx(x, y)] = v; m[idx(W - 1 - x, H - 1 - y)] = v; };
+      for (let x = 0; x < W; x++) set(x, 0, 9);
+      for (let y = 0; y < H; y++) set(0, y, 9);
+      const n = 9 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < n; i++) {
+        const x = 1 + Math.floor(Math.random() * (W - 2)), y = 1 + Math.floor(Math.random() * (H - 2));
+        const hor = Math.random() < 0.5, len = 1 + Math.floor(Math.random() * 3), v = Math.random() < 0.35 ? 9 : 2;
+        for (let j = 0; j < len; j++) { const xx = x + (hor ? j : 0), yy = y + (hor ? 0 : j); if (xx >= W - 1 || yy >= H - 1) break; set(xx, yy, v); }
+      }
+      for (let y = 7; y <= 10; y++) for (let x = 1; x <= 4; x++) set(x, y, 0); // volné místo u startu
+      if (bfs(m, SPAWN[0], SPAWN[1])) return m;
+    }
+    const m = new Array(W * H).fill(0);
+    for (let x = 0; x < W; x++) { m[idx(x, 0)] = m[idx(x, H - 1)] = 9; }
+    for (let y = 0; y < H; y++) { m[idx(0, y)] = m[idx(W - 1, y)] = 9; }
+    return m;
+  }
+  const tank = (i) => ({ x: (SPAWN[i][0] + 0.5) * C, y: (SPAWN[i][1] + 0.5) * C, a: i ? Math.PI : 0, ta: i ? Math.PI : 0, hp: TK.HP, cd: 0.5, alive: true, vx: 0, vy: 0, i });
+  function newRound() {
+    G.map = genMap();
+    G.tanks = [tank(0), tank(1)];
+    G.shots = [];
+    G.roundT = 0;
+    msgEl.hidden = true;
+  }
+  function newMatch(m = mode) {
+    mode = m;
+    G = { score: [0, 0], parts: [], shake: 0, over: false, mouse: null, mouseDown: false };
+    newRound();
+    renderHud();
+  }
+  const names = () => (mode === 'ai' ? ['Ty', 'Počítač'] : ['Hráč 1', 'Hráč 2']);
+  function renderHud() {
+    const [a, b] = names();
+    scoreEl.innerHTML = `<b class="p1">${a}</b> ${G.score[0]} : ${G.score[1]} <b class="p2">${b}</b> <span class="pc-dim">· do ${TK.WIN} bodů</span>`;
+    root.querySelectorAll('[data-tk="ai"],[data-tk="pvp"]').forEach((b2) => b2.classList.toggle('on', b2.dataset.tk === mode));
+    root.querySelector('[data-tk="diff"]').style.display = mode === 'ai' ? '' : 'none';
+    helpEl.textContent = mode === 'ai'
+      ? 'W S jízda · A D otáčení · Q E nebo myš věž · Mezerník / klik střelba · R restart'
+      : 'Hráč 1: W S A D, věž Q E, střelba Mezerník · Hráč 2: šipky, věž , a . , střelba Enter · R restart';
+  }
+  function message(html, btn) {
+    msgEl.innerHTML = html + (btn ? `<br><button data-tk="restart">${btn}</button>` : '');
+    msgEl.hidden = false;
+  }
+
+  // ---------- pohyb a střelba
+  function free(x, y, t) {
+    const r = TK.R;
+    for (let cy = Math.floor((y - r) / C); cy <= Math.floor((y + r) / C); cy++)
+      for (let cx = Math.floor((x - r) / C); cx <= Math.floor((x + r) / C); cx++) {
+        if (!solid(cx, cy)) continue;
+        const px = clamp(x, cx * C, cx * C + C), py = clamp(y, cy * C, cy * C + C);
+        if ((px - x) ** 2 + (py - y) ** 2 < r * r) return false;
+      }
+    for (const o of G.tanks) if (o !== t && o.alive && (o.x - x) ** 2 + (o.y - y) ** 2 < (2 * r) ** 2) return false;
+    return true;
+  }
+  function moveTank(t, fwd, rot, dt) {
+    t.a += rot * TK.ROT * dt;
+    const sp = fwd * TK.SPEED * (fwd < 0 ? 0.6 : 1) * dt, ox = t.x, oy = t.y;
+    const nx = t.x + Math.cos(t.a) * sp, ny = t.y + Math.sin(t.a) * sp;
+    if (free(nx, t.y, t)) t.x = nx;
+    if (free(t.x, ny, t)) t.y = ny;
+    t.vx = (t.x - ox) / dt;
+    t.vy = (t.y - oy) / dt;
+  }
+  function fire(t, mul = 1) {
+    t.cd = TK.CD * mul;
+    const ca = Math.cos(t.ta), sa = Math.sin(t.ta);
+    G.shots.push({ x: t.x + ca * 18, y: t.y + sa * 18, vx: ca * TK.BSPD, vy: sa * TK.BSPD, life: 2.2, age: 0, bounce: 1, owner: t });
+    burst(t.x + ca * 20, t.y + sa * 20, '#ffd27a', 5, 60, 0.15);
+    Sound.burst({ dur: 0.12, f0: 900, f1: 120, q: 0.8, vol: 0.25, type: 'lowpass' });
+  }
+  function burst(x, y, col, n, spd, life, r = 3) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = spd * (0.3 + Math.random());
+      G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: life * (0.6 + Math.random() * 0.6), max: life, col, r });
+    }
+  }
+  function hitTank(t) {
+    t.hp--;
+    G.shake = 0.15;
+    burst(t.x, t.y, '#ffb04a', 10, 90, 0.35);
+    if (t.hp > 0) { Sound.hit(); return; }
+    t.alive = false;
+    G.shake = 0.5;
+    burst(t.x, t.y, '#ff7a2a', 34, 160, 0.8, 4);
+    burst(t.x, t.y, '#5a5a5a', 20, 70, 1.2, 5);
+    Sound.crack();
+    const win = 1 - t.i;
+    G.score[win]++;
+    G.roundT = 2.2;
+    renderHud();
+    const [a, b] = names(), who = win ? b : a;
+    message(G.tanks.every((o) => !o.alive) ? 'Oba tanky zničeny – <b>remíza</b>, bod pro oba' : `Bod pro: <b>${who}</b>`);
+  }
+  function stepShots(dt) {
+    for (let i = G.shots.length - 1; i >= 0; i--) {
+      const b = G.shots[i];
+      b.age += dt;
+      let dead = (b.life -= dt) <= 0;
+      const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, cx = Math.floor(nx / C), cy = Math.floor(ny / C);
+      if (!dead && solid(cx, cy)) {
+        const v = cx >= 0 && cy >= 0 && cx < W && cy < H ? G.map[idx(cx, cy)] : 9;
+        if (v !== 9) { // cihla: praskne, po druhém zásahu zmizí
+          G.map[idx(cx, cy)] = v - 1;
+          burst(nx, ny, '#b8603a', v === 1 ? 16 : 6, 80, 0.5);
+          Sound.burst({ dur: 0.15, f0: 1200, f1: 200, q: 0.8, vol: 0.2, type: 'lowpass' });
+          dead = true;
+        } else if (b.bounce-- > 0) { // ocel: jeden odraz
+          const ox = Math.floor(b.x / C), oy = Math.floor(b.y / C), hx = solid(cx, oy), hy = solid(ox, cy);
+          if (hx) b.vx = -b.vx;
+          if (hy) b.vy = -b.vy;
+          if (!hx && !hy) { b.vx = -b.vx; b.vy = -b.vy; }
+          Sound.tone(1400, 0.04, 0.05, 'square');
+          continue;
+        } else { burst(b.x, b.y, '#d8d8d8', 5, 50, 0.25); dead = true; }
+      }
+      if (!dead) {
+        b.x = nx;
+        b.y = ny;
+        for (const t of G.tanks) if (t.alive && (t !== b.owner || b.age > 0.25) && (t.x - b.x) ** 2 + (t.y - b.y) ** 2 < (TK.R + 2) ** 2) { hitTank(t); dead = true; break; }
+      }
+      if (dead) G.shots.splice(i, 1);
+    }
+  }
+  // Je mezi dvěma body volný výhled (bez zdí)?
+  function los(x0, y0, x1, y1) {
+    const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6);
+    for (let i = 1; i < n; i++) { const x = x0 + ((x1 - x0) * i) / n, y = y0 + ((y1 - y0) * i) / n; if (solid(Math.floor(x / C), Math.floor(y / C))) return false; }
+    return true;
+  }
+  // ---------- počítačový protivník: hledá cestu bludištěm (cihly prostřelí), z dálky míří s předstihem
+  function ai(t, foe, dt) {
+    const D = TK_DIFF[diff], A = (t.ai ||= { path: null, pathT: 0, stuckT: 0, lx: t.x, ly: t.y, back: 0, err: 0, errT: 0 });
+    if ((A.pathT -= dt) <= 0) { A.pathT = 0.5; A.path = bfs(G.map, cellOf(t), cellOf(foe), (v) => v !== 9); }
+    const see = foe.alive && los(t.x, t.y, foe.x, foe.y), d = Math.hypot(foe.x - t.x, foe.y - t.y);
+    let fwd = 0, rot = 0, aim = null, shoot = false, goal = null;
+    if (A.path && A.path.length > 1) {
+      const [nx, ny] = A.path[1];
+      goal = [(nx + 0.5) * C, (ny + 0.5) * C];
+      if (G.map[idx(nx, ny)]) { aim = goal; shoot = true; goal = null; } // cihla v cestě: prostřelit
+    }
+    if (see && d < D.keep) goal = null; // nepřítel na dostřel: zastavit a střílet
+    if (goal) {
+      const da = angDiff(Math.atan2(goal[1] - t.y, goal[0] - t.x), t.a);
+      rot = clamp(da * 3, -1, 1);
+      fwd = Math.abs(da) < 0.6 ? 1 : 0;
+    }
+    if (A.back > 0) { A.back -= dt; fwd = -1; rot = 0.7; }
+    if ((A.stuckT += dt) > 1.2) {
+      if (fwd > 0 && Math.hypot(t.x - A.lx, t.y - A.ly) < 8) A.back = 0.5; // zasekl se: kousek couvnout
+      A.stuckT = 0; A.lx = t.x; A.ly = t.y;
+    }
+    moveTank(t, fwd, rot, dt);
+    if (see) { const tt = (d / TK.BSPD) * D.lead; aim = [foe.x + foe.vx * tt, foe.y + foe.vy * tt]; shoot = true; }
+    if ((A.errT -= dt) <= 0) { A.errT = 0.6; A.err = (Math.random() * 2 - 1) * D.err; }
+    const want = aim ? Math.atan2(aim[1] - t.y, aim[0] - t.x) + (see ? A.err : 0) : t.a, da = angDiff(want, t.ta), lim = TK.TROT * D.trot * dt;
+    t.ta += clamp(da, -lim, lim);
+    if (shoot && Math.abs(da) < 0.07 && t.cd <= 0) fire(t, D.cd);
+  }
+  function human(t, [up, down, left, right, tl, tr, shot], dt, mouse) {
+    const k = (c) => keysT.has(c);
+    moveTank(t, (k(up) ? 1 : 0) - (k(down) ? 1 : 0), (k(right) ? 1 : 0) - (k(left) ? 1 : 0), dt);
+    const turn = (k(tr) ? 1 : 0) - (k(tl) ? 1 : 0);
+    if (turn) G.mouse = null;
+    if (mouse && G.mouse) { const da = angDiff(Math.atan2(G.mouse[1] - t.y, G.mouse[0] - t.x), t.ta), lim = TK.TROT * 1.4 * dt; t.ta += clamp(da, -lim, lim); }
+    else t.ta += turn * TK.TROT * dt;
+    if ((k(shot) || (mouse && G.mouseDown)) && t.cd <= 0) fire(t);
+  }
+  function step(dt) {
+    if (!G || dt <= 0) return;
+    const [P1, P2] = G.tanks;
+    if (!G.over) {
+      for (const t of G.tanks) t.cd -= dt;
+      if (P1.alive) human(P1, ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyQ', 'KeyE', 'Space'], dt, true);
+      if (P2.alive) {
+        if (mode === 'ai') { if (P1.alive) ai(P2, P1, dt); }
+        else human(P2, ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Comma', 'Period', 'Enter'], dt, false);
+      }
+      stepShots(dt);
+      if (G.roundT > 0 && (G.roundT -= dt) <= 0) {
+        const [s0, s1] = G.score;
+        if (Math.max(s0, s1) >= TK.WIN) {
+          const w = s0 === s1 ? -1 : s0 > s1 ? 0 : 1; // -1 = remíza (oba tanky padly v posledním kole)
+          G.over = true;
+          if (mode === 'ai' && w >= 0) { const tk = [...(powerOf(pc.k).tk || [0, 0])]; tk[w]++; pcSet(pc.k, { tk }); } // výsledek si počítač pamatuje
+          const [a, b] = names();
+          message(`<b>${w < 0 ? 'Remíza' : mode === 'ai' ? (w ? 'Počítač vyhrál zápas' : 'Vyhrál jsi zápas!') : `${w ? b : a} vyhrál zápas!`}</b><br>${G.score[0]} : ${G.score[1]}`, 'Hrát znovu');
+        } else newRound();
+      }
+    }
+    for (let i = G.parts.length - 1; i >= 0; i--) {
+      const p = G.parts[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92;
+      if ((p.life -= dt) <= 0) G.parts.splice(i, 1);
+    }
+    G.shake = Math.max(0, G.shake - dt);
+    draw();
+  }
+
+  // ---------- kreslení
+  function draw() {
+    g.save();
+    if (G.shake > 0) g.translate((Math.random() - 0.5) * G.shake * 16, (Math.random() - 0.5) * G.shake * 16);
+    g.fillStyle = '#cbb68a';
+    g.fillRect(-10, -10, W * C + 20, H * C + 20);
+    g.fillStyle = 'rgba(120,96,60,0.16)';
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x + y) % 2) g.fillRect(x * C, y * C, C, C);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const v = G.map[idx(x, y)], px = x * C, py = y * C;
+      if (v === 9) {
+        g.fillStyle = '#5e666f'; g.fillRect(px, py, C, C);
+        g.fillStyle = '#87909a'; g.fillRect(px + 3, py + 3, C - 6, C - 6);
+        g.fillStyle = '#4a5058'; for (const [a, b] of [[6, 6], [C - 9, 6], [6, C - 9], [C - 9, C - 9]]) g.fillRect(px + a, py + b, 3, 3);
+      } else if (v > 0) {
+        g.fillStyle = '#a8553a'; g.fillRect(px, py, C, C);
+        g.fillStyle = '#d8c8a8';
+        for (let r = 1; r < 4; r++) g.fillRect(px, py + r * 8, C, 1.5);
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 2; c++) g.fillRect(px + ((c * 16 + (r % 2) * 8) % C), py + r * 8, 1.5, 8);
+        if (v === 1) { g.strokeStyle = '#2a1a12'; g.lineWidth = 2; g.beginPath(); g.moveTo(px + 6, py + 4); g.lineTo(px + 15, py + 15); g.lineTo(px + 11, py + 24); g.moveTo(px + 15, py + 15); g.lineTo(px + 27, py + 19); g.stroke(); }
+      }
+    }
+    for (const t of G.tanks) drawTank(t);
+    g.fillStyle = '#1a1a1a';
+    for (const b of G.shots) { g.beginPath(); g.arc(b.x, b.y, 3.2, 0, Math.PI * 2); g.fill(); }
+    for (const p of G.parts) { g.globalAlpha = clamp(p.life / p.max, 0, 1); g.fillStyle = p.col; g.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }
+    g.globalAlpha = 1;
+    g.restore();
+  }
+  function drawTank(t) {
+    const col = t.i ? ['#b8463a', '#7a2a22', '#d8685a'] : ['#4a8a3a', '#2a5a22', '#6aaa5a'];
+    if (!t.alive) { // vrak
+      g.save(); g.translate(t.x, t.y); g.rotate(t.a);
+      g.fillStyle = '#2a2622'; g.fillRect(-13, -11, 26, 22);
+      g.restore();
+      return;
+    }
+    g.save(); g.translate(t.x, t.y); g.rotate(t.a);
+    g.fillStyle = '#26262a'; g.fillRect(-14, -13, 28, 6); g.fillRect(-14, 7, 28, 6);
+    g.fillStyle = '#4a4a50'; for (let i = -12; i < 14; i += 5) { g.fillRect(i, -13, 2, 6); g.fillRect(i, 7, 2, 6); }
+    g.fillStyle = col[0]; g.fillRect(-12, -8, 24, 16);
+    g.fillStyle = col[1]; g.fillRect(9, -8, 3, 16);
+    g.restore();
+    g.save(); g.translate(t.x, t.y); g.rotate(t.ta);
+    g.fillStyle = col[1]; g.fillRect(0, -2.5, 21, 5);
+    g.fillStyle = col[2]; g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.fill();
+    g.restore();
+    for (let i = 0; i < TK.HP; i++) { g.fillStyle = i < t.hp ? '#3ad84a' : '#5a2a2a'; g.fillRect(t.x - 11 + i * 8, t.y - 24, 6, 3); }
+  }
+
+  // ---------- ovládání: klávesy (z okna počítače), myš na plátně, dotyková tlačítka
+  root.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tk]');
+    if (!b || b.tagName === 'SELECT') return;
+    if (b.dataset.tk === 'ai' || b.dataset.tk === 'pvp') newMatch(b.dataset.tk);
+    else if (b.dataset.tk === 'restart') newMatch();
+    b.blur();
+  });
+  root.querySelector('select').addEventListener('change', (e) => { diff = e.target.value; e.target.blur(); newMatch(); });
+  const toCanvas = (e) => {
+    const r = cv.getBoundingClientRect(), s = Math.min(r.width / cv.width, r.height / cv.height);
+    return [(e.clientX - r.left - (r.width - cv.width * s) / 2) / s, (e.clientY - r.top - (r.height - cv.height * s) / 2) / s];
+  };
+  if (!TOUCH) {
+    cv.addEventListener('mousemove', (e) => { G.mouse = toCanvas(e); });
+    cv.addEventListener('mousedown', (e) => { if (e.button === 0) { G.mouse = toCanvas(e); G.mouseDown = true; } });
+    addEventListener('mouseup', () => { if (G) G.mouseDown = false; });
+  }
+  for (const b of root.querySelectorAll('[data-key]')) {
+    const c = b.dataset.key;
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); keysT.add(c); });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => keysT.delete(c));
+  }
+  root.classList.toggle('touch', TOUCH);
+  win.game = {
+    keys: keysT,
+    get state() { return G; }, // pro ladění v konzoli
+    step,
+    key(code, down) {
+      if (!TK_KEYS.has(code)) return false;
+      if (code === 'KeyR') { if (down) newMatch(); return true; }
+      if (down) keysT.add(code); else keysT.delete(code);
+      return true;
+    },
+  };
+  newMatch('ai');
+  draw();
+}
+// ============================================================ dokumenty: textový editor, tiskárna, papíry ve světě, čtení a předání
+// pcDisks: uložené dokumenty každého počítače (klíč bloku -> { docs: [{ id, name, text, day }] }).
+// Tiskárna (power[k]): slots[0] papír, slots[1..3] vytištěné listy, q = fronta úloh { p: id papíru, n: kopií, done }.
+// paperSpots: papíry položené na zemi a na stole, pověšené na zdi, rámečky (id -> { d: id papíru | null, x, y, z, ry, w: na zdi, fr: rámeček }).
+const pcDisks = new Map(Object.entries(save?.pcDisks || {}));
+const paperSpots = new Map(Object.entries(save?.paperSpots || {}));
+const PRINT_TIME = 3, PRINT_QUEUE = 5, DISK_MAX = 30, DOC_TEXT_MAX = 4000;
+let docOpen = false;
+const escH = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const kvPend = (m, k) => { if (NET.client) NET.pend.set(m + '|' + k, performance.now() + 1500); }; // vlastní změnu hostitel hned nepřepíše
+function newPaper(title, text) {
+  const id = NET.uid();
+  papers.set(id, { title: String(title).slice(0, 40), text: String(text).slice(0, DOC_TEXT_MAX), by: NET.name || 'Hráč', day: dayCount });
+  return id;
+}
+
+// ---------- tiskárna
+function queuePrint(k, p, n) { // provádí hostitel (ve hře pro jednoho hra sama)
+  if (blocks.get(k) !== 'printer' || typeof p !== 'string') return false;
+  const st = powerOf(k);
+  if (st.q.length >= PRINT_QUEUE) return false;
+  st.q.push({ p: p.slice(0, 80), n: clamp(Math.floor(n) || 1, 1, 5), done: 0 });
+  return true;
+}
+function printJob(k, p, n) {
+  if (NET.client) { NET.req(['print', k, p, n]); return true; }
+  return queuePrint(k, p, n);
+}
+const printerReady = (st) => !!(st.q?.length && st.slots[0]?.id === 'paper' && st.slots.slice(1).some((s) => !s));
+function printStep(st, step) {
+  if ((st.t = (st.t || 0) + step) < PRINT_TIME) return;
+  st.t = 0;
+  const job = st.q[0];
+  if (!--st.slots[0].n) st.slots[0] = null;
+  st.slots[st.slots.findIndex((s, i) => i > 0 && !s)] = { id: 'doc_' + job.p, n: 1 };
+  if (++job.done >= job.n) st.q.shift();
+}
+function printerDev(st) {
+  const job = st.q?.[0], title = job && (papers.get(job.p)?.title || '…'), out = st.slots.slice(1).filter(Boolean).length;
+  const red = (s) => `<span style="color:#ff8a7a">${s}</span>`;
+  const status = !job ? 'Čeká na tisk. Dokument pošli z textového editoru v počítači, který je ve stejné elektrické síti.'
+    : st.slots[0]?.id !== 'paper' ? red('Došel papír – vlož papír do levého políčka.')
+    : out >= 3 ? red('Zásobník je plný – vyber vytištěné listy.')
+    : st.pw ? `Tiskne „${escH(title)}“ – kopie ${job.done + 1} / ${job.n}` : red('Málo energie – stojí.');
+  const queue = (st.q || []).map((j, i) => `<div>${i + 1}. ${escH(papers.get(j.p)?.title || '…')} · ${j.done}/${j.n}</div>`).join('');
+  return `<div class="fire-ui">${slotHTML(st.slots[0], 0, '', 'power')}<div class="parrow" style="width:90px"><i style="width:${job && st.pw ? ((st.t || 0) / PRINT_TIME) * 100 : 0}%"></i></div>
+    ${[1, 2, 3].map((i) => slotHTML(st.slots[i], i, 'out', 'power')).join('')}</div>
+    <div class="mc-note">${status}</div>${queue ? `<div class="mc-note">Fronta tisku:${queue}</div>` : ''}<div class="mc-note">Jeden list = 1 papír a ${PRINT_TIME} s. Příkon ${elecOf('printer').use} W jen při tisku.</div>`;
+}
+function buildPrinterModel(g) {
+  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.55, ...o });
+  const box = (w, h, d, m, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); g.add(me); return me; };
+  const body = M({ color: 0xe0dcd4 }), dark = M({ color: 0x3a3a42 });
+  box(0.7, 0.3, 0.5, body, 0, 0.15, -0.02);
+  box(0.6, 0.02, 0.02, dark, 0, 0.2, 0.235); // výstupní štěrbina
+  box(0.5, 0.02, 0.2, body, 0, 0.06, 0.32); // zásobník
+  const tray = box(0.42, 0.14, 0.02, body, 0, 0.36, -0.2); // podavač papíru vzadu
+  tray.rotation.x = -0.4;
+  box(0.36, 0.11, 0.005, M({ color: 0xfbf8ee }), 0, 0.37, -0.19).rotation.x = -0.4;
+  g.userData.led = box(0.04, 0.03, 0.01, M({ color: 0x222222, emissive: 0x3aff5a, emissiveIntensity: 0 }), 0.28, 0.25, 0.231).material;
+  const sheet = box(0.36, 0.005, 0.24, M({ color: 0xfbf8ee }), 0, 0.075, 0.3);
+  sheet.visible = false;
+  g.userData.sheet = sheet;
+}
+
+// ---------- papír jako textura (nadpis, text, autor)
+const paperGeo = new THREE.PlaneGeometry(0.42, 0.594), paperTexCache = new Map();
+function wrapLines(x, text, maxW) {
+  const out = [];
+  for (const para of String(text).split('\n')) {
+    let line = '';
+    for (const word of para.split(' ')) {
+      const t = line ? line + ' ' + word : word;
+      if (x.measureText(t).width > maxW && line) { out.push(line); line = word; } else line = t;
+    }
+    out.push(line);
+  }
+  return out;
+}
+function paperTex(pid) {
+  const rec = papers.get(pid), key = pid + (rec ? '1' : '0');
+  if (paperTexCache.has(key)) return paperTexCache.get(key);
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 362;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fbf8ee';
+  x.fillRect(0, 0, 256, 362);
+  x.fillStyle = '#1a1a2a';
+  x.font = 'bold 20px Georgia, serif';
+  const title = wrapLines(x, rec?.title || '…', 224).slice(0, 2);
+  title.forEach((l, i) => x.fillText(l, 16, 32 + i * 23));
+  x.font = '15px Georgia, serif';
+  x.fillStyle = '#16161e';
+  let y = 46 + title.length * 23;
+  for (const l of wrapLines(x, rec?.text || '', 224)) { if (y > 336) break; x.fillText(l, 16, y); y += 18; }
+  x.fillStyle = '#8a8a92';
+  x.font = 'italic 10px Georgia, serif';
+  if (rec) x.fillText(`${rec.by} · den ${rec.day}`, 16, 352);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 });
+  paperTexCache.set(key, mat);
+  return mat;
+}
+
+// ---------- papíry a rámečky ve světě
+const spotObjs = new Map(); // id -> { obj, sig }
+const frameMat = new THREE.MeshStandardMaterial({ map: planksTex, color: 0x9a6a3a, roughness: 0.6 }), backMat = new THREE.MeshStandardMaterial({ color: 0x3a3028, roughness: 0.9 });
+const pinMat = new THREE.MeshStandardMaterial({ color: 0xd82a2a, roughness: 0.4 });
+function buildSpot(s) {
+  const g = new THREE.Group(), inner = new THREE.Group();
+  g.position.set(s.x, s.y, s.z);
+  g.rotation.y = s.ry;
+  if (!s.w) inner.rotation.x = -Math.PI / 2; // na zemi a na stole leží
+  g.add(inner);
+  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); inner.add(m); return m; };
+  if (s.fr) {
+    for (const [w, h, x, y] of [[0.56, 0.05, 0, 0.345], [0.56, 0.05, 0, -0.345], [0.05, 0.74, -0.255, 0], [0.05, 0.74, 0.255, 0]]) add(new THREE.BoxGeometry(w, h, 0.04), frameMat, x, y, 0.02);
+    add(new THREE.PlaneGeometry(0.46, 0.64), backMat, 0, 0, 0.004);
+  }
+  if (s.d) {
+    const p = add(paperGeo, paperTex(s.d), 0, 0, s.fr ? 0.01 : 0.002);
+    if (s.fr) p.scale.setScalar(1.05);
+    if (s.w && !s.fr) add(new THREE.SphereGeometry(0.018, 8, 6), pinMat, 0, 0.27, 0.01); // připínáček
+  }
+  scene.add(g);
+  return g;
+}
+let spotT = 0;
+function updateDocs(dt) {
+  if ((spotT -= dt) > 0) return;
+  spotT = 0.25;
+  for (const [id, s] of paperSpots) {
+    const sig = JSON.stringify(s) + (s.d && papers.has(s.d) ? 1 : 0), o = spotObjs.get(id);
+    if (o?.sig === sig) continue;
+    if (o) scene.remove(o.obj);
+    spotObjs.set(id, { obj: buildSpot(s), sig });
+  }
+  for (const [id, o] of spotObjs) if (!paperSpots.has(id)) { scene.remove(o.obj); spotObjs.delete(id); }
+}
+// Paprsek proti obdélníkům papírů (na zemi vodorovně, na zdi svisle)
+function rayPaper(o, d, maxT) {
+  let best = null;
+  for (const [id, s] of paperSpots) {
+    const dx = s.x - o.x, dy = s.y - o.y, dz = s.z - o.z;
+    if (dx * dx + dy * dy + dz * dz > 64) continue;
+    const c = Math.cos(s.ry), sn = Math.sin(s.ry), n = s.w ? [sn, 0, c] : [0, 1, 0], u = [c, 0, -sn], v = s.w ? [0, 1, 0] : [sn, 0, c];
+    const den = d.x * n[0] + d.y * n[1] + d.z * n[2];
+    if (Math.abs(den) < 1e-4) continue;
+    const t = (dx * n[0] + dy * n[1] + dz * n[2]) / den;
+    if (t <= 0 || t >= maxT || (best && t >= best.t)) continue;
+    const px = o.x + d.x * t - s.x, py = o.y + d.y * t - s.y, pz = o.z + d.z * t - s.z, hu = s.fr ? 0.29 : 0.22, hv = s.fr ? 0.38 : 0.31;
+    if (Math.abs(px * u[0] + py * u[1] + pz * u[2]) < hu && Math.abs(px * v[0] + py * v[1] + pz * v[2]) < hv) best = { id, t, at: [px + s.x, py + s.y, pz + s.z] };
+  }
+  return best;
+}
+// Doplní cíl pohledu o papír, když je blíž než to, na co se hráč dívá
+function withPaper(best) {
+  const pp = rayPaper(rayO, rayD, REACH), hit = best?.point || best?.at;
+  if (!pp || (hit && pp.t > Math.hypot(hit[0] - rayO.x, hit[1] - rayO.y, hit[2] - rayO.z) + 0.05)) return best;
+  const s = paperSpots.get(pp.id), title = s.d && papers.get(s.d)?.title;
+  return {
+    kind: 'paper', id: pp.id, key: 'pd' + pp.id, at: pp.at, hard: 0.35,
+    name: s.d ? `Dokument „${title || '…'}“` : 'Prázdný rámeček',
+    hint: s.d ? `pravé tl. = číst · drž levé = ${s.fr ? 'sundat s rámečkem' : 'sebrat'}` : 'pravé tl. s dokumentem v ruce = zarámovat · drž levé = sundat',
+  };
+}
+function takeSpot(id) {
+  const s = paperSpots.get(id);
+  if (!s) return;
+  paperSpots.delete(id);
+  if (s.d) addItem('doc_' + s.d, 1);
+  if (s.fr) addItem('picture_frame', 1);
+  Sound.rustle();
+}
+// Zničený blok shodí papíry, které na něm leží nebo visí
+function dropSpotsAt(cx, cy, cz) {
+  for (const [id, s] of paperSpots) if (s.x > cx - 0.06 && s.x < cx + 1.06 && s.y > cy - 0.06 && s.y < cy + 1.06 && s.z > cz - 0.06 && s.z < cz + 1.06) takeSpot(id);
+}
+// Kam položit papír nebo pověsit rámeček podle toho, kam se hráč dívá. null = nikam (dokument se jen přečte), text = proč to nejde.
+function surfaceSpot(wallOnly) {
+  const t = target;
+  if (!t?.point || !t.normal) return null;
+  const [nx, ny, nz] = t.normal, p = t.point, B = t.kind === 'block' ? BLOCKS[t.type] : null, half = wallOnly ? [0.29, 0.38] : [0.22, 0.31];
+  let spot;
+  if (B && t.type === 'table') { // na stůl
+    if (wallOnly) return 'Rámeček se věší na zeď – zamiř na stěnu bloku';
+    const [cx, cy, cz] = t.cell;
+    spot = { x: clamp(p[0], cx + 0.26, cx + 0.74), y: (specials.get(bkey(cx, cy, cz))?.ry ?? cy) + 0.905, z: clamp(p[2], cz + 0.26, cz + 0.74), ry: player.yaw, w: 0 };
+  } else if (ny === 0 && (t.kind === 'vox' || (B && !B.special && !B.shape && B.solid !== false))) { // na zeď
+    const [cx, cy, cz] = t.cell;
+    spot = { x: p[0] + nx * 0.012, y: clamp(p[1], cy + half[1], cy + 1 - half[1]), z: p[2] + nz * 0.012, ry: Math.atan2(nx, nz), w: 1 };
+    if (nx) spot.z = clamp(p[2], cz + half[0], cz + 1 - half[0]); else spot.x = clamp(p[0], cx + half[0], cx + 1 - half[0]);
+  } else if (wallOnly) return 'Rámeček se věší na zeď – zamiř na stěnu bloku';
+  else if (ny === 1 && (t.kind === 'grass' || t.kind === 'ground' || t.kind === 'vox' || (B && !B.special && !B.shape))) spot = { x: p[0], y: p[1] + 0.012, z: p[2], ry: player.yaw, w: 0 }; // na zem
+  else if (B) return 'Sem se papír položit nedá';
+  else return null;
+  for (const s of paperSpots.values()) if ((s.x - spot.x) ** 2 + (s.y - spot.y) ** 2 + (s.z - spot.z) ** 2 < 0.16) return 'Tady už papír je';
+  return spot;
+}
+
+// ---------- předání dokumentu jinému hráči (pravé tlačítko, když se na něj díváš zblízka)
+function lookedPlayer() {
+  if (!MP) return null;
+  let best = null, bd = 3.5;
+  for (const P of others.values()) {
+    const q = P.pose;
+    if (!q || q.alive === false) continue;
+    const vx = q.x - rayO.x, vy = q.y + 1 - rayO.y, vz = q.z - rayO.z, t = vx * rayD.x + vy * rayD.y + vz * rayD.z;
+    if (t <= 0 || t >= bd) continue;
+    if ((vx - rayD.x * t) ** 2 + (vy - rayD.y * t) ** 2 + (vz - rayD.z * t) ** 2 < 0.45) { best = P; bd = t; }
+  }
+  return best;
+}
+function giveDoc(P, id) {
+  consumeSelected();
+  if (NET.host) sendTo(P.pid, ['gift', id, NET.name]); else NET.req(['giveTo', P.pid, id]);
+  Sound.pop();
+  toast(`Předal jsi hráči ${P.name}: ${ITEMS[id].name}`);
+}
+function receiveGift(id, from) {
+  if (typeof id !== 'string' || !ITEMS[id]) return;
+  const left = addItem(id, 1);
+  if (left > 0) spawnGroundItem(id, left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3);
+  Sound.pop();
+  toast(`${from} ti předal: ${ITEMS[id].name}`);
+}
+
+// ---------- pravé tlačítko s dokumentem nebo rámečkem, na papír ve světě
+function useDocs() {
+  const held = heldStack(), doc = held && ITEMS[held.id].doc;
+  if (target?.kind === 'paper') {
+    const s = paperSpots.get(target.id);
+    if (!s) return true;
+    if (!s.d && doc) { paperSpots.set(target.id, { ...s, d: doc }); consumeSelected(); Sound.place(); toast('Dokument je v rámečku'); }
+    else if (s.d) openDoc(s.d);
+    else toast('Do rámečku vlož dokument: vezmi ho do ruky a klikni pravým na rámeček');
+    return true;
+  }
+  if (!doc && held?.id !== 'picture_frame') return false;
+  if (doc) { const P = lookedPlayer(); if (P) { giveDoc(P, held.id); return true; } }
+  const spot = surfaceSpot(!doc);
+  if (spot === null) { if (doc) openDoc(doc); else toast('Rámeček se věší na zeď – zamiř na stěnu bloku'); return true; }
+  if (typeof spot === 'string') { toast(spot); return true; }
+  paperSpots.set(NET.uid(), doc ? { ...spot, d: doc, fr: 0 } : { ...spot, d: null, fr: 1 });
+  consumeSelected();
+  Sound.place();
+  toast(doc ? (spot.w ? 'Dokument visí na zdi. Pravé tl. = číst, drž levé = sundat' : 'Dokument leží. Pravé tl. = číst, drž levé = sebrat') : 'Rámeček visí. Vlož do něj dokument (pravé tl. s dokumentem)');
+  return true;
+}
+
+// ---------- čtení dokumentu
+const docEl = document.createElement('div');
+docEl.id = 'docView';
+docEl.innerHTML = '<div class="doc-paper"><button class="doc-x" title="Zavřít (Esc)">✕</button><h2></h2><div class="doc-text"></div><div class="doc-meta"></div></div>';
+document.body.appendChild(docEl);
+function openDoc(pid) {
+  const rec = papers.get(pid);
+  docEl.querySelector('h2').textContent = rec?.title || 'Dokument';
+  docEl.querySelector('.doc-text').textContent = rec ? rec.text || '(prázdný list)' : 'Obsah dokumentu se ještě načítá…';
+  docEl.querySelector('.doc-meta').textContent = rec ? `Napsal(a) ${rec.by} · vytištěno ${rec.day}. den` : '';
+  docEl.querySelector('.doc-paper').scrollTop = 0;
+  docOpen = true;
+  keys.clear();
+  input.lmb = input.rmb = false;
+  unlockPointer();
+  docEl.style.display = 'flex';
+  Sound.rustle();
+}
+function closeDoc() {
+  docOpen = false;
+  docEl.style.display = 'none';
+  lockPointer();
+}
+docEl.addEventListener('click', (e) => { if (e.target === docEl || e.target.closest('.doc-x')) closeDoc(); });
+addEventListener('keydown', (e) => {
+  if (!docOpen) return;
+  e.stopImmediatePropagation();
+  if (e.code === 'Escape' || e.code === 'KeyE' || e.code === 'Space') { e.preventDefault(); closeDoc(); }
+}, true);
+addEventListener('keyup', (e) => { if (docOpen) e.stopImmediatePropagation(); }, true);
+
+// ---------- textový editor v počítači
+const diskOf = (k) => pcDisks.get(k)?.docs || [];
+function diskSave(k, docs) { pcDisks.set(k, { docs }); kvPend('pcDisks', k); }
+const printersOf = (k) => (netOf.get(k)?.keys || []).filter((n) => blocks.get(n) === 'printer');
+PC_APPS.editor = {
+  title: 'Textový editor', icon: '📝', w: 700, h: 470,
+  init(w) {
+    w.body.innerHTML = `<div class="ed">
+      <div class="ed-side"><button data-ed="new">＋ Nový dokument</button><div class="ed-list"></div><div class="ed-disk"></div></div>
+      <div class="ed-main">
+        <div class="ed-bar"><input class="ed-name" maxlength="40" placeholder="Název dokumentu"><button data-ed="save">💾 Uložit</button><button data-ed="print">🖨 Tisk</button><button data-ed="del">🗑 Smazat</button></div>
+        <textarea class="ed-text" maxlength="${DOC_TEXT_MAX}" placeholder="Sem piš text…" spellcheck="false"></textarea>
+        <div class="ed-print" hidden></div>
+        <div class="ed-status"></div>
+      </div></div>`;
+    w.ed = { cur: null, dirty: false, sig: '' };
+    const dirty = () => { w.ed.dirty = true; edStatus(w, 'Neuloženo'); };
+    w.body.querySelector('.ed-text').addEventListener('input', dirty);
+    w.body.querySelector('.ed-name').addEventListener('input', dirty);
+    w.body.addEventListener('click', (e) => edClick(w, e));
+    edLoad(w, null);
+  },
+  slow: (w) => edList(w),
+  canClose: (w) => !w.ed.dirty || confirm('Dokument má neuložené změny. Zahodit je?'),
+};
+const edQ = (w, s) => w.body.querySelector(s);
+function edStatus(w, html) { edQ(w, '.ed-status').innerHTML = html; }
+function edList(w, force) {
+  const docs = diskOf(pc.k), sig = JSON.stringify(docs.map((d) => [d.id, d.name, d.day])) + w.ed.cur;
+  if (!force && sig === w.ed.sig) return;
+  w.ed.sig = sig;
+  edQ(w, '.ed-list').innerHTML = docs.length ? docs.map((d) => `<button data-open="${d.id}" class="${d.id === w.ed.cur ? 'on' : ''}">📄 ${escH(d.name)}<small>den ${d.day}</small></button>`).join('')
+    : '<div class="ed-empty">Zatím žádné dokumenty.</div>';
+  edQ(w, '.ed-disk').textContent = `Disk: ${docs.length} / ${DISK_MAX} dokumentů`;
+}
+function edLoad(w, d) {
+  w.ed.cur = d?.id || null;
+  w.ed.dirty = false;
+  edQ(w, '.ed-name').value = d?.name || '';
+  edQ(w, '.ed-text').value = d?.text || '';
+  edQ(w, '.ed-print').hidden = true;
+  edStatus(w, d ? `Otevřeno: „${escH(d.name)}“` : 'Nový dokument – napiš název a text, pak Uložit.');
+  edList(w, true);
+}
+function edClick(w, e) {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const k = pc.k, docs = diskOf(k), cur = docs.find((d) => d.id === w.ed.cur);
+  const name = edQ(w, '.ed-name').value.trim() || 'Bez názvu', text = edQ(w, '.ed-text').value;
+  if (b.dataset.open || b.dataset.ed === 'new') {
+    if (w.ed.dirty && !confirm('Dokument má neuložené změny. Zahodit je?')) return;
+    edLoad(w, b.dataset.open ? docs.find((d) => d.id === b.dataset.open) : null);
+    if (!b.dataset.open) edQ(w, '.ed-name').focus();
+  } else if (b.dataset.ed === 'save') {
+    if (!cur && docs.length >= DISK_MAX) return edStatus(w, '<b class="bad">Disk je plný – smaž nějaký dokument.</b>');
+    const doc = { id: cur?.id || NET.uid(), name, text: text.slice(0, DOC_TEXT_MAX), day: dayCount };
+    diskSave(k, cur ? docs.map((d) => (d.id === cur.id ? doc : d)) : [...docs, doc]);
+    edQ(w, '.ed-name').value = name;
+    w.ed.cur = doc.id;
+    w.ed.dirty = false;
+    edList(w, true);
+    edStatus(w, `Uloženo: „${escH(name)}“`);
+    Sound.pop();
+  } else if (b.dataset.ed === 'del') {
+    if (!cur) { if (!w.ed.dirty || confirm('Zahodit rozepsaný dokument?')) edLoad(w, null); return; }
+    if (!confirm(`Smazat dokument „${cur.name}“? Smazání nejde vrátit.`)) return;
+    diskSave(k, docs.filter((d) => d.id !== cur.id));
+    edLoad(w, null);
+    edStatus(w, `Smazáno: „${escH(cur.name)}“`);
+  } else if (b.dataset.ed === 'print') {
+    const prs = printersOf(k), box = edQ(w, '.ed-print');
+    if (!prs.length) { box.hidden = true; return edStatus(w, '<b class="bad">V elektrické síti počítače není tiskárna – připoj ji kabelem.</b>'); }
+    box.innerHTML = `Tiskárna: <select class="ed-prn">${prs.map((p, i) => { const st = power.get(p) || {}; return `<option value="${p}">Tiskárna ${i + 1} · papír ${st.slots?.[0]?.id === 'paper' ? st.slots[0].n : 0} ks${st.q?.length ? ` · ve frontě ${st.q.length}` : ''}</option>`; }).join('')}</select>
+      Kopií: <input class="ed-copies" type="number" min="1" max="5" value="1"> <button data-ed="doprint">🖨 Vytisknout</button> <button data-ed="noprint">Zrušit</button>`;
+    box.hidden = false;
+  } else if (b.dataset.ed === 'noprint') edQ(w, '.ed-print').hidden = true;
+  else if (b.dataset.ed === 'doprint') {
+    if (!text.trim() && !edQ(w, '.ed-name').value.trim()) return edStatus(w, '<b class="bad">Dokument je prázdný.</b>');
+    const prn = edQ(w, '.ed-prn').value, n = clamp(Math.floor(Number(edQ(w, '.ed-copies').value)) || 1, 1, 5), st = power.get(prn) || {};
+    if (!NET.client && (st.q?.length || 0) >= PRINT_QUEUE) return edStatus(w, '<b class="bad">Fronta tiskárny je plná.</b>');
+    printJob(prn, newPaper(name, text), n);
+    edQ(w, '.ed-print').hidden = true;
+    edStatus(w, `Odesláno do tiskárny: „${escH(name)}“, ${n}× · ${st.slots?.[0]?.id === 'paper' ? 'tiskne se' : 'tiskárna potřebuje papír'}`);
+    Sound.tone(880, 0.08, 0.06, 'square');
+  }
+}
 // ============================================================ hráč a ovládání
 const canvas = renderer.domElement;
 let touchLocked = false;
@@ -5237,11 +6461,22 @@ addEventListener('keydown', (e) => {
   if (guideOpen) return;
   if (e.code === 'KeyC' && !e.repeat && !invOpen) { setCreative(!creative); return; }
   if (e.code === 'KeyG' && !e.repeat && !invOpen && (isLocked() || game.testMode)) { dropHeld(e.shiftKey); return; }
+  // Auto: F nastoupit / vystoupit, L světla, B klakson, V kamera (první / třetí osoba)
+  if (e.code === 'KeyF' && !e.repeat && !invOpen && (isLocked() || game.testMode)) {
+    if (player.vehicle) exitVehicle(); else if (target?.kind === 'vehicle') enterVehicle(target.id);
+    return;
+  }
+  if (player.vehicle && !e.repeat && !invOpen) {
+    const v = vehicles.get(player.vehicle);
+    if (e.code === 'KeyL' && v) { if (v.type !== 'plane' && !v.lights && !v.engine && !(v.slots[0]?.id === 'car_battery' && v.bat > 0)) toast('Světla nesvítí – vybitá autobaterie'); else v.lights = !v.lights; return; }
+    if (e.code === 'KeyB' && v?.type !== 'plane') { honk(); return; }
+    if (e.code === 'KeyV') { carCam = 1 - carCam; player.yaw = 0; return; }
+  }
   // Nebeská sada: dvojitý skok
   if (e.code === 'Space' && !e.repeat && !creative && fullSet() === 'sky' && !player.onGround && !player.doubleUsed && !(player.flyT > 0)) {
     player.vel.y = JUMP; player.doubleUsed = true; sparks.emit(player.pos.x, player.pos.y, player.pos.z, [1, 0.9, 0.6], 20, 2, 0);
   }
-  if (e.code === 'Space' && !e.repeat && creative) {
+  if (e.code === 'Space' && !e.repeat && creative && !player.vehicle) {
     const now = performance.now();
     if (now - lastSpace < 300) { player.flying = !player.flying; player.vel.y = 0; toast(player.flying ? 'Létání zapnuto' : 'Létání vypnuto'); }
     lastSpace = now;
@@ -5263,7 +6498,7 @@ canvas.addEventListener('mousedown', (e) => {
 addEventListener('mouseup', (e) => { if (e.button === 0) input.lmb = false; if (e.button === 2) input.rmb = false; });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('pointerlockchange', () => {
-  $('hint').classList.toggle('hidden', isLocked() || invOpen);
+  $('hint').classList.toggle('hidden', isLocked() || invOpen || pcOpen || docOpen);
   if (!isLocked()) input.lmb = input.rmb = false;
 });
 addEventListener('mousemove', (e) => {
@@ -5386,6 +6621,7 @@ function updatePlayer(dt) {
       }
     }
   }
+  vehiclePush(p); // do zaparkovaného auta se nevejde
   const g = groundHeight(p.x, p.z);
   if (!landed && wasGround && v.y <= 0 && p.y > g && p.y - g < 0.45 && !collidesBlocks({ x: p.x, y: g, z: p.z })) { p.y = g; v.y = 0; landed = true; }
   // Chůze dolů po schodech: hráč zůstane na schodu, místo aby z každého seskočil
@@ -5570,7 +6806,7 @@ function pickTarget() {
     const b = BLOCKS[bh.type];
     bt = bh.t;
     best = { kind: 'block', key: 'b' + bkey(bh.x, bh.y, bh.z), cell: [bh.x, bh.y, bh.z], normal: bh.normal, type: bh.type, name: b.name, point: [o.x + d.x * bh.t, o.y + d.y * bh.t, o.z + d.z * bh.t],
-      hint: { workbench: 'pravé tlačítko = výroba 3×3', campfire: 'pravé tlačítko = pečení a tavení', chest: 'pravé tlačítko = otevřít' }[bh.type] || '', hard: b.hard, tool: b.tool, req: b.req ? { tool: 'pick', tier: b.req } : null, at: [bh.x + 0.5, bh.y + 0.5, bh.z + 0.5] };
+      hint: { workbench: 'pravé tlačítko = výroba 3×3', campfire: 'pravé tlačítko = pečení a tavení', chest: 'pravé tlačítko = otevřít', computer: 'pravé tlačítko = sednout k počítači' }[bh.type] || '', hard: b.hard, tool: b.tool, req: b.req ? { tool: 'pick', tier: b.req } : null, at: [bh.x + 0.5, bh.y + 0.5, bh.z + 0.5] };
   }
   const a = d.x * d.x + d.z * d.z;
   for (const t of forestTrees) {
@@ -5606,6 +6842,13 @@ function pickTarget() {
     const hint = m.type === 'chicken' ? `vejce: ${m.eggs || 0} · pravé tl. = sebrat` : m.type === 'cow' ? (m.milkT > 0 ? 'podojená' : 'pravé tl. s kbelíkem = podojit')
       : ['crawler', 'markoman', 'golem', 'wolf'].includes(m.type) ? 'nepřítel' : 'lovná zvěř';
     best = { kind: 'mob', mob: m, name: m.def.name, hint };
+  }
+  // Auto
+  const vh = rayVehicle(o, d, bt);
+  if (vh) {
+    bt = vh.t;
+    const v = vehicles.get(vh.id);
+    best = { kind: 'vehicle', id: vh.id, key: 'veh' + vh.id, name: vehDim(v.type).name, hint: `F = nastoupit · pravé tl. = kufr a palivo (${v.fuel.toFixed(0)} l) · drž levé = rozebrat`, hard: 4, at: [o.x + d.x * vh.t, o.y + d.y * vh.t, o.z + d.z * vh.t] };
   }
   // Portál ve svatyni (kruh o poloměru 2,4 m, stojí v rovině x–y)
   const sh = shrineOf(o.x);
@@ -5690,7 +6933,7 @@ const toolOf = (s) => (s && ITEMS[s.id].tool ? ITEMS[s.id] : null);
 const CHIP = { tree: [0.42, 0.3, 0.17], rock: [0.5, 0.5, 0.48], iron: [0.65, 0.35, 0.15], grass: [0.25, 0.5, 0.12], planks: [0.6, 0.45, 0.28], cobble: [0.5, 0.5, 0.48], bricks: [0.55, 0.52, 0.48], dirt: [0.42, 0.3, 0.2] };
 
 function updateInteraction(dt) {
-  target = pickTarget();
+  target = withPaper(pickTarget()); // papíry a rámečky ve světě (14e)
   const tool = toolOf(heldStack());
   let warn = '';
   const boxCell = target?.kind === 'block' || (target?.kind === 'vox' && !target.surface) ? target.cell : null;
@@ -5771,6 +7014,15 @@ function breakTarget(t) {
     debris.emit(tr.x, tr.y + tr.trunkH, tr.z, [0.2, 0.45, 0.12], 60, 5, 2);
     Sound.crack();
     rebuildForest(player.pos.x, player.pos.z, true);
+  } else if (t.kind === 'paper') takeSpot(t.id);
+  else if (t.kind === 'vehicle') { // rozebrané auto se vrátí do batohu i s kufrem a baterií
+    const v = vehicles.get(t.id);
+    if (!v) return;
+    if (v.driver && v.driver !== myDriverId()) { toast('V autě někdo sedí'); return; }
+    for (const s of v.slots) if (s) addItem(s.id, s.n);
+    addItem(v.type === 'plane' ? 'biplane' : v.type, 1);
+    vehicles.delete(t.id);
+    Sound.crack();
   } else if (t.kind === 'rock') {
     removed.add(t.key);
     const r = t.rock;
@@ -5782,6 +7034,7 @@ function breakTarget(t) {
     rebuildForest(player.pos.x, player.pos.z, true);
   } else if (t.kind === 'block') {
     const k = bkey(...t.cell);
+    if (MP && [...others.values()].some((P) => P.pose?.ui === k)) { toast('Tohle teď používá jiný hráč'); return; } // otevřená truhla nebo stroj
     blocks.delete(k);
     blockMeta.delete(k);
     if (CROPS[t.type]) harvestCrop(t.type, k);
@@ -5794,6 +7047,8 @@ function breakTarget(t) {
     for (const store of [fires.get(k)?.slots, chests.get(k), furnaces.get(k)?.slots, power.get(k)?.slots]) if (store) for (const s of store) if (s) addItem(s.id, s.n);
     fires.delete(k);
     power.delete(k);
+    pcDisks.delete(k); // rozebraný počítač přijde o uložené dokumenty
+    dropSpotsAt(...t.cell); // papíry na bloku spadnou do batohu
     furnaces.delete(k);
     chests.delete(k);
     debris.emit(...t.at, CHIP[t.type] || CHIP.planks, 25, 3, 1.5);
@@ -5825,6 +7080,8 @@ function breakTarget(t) {
     if (t.vox === V.STONE && Math.random() < 0.08) addItem('salt', 1);
     if (t.vox === V.DIRT && nearPond(x + 0.5, z + 0.5, 4) && Math.random() < 0.4) addItem('clay', randInt(1, 2)); // jíl u rybníka
     if (t.surface) cutGrass(x + 0.5, z + 0.5, 1.2);
+    dropSpotsAt(x, y, z);
+    if (t.surface) dropSpotsAt(x, y + 1, z);
     debris.emit(x + 0.5, y + 0.5, z + 0.5, def.chip, 30, 3, 1.5);
     if (def.glow) { sparks.emit(x + 0.5, y + 0.5, z + 0.5, [0.4, 0.95, 1.0], 50, 4, 2); Sound.pickup(); }
     else Sound.crack();
@@ -5832,6 +7089,37 @@ function breakTarget(t) {
 }
 
 function useItem() {
+  if (useDocs()) return; // dokumenty: číst, položit, pověsit, zarámovat, předat
+  // Auto: s kanystrem natankuje, jinak otevře kufr
+  if (target?.kind === 'vehicle') {
+    const v = vehicles.get(target.id);
+    if (!v) return;
+    if (heldStack()?.id === 'fuel_canister') {
+      const fmax = vehDim(v.type).fuelMax;
+      if (v.fuel >= fmax - 0.5) { toast('Nádrž je plná'); return; }
+      v.fuel = Math.min(fmax, v.fuel + 15);
+      consumeSelected();
+      Sound.rustle();
+      toast(`Natankováno: ${v.fuel.toFixed(1)} / ${fmax} l`);
+    } else openInventory('car', target.id);
+    return;
+  }
+  // Položení auta na zem (natočené ve směru pohledu)
+  const vehHeld = heldStack() && ITEMS[heldStack().id].vehicle;
+  if (vehHeld && target?.point && ['grass', 'ground', 'vox', 'block'].includes(target.kind) && (target.kind !== 'block' || target.normal?.[1] === 1)) {
+    let [x, , z] = target.point, y = floorAt(x, z, target.point[1] + 0.5);
+    if (vehHeld === 'plane') { // letadlo je větší než dosah ruky: postaví se před hráče ocasem k němu
+      const spot = planeSpot(target.point);
+      if (!spot.ok) { toast(`Tady se letadlo nevejde – ${spot.why} (potřebuje asi 10 × 8 m)`); return; }
+      ({ x, y, z } = spot);
+    } else if (carHits({ y }, x, z, player.yaw) || Math.hypot(x - player.pos.x, z - player.pos.z) < 2.2) { toast('Tady se auto nevejde'); return; }
+    const id = spawnVehicle(vehHeld, x, z, player.yaw);
+    vehicles.get(id).y = y;
+    consumeSelected();
+    Sound.place();
+    toast(vehHeld === 'plane' ? 'Dvouplošník stojí. F = nastoupit, pravé tl. = palivo a zavazadla' : 'Auto stojí. F = nastoupit, pravé tl. = kufr (palivo a autobaterie)');
+    return;
+  }
   // Pravé tlačítko na pracovní stůl nebo táborák otevře jeho okno.
   const STATION_UI = { workbench: 'bench', campfire: 'fire', chest: 'chest', stove: 'kitchen', furnace: 'furnace', adv_bench: 'adv' };
   const held0 = heldStack();
@@ -5846,7 +7134,7 @@ function useItem() {
   // Elektrická zařízení a kabely: vypínač se přepne, ostatní otevřou přehled sítě (s blokem v ruce se staví dál)
   if (target?.kind === 'block' && BLOCKS[target.type].elec && !(held0 && ITEMS[held0.id].block)) {
     const k = bkey(...target.cell);
-    if (target.type === 'power_switch') toggleSwitch(k); else openInventory('power', k);
+    if (target.type === 'power_switch') toggleSwitch(k); else if (target.type === 'computer') openPC(k); else openInventory('power', k);
     return;
   }
   if (target?.kind === 'block' && STATION_UI[target.type]) {
@@ -6850,6 +8138,581 @@ function updateFishing(dt) {
   fishLine.geometry.setFromPoints([tip, bobber.position]);
 }
 
+// ============================================================ vozidla: auto
+// Stav auta se ukládá a v multiplayeru synchronizuje jako malá mapa (vehicles). Kdo řídí, počítá fyziku u sebe
+// a polohu posílá s pozicí hráče (12× za sekundu); ostatní auto plynule dopočítávají.
+const vehicles = new Map(Object.entries(save?.vehicles || {})); // id -> { type, x, y, z, yaw, pitch, roll, spd, steer, fuel, bat, slots[19], lights, driver }
+const CAR = { len: 4.2, wid: 1.9, wb: 2.6, track: 1.6, maxFwd: 22, maxRev: 6, accel: 7, brake: 16, steerMax: 0.55, fuelMax: 40, step: 0.65 };
+const myDriverId = () => (MP ? NET.pid : 'me');
+// Rozměry a vlastnosti podle druhu vozidla (letadlo je definované v 19c)
+const vehDim = (t) => (t === 'plane' ? { wid: PLANE.span, len: PLANE.len, h: 2.6, push: 1.1, name: 'Dvouplošník', fuelMax: PLANE.fuelMax }
+  : { wid: CAR.wid, len: CAR.len, h: 1.62, push: CAR.wid, name: 'Auto', fuelMax: CAR.fuelMax });
+const remoteVeh = new Map(); // id auta -> poslední poloha od hráče, který ho řídí (neukládá se)
+let carWarnT = 0;
+// Po načtení nikdo nesedí za volantem (u klienta to určuje hostitel)
+if (!NET.client) for (const v of vehicles.values()) { v.driver = null; v.engine = false; v.spd = 0; }
+let carCam = 0; // 0 = z první osoby, 1 = ze třetí osoby
+const vehMeshes = new Map();
+// Jediné reflektorové světlo pro auto, které řídíš (stálý počet světel = žádné překompilování shaderů)
+const carSpot = new THREE.SpotLight(0xfff2d0, 0, 45, 0.55, 0.5, 1.2);
+scene.add(carSpot, carSpot.target);
+
+// ---------- model: dopředu je -z, počátek mezi nápravami na zemi
+function buildCarModel(color) {
+  const g = new THREE.Group();
+  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.5, ...o });
+  const paint = M({ color, metalness: 0.45, roughness: 0.3 }), dark = M({ color: 0x1e1e22, roughness: 0.8 }), chrome = M({ color: 0xd8dce2, metalness: 0.9, roughness: 0.2 });
+  const glass = M({ color: 0x223040, transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.3 });
+  const box = (w, h, d, m, x, y, z, parent = g) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); parent.add(me); return me; };
+  box(1.9, 0.5, 4.2, paint, 0, 0.68, 0);              // spodní část karoserie
+  box(1.86, 0.12, 1.5, paint, 0, 0.98, -1.3);         // kapota
+  box(1.8, 0.62, 1.95, glass, 0, 1.24, 0.25);         // kabina se skly
+  box(1.84, 0.08, 1.75, paint, 0, 1.58, 0.3);         // střecha
+  for (const [x, z] of [[-0.88, -0.7], [0.88, -0.7], [-0.88, 1.2], [0.88, 1.2]]) box(0.08, 0.62, 0.1, paint, x, 1.24, z); // sloupky
+  box(1.95, 0.22, 0.18, dark, 0, 0.52, -2.12);        // přední nárazník
+  box(1.95, 0.22, 0.18, dark, 0, 0.52, 2.12);         // zadní nárazník
+  box(1.0, 0.2, 0.04, chrome, 0, 0.75, -2.11);        // maska chladiče
+  const head = M({ color: 0xfff8e0, emissive: 0xfff2c0, emissiveIntensity: 0 }), tail = M({ color: 0x6a1010, emissive: 0xff2010, emissiveIntensity: 0.25 });
+  for (const x of [-0.65, 0.65]) { box(0.38, 0.16, 0.04, head, x, 0.78, -2.11); box(0.36, 0.14, 0.04, tail, x, 0.78, 2.11); }
+  const seat = M({ color: 0x4a2e22 });
+  for (const x of [-0.42, 0.42]) { box(0.55, 0.12, 0.55, seat, x, 0.98, 0.35); box(0.55, 0.6, 0.12, seat, x, 1.25, 0.66); }
+  const sw = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.025, 6, 16), dark);
+  sw.position.set(-0.42, 1.2, -0.25);
+  sw.rotation.x = -0.9;
+  g.add(sw);
+  // kola: natáčecí čep -> rotující kolo (pneumatika, ráfek, paprsek, aby bylo vidět otáčení)
+  const wheels = [], pivots = [];
+  const tireGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.3, 18).rotateZ(Math.PI / 2), rimGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.32, 12).rotateZ(Math.PI / 2);
+  for (const [x, z] of [[-0.95, -1.3], [0.95, -1.3], [-0.95, 1.3], [0.95, 1.3]]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, 0.38, z);
+    g.add(pivot);
+    const spin = new THREE.Group();
+    pivot.add(spin);
+    spin.add(new THREE.Mesh(tireGeo, dark), new THREE.Mesh(rimGeo, chrome));
+    box(0.34, 0.06, 0.36, chrome, 0, 0, 0, spin);
+    wheels.push(spin);
+    if (z < 0) pivots.push(pivot);
+  }
+  return { group: g, wheels, pivots, head, tail };
+}
+const CAR_COLORS = [0xc82a2a, 0x2a5ab0, 0x2a8a3a, 0xe8c030, 0xe8e8e8, 0x2a2a30, 0xe07a20];
+
+// ---------- vytvoření, nastoupení, vystoupení
+function spawnVehicle(type, x, z, yaw) {
+  const id = NET.uid();
+  const y = floorAt(x, z, terrainH(x, z) + 1);
+  vehicles.set(id, { type, x, y, z, yaw, pitch: type === 'plane' ? PLANE.groundPitch : 0, roll: 0, spd: 0, steer: 0, fuel: 0, bat: 0, slots: Array(19).fill(null), lights: false, driver: null,
+    color: type === 'plane' ? [0x8a2a22, 0x3a5a3a, 0x3a4a7a, 0xb8a060][randInt(0, 3)] : CAR_COLORS[randInt(0, CAR_COLORS.length - 1)], ...(type === 'plane' ? { vx: 0, vy: 0, vz: 0, thr: 0, ground: true } : {}) });
+  return id;
+}
+function enterVehicle(id) {
+  const v = vehicles.get(id);
+  if (!v) return;
+  if (v.driver && v.driver !== myDriverId()) { toast('V autě už někdo sedí'); return; }
+  v.driver = myDriverId();
+  player.vehicle = id;
+  player.sitting = null;
+  player.yaw = 0; // ve voze je natočení kamery relativní k autu
+  player.pitch = -0.08;
+  holder.visible = false;
+  v.engine = false;
+  Sound.place();
+  if (v.type === 'plane') toast(TOUCH ? 'Plyn + / − · joystick = knipl (dolů = nos nahoru, do stran = náklon) · kamera, vystoupit' : 'Mezerník / Shift = plyn · S nos nahoru, W dolů · A/D náklon (na zemi řízení) · L světla · V kamera · F vystoupit');
+  else toast(TOUCH ? 'Joystick = jízda a zatáčení · tlačítka: brzda, světla, klakson, kamera, vystoupit' : 'W/S plyn a brzda · A/D zatáčení · Mezerník brzda · L světla · B klakson · V kamera · F vystoupit');
+}
+function exitVehicle() {
+  const v = vehicles.get(player.vehicle);
+  // z letadla se vystupuje jen na zemi, když stojí
+  if (v?.type === 'plane' && player.alive && (!v.ground || Math.hypot(v.vx || 0, v.vz || 0) > 3)) { toast('Vystoupit můžeš jen na zemi, až letadlo zastaví'); return; }
+  player.vehicle = null;
+  holder.visible = true;
+  Sound.engine?.(false, 0);
+  if (!v) return;
+  v.driver = null;
+  v.engine = false;
+  v.spd = 0;
+  // vystoupí vlevo od auta (nebo vpravo, když vlevo je zeď)
+  for (const side of [-1, 1]) {
+    const c = Math.cos(v.yaw), s = Math.sin(v.yaw), lx = side * (v.type === 'plane' ? 5.2 : 1.6);
+    const x = v.x + c * lx, z = v.z - s * lx, y = floorAt(x, z, v.y + 1);
+    player.pos.set(x, y + 0.02, z);
+    if (!collidesBlocks(player.pos)) break;
+  }
+  player.vel.set(0, 0, 0);
+  player.yaw = v.yaw + player.yaw;
+  Sound.place();
+}
+
+// ---------- fyzika jízdy
+// Podlaha pod bodem: terén (když není vykopaný) nebo horní stěna bloku / podzemí; jen do výšky schodu nad yRef
+function floorAt(x, z, yRef) {
+  const g = groundHeight(x, z), vf = voxFloor(x, yRef + 0.2, z);
+  return Math.max(isFinite(g) && g <= yRef + CAR.step ? g : -Infinity, vf);
+}
+const carLocal = (v, lx, lz) => { const c = Math.cos(v.yaw), s = Math.sin(v.yaw); return [v.x + c * lx + s * lz, v.z - s * lx + c * lz]; };
+// Narazí karoserie (body po obvodu ve výšce 0,5–1,5 m) do bloku, stromu nebo balvanu?
+function carHits(v, x, z, yaw) {
+  const t = { ...v, x, z, yaw };
+  for (const [lx, lz] of [[-0.9, -2.05], [0.9, -2.05], [-0.9, 2.05], [0.9, 2.05], [-0.95, 0], [0.95, 0], [0, -2.1], [0, 2.1]]) {
+    const [px, pz] = carLocal(t, lx, lz);
+    for (const dy of [0.6, 1.3]) if (solidAny(Math.floor(px), Math.floor(v.y + dy), Math.floor(pz))) return true;
+    if (v.y > terrainH(px, pz) - 2) for (const c of forestColliders) if ((px - c.x) ** 2 + (pz - c.z) ** 2 < (c.r + 0.15) ** 2) return true;
+  }
+  return false;
+}
+let hornN = 0, carHitT = 0;
+function driveVehicle(dt) {
+  const v = vehicles.get(player.vehicle);
+  if (!v) { exitVehicle(); return 0; }
+  if (v.type === 'plane') return flyPlane(v, dt);
+  if (target) { target = null; outline.visible = groundRing.visible = preview.visible = false; $('targetLabel').innerHTML = ''; $('progress').style.opacity = 0; } // za volantem se nemíří
+  const joy = input.joy;
+  const fwd = clamp((keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) + (joy ? -joy.y : 0), -1, 1);
+  const steerIn = clamp((keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) + (joy ? -joy.x : 0), -1, 1);
+  const hand = keys.has('Space');
+  // startování: palivo + nabitá baterie
+  if (!v.engine && Math.abs(fwd) > 0.2) {
+    if (v.fuel <= 0) { if ((carWarnT -= dt) <= 0) { carWarnT = 3; toast('Došlo palivo – natankuj z kanystru (pravé tl. s kanystrem na auto)'); } }
+    else if (!(v.slots[0]?.id === 'car_battery' && v.bat > 0)) { if ((carWarnT -= dt) <= 0) { carWarnT = 3; toast('Auto nenastartuje – do kufru vlož nabitou autobaterii'); } }
+    else { v.engine = true; v.bat = Math.max(0, v.bat - 2); Sound.burst({ dur: 0.6, f0: 300, f1: 120, q: 1.5, vol: 0.3, type: 'lowpass' }); }
+  }
+  if (v.engine && v.fuel <= 0) { v.engine = false; toast('Motor zhasl – došlo palivo'); }
+  // zrychlení, brzdy, zpátečka, odpor
+  const thr = v.engine ? fwd : 0;
+  if (hand) v.spd -= Math.sign(v.spd) * Math.min(Math.abs(v.spd), CAR.brake * 1.2 * dt);
+  else if (thr > 0) v.spd = v.spd < 0 ? Math.min(0, v.spd + CAR.brake * dt) : Math.min(CAR.maxFwd, v.spd + CAR.accel * thr * (1 - v.spd / (CAR.maxFwd * 1.15)) * dt);
+  else if (thr < 0) v.spd = v.spd > 0.3 ? Math.max(0, v.spd - CAR.brake * dt) : Math.max(-CAR.maxRev, v.spd + CAR.accel * 0.6 * thr * dt);
+  else if (fwd < 0 && v.spd > 0) v.spd = Math.max(0, v.spd - CAR.brake * dt); // brzda funguje i s vypnutým motorem
+  v.spd *= 1 - Math.min(1, (0.25 + Math.abs(v.spd) * 0.012) * dt); // valivý a vzdušný odpor
+  if (Math.abs(v.spd) < 0.02 && !thr) v.spd = 0;
+  // svah: auto do kopce zpomaluje, z kopce zrychluje
+  v.spd -= Math.sin(v.pitch || 0) * 9.8 * dt * 0.6;
+  // natáčení kol a zatáčení (kolo se otáčí kolem zadní nápravy)
+  v.steer += (steerIn * CAR.steerMax * (1 - Math.min(0.6, Math.abs(v.spd) / 40)) - v.steer) * Math.min(1, dt * 6);
+  const yawRate = (v.spd * Math.tan(v.steer)) / CAR.wb;
+  const nyaw = v.yaw + yawRate * dt;
+  const nx = v.x - Math.sin(nyaw) * v.spd * dt, nz = v.z - Math.cos(nyaw) * v.spd * dt;
+  // kola: výška podlahy pod každým kolem
+  const wy = [[-0.95, -1.3], [0.95, -1.3], [-0.95, 1.3], [0.95, 1.3]].map(([lx, lz]) => { const [px, pz] = carLocal({ x: nx, z: nz, yaw: nyaw }, lx, lz); return floorAt(px, pz, v.y); });
+  const blockedStep = wy.some((h) => !isFinite(h)) || (v.spd > 0 ? Math.max(wy[0], wy[1]) : Math.max(wy[2], wy[3])) > v.y + CAR.step;
+  if (blockedStep || carHits(v, nx, nz, nyaw)) {
+    if (Math.abs(v.spd) > 4 && (carHitT -= dt) <= 0) { carHitT = 0.5; Sound.burst({ dur: 0.25, f0: 500, f1: 120, q: 1, vol: 0.5, type: 'lowpass' }); player.shake = 0.3; }
+    v.spd *= -0.25;
+  } else { v.x = nx; v.z = nz; v.yaw = nyaw; }
+  // výška, náklon a pád
+  const fy = Math.max(...wy.map((h) => (isFinite(h) ? h : -99)));
+  const avg = wy.reduce((s, h) => s + (isFinite(h) ? h : fy), 0) / 4;
+  if (avg < v.y - 0.08) { v.vy = (v.vy || 0) - 18 * dt; v.y = Math.max(avg, v.y + v.vy * dt); } else { v.y += (avg - v.y) * Math.min(1, dt * 12); v.vy = 0; }
+  const f = (wy[0] + wy[1]) / 2, r = (wy[2] + wy[3]) / 2, l = (wy[0] + wy[2]) / 2, rt = (wy[1] + wy[3]) / 2;
+  v.pitch = isFinite(f - r) ? clamp(Math.atan2(f - r, CAR.wb), -0.6, 0.6) : 0;
+  v.roll = isFinite(l - rt) ? clamp(Math.atan2(l - rt, CAR.track), -0.5, 0.5) : 0;
+  if (waterAt(v.x, v.y + 0.3, v.z) !== null) v.spd *= 1 - Math.min(1, dt * 2); // voda brzdí
+  // palivo a baterie: motor žere palivo podle plynu a dobíjí baterii; světla s vypnutým motorem vybíjejí
+  if (v.engine) { v.fuel = Math.max(0, v.fuel - (0.012 + Math.abs(thr) * 0.06) * dt); v.bat = Math.min(100, v.bat + 0.5 * dt); }
+  else if (v.lights) v.bat = Math.max(0, v.bat - 0.4 * dt);
+  if (v.lights && v.bat <= 0 && !v.engine) { v.lights = false; toast('Baterie je vybitá – světla zhasla'); }
+  if (v.slots[0]?.id === 'car_battery' && v.bat <= 0 && !v.engine) v.slots[0] = { id: 'car_battery_empty', n: 1 };
+  // srážka s tvorem
+  if (Math.abs(v.spd) > 5) for (const m of mobs) {
+    if (m.dead || (m.carT || 0) > gameTime) continue;
+    const [fx, fz] = carLocal(v, 0, -Math.sign(v.spd) * 2);
+    if (Math.hypot(m.pos.x - fx, m.pos.z - fz) < 1.4 + m.def.radius) { m.carT = gameTime + 0.6; hitMob(m, Math.abs(v.spd) * 0.8, v.yaw); }
+  }
+  // hráč sedí v autě (pozice kvůli načítání okolí, tvorům a síti)
+  const [sx, sz] = carLocal(v, -0.42, 0.35);
+  player.pos.set(sx, v.y + 0.6, sz);
+  player.vel.set(0, 0, 0);
+  player.onGround = true;
+  placeCarCamera(v);
+  Sound.engine(v.engine, Math.abs(v.spd) / CAR.maxFwd + Math.max(0, thr) * 0.25);
+  return Math.abs(v.spd);
+}
+function placeCarCamera(v) {
+  if (v.type === 'plane') return placePlaneCamera(v);
+  const e = new THREE.Euler(0, 0, 0, 'YXZ');
+  if (carCam === 0) {
+    const [cx, cz] = carLocal(v, -0.42, 0.62); // oči řidiče nad sedadlem, pod střechou
+    camera.position.set(cx, v.y + 1.42, cz);
+    e.set(player.pitch + (v.pitch || 0), v.yaw + clamp(player.yaw, -2.4, 2.4), 0);
+  } else {
+    const yaw = v.yaw + player.yaw, d = 7.5;
+    let cx = v.x + Math.sin(yaw) * d, cz = v.z + Math.cos(yaw) * d, cy = v.y + 2.6 - player.pitch * 6;
+    cy = Math.max(cy, terrainH(cx, cz) + 0.6);
+    camera.position.set(cx, cy, cz);
+    e.set(Math.atan2(v.y + 1.2 - cy, d), yaw, 0);
+  }
+  camera.quaternion.setFromEuler(e);
+  camera.rotation.set(e.x, e.y, e.z);
+}
+function honk() { hornN++; Sound.horn(); }
+const vehHud = document.createElement('div');
+vehHud.id = 'vehHud';
+document.body.append(vehHud);
+function updateVehHud() {
+  const v = vehicles.get(player.vehicle);
+  vehHud.style.display = v ? 'block' : 'none';
+  if (!v) return;
+  const dm = vehDim(v.type), fuel = `⛽ ${v.fuel.toFixed(1)} / ${dm.fuelMax} l`;
+  let html;
+  if (v.type === 'plane') {
+    const sp = Math.hypot(v.vx || 0, v.vy || 0, v.vz || 0), alt = Math.max(0, v.y - terrainH(v.x, v.z));
+    const stall = !v.ground && sp < PLANE.stall + 2;
+    html = `✈ ${Math.round(sp * 3.6)} km/h · ⇡ ${Math.round(alt)} m · plyn ${Math.round((v.thr || 0) * 100)} % · ${fuel}${v.ground ? ' · na zemi' : ''}${stall ? ' <b class="warn">PÁD RYCHLOSTI</b>' : ''}`;
+  } else html = `🚗 ${Math.round(Math.abs(v.spd) * 3.6)} km/h${v.spd < -0.3 ? ' (zpátečka)' : ''} · ${fuel} · 🔋 ${v.slots[0]?.id === 'car_battery' ? Math.round(v.bat) + ' %' : 'chybí'}${v.engine ? '' : ' · motor stojí'}`;
+  if (vehHud.innerHTML !== html) vehHud.innerHTML = html;
+}
+
+// ---------- zobrazení všech aut (i řízených ostatními hráči)
+function updateVehicles(dt) {
+  const me = myDriverId();
+  // auta řízená ostatními: poloha z jejich pozice (12× za sekundu), plynule
+  for (const P of others.values()) {
+    const q = P.pose?.veh;
+    if (!q) continue;
+    const v = vehicles.get(q.id);
+    if (!v) continue;
+    remoteVeh.set(q.id, q);
+    if (P.hornSeen !== undefined && P.pose.hn > P.hornSeen && Math.hypot(q.x - player.pos.x, q.z - player.pos.z) < 60) Sound.horn();
+    P.hornSeen = P.pose.hn;
+  }
+  for (const [id, v] of vehicles) {
+    let m = vehMeshes.get(id);
+    if (!m) { m = v.type === 'plane' ? buildPlaneModel(v.color || 0x8a2a22) : buildCarModel(v.color || 0xc82a2a); scene.add(m.group); vehMeshes.set(id, m); m.group.position.set(v.x, v.y, v.z); m.group.rotation.y = v.yaw; m.spin = 0; }
+    const remote = v.driver && v.driver !== me ? remoteVeh.get(id) || null : null;
+    const src = remote || v;
+    const k = remote ? 1 - Math.exp(-dt * 10) : 1;
+    m.group.position.lerp(tmpV.set(src.x, src.y, src.z), k);
+    m.yaw = m.yaw === undefined ? src.yaw : m.yaw + wrapAngle(src.yaw - m.yaw) * k;
+    m.group.rotation.set(0, 0, 0);
+    m.group.rotateY(m.yaw);
+    m.group.rotateX(src.pitch || 0); // předek výš = kladný náklon
+    m.group.rotateZ(-(src.roll || 0));
+    m.spin += ((src.spd || 0) / 0.38) * dt;
+    for (const w of m.wheels) w.rotation.x = -m.spin;
+    if (m.prop) m.prop.rotation.z += (src.thr || 0) * 70 * dt + (src.thr > 0 ? 6 * dt : 0); // vrtule
+    for (const p of m.pivots) p.rotation.y = src.steer || 0;
+    const lights = remote ? remote.lights : v.lights;
+    if (m.head) { m.head.emissiveIntensity = lights ? 2.2 : 0; m.tail.emissiveIntensity = lights ? 1.2 : 0.25; }
+    if (m.navs) m.navs.forEach((n, i) => (n.emissiveIntensity = lights ? (i === 2 && Math.sin(performance.now() / 300) < 0 ? 0 : 2) : 0)); // poziční světla, ocasní bliká
+    if (v.slots?.[0]?.id && v.batId !== v.slots[0].id) { v.bat = v.slots[0].id === 'car_battery' ? 100 : 0; v.batId = v.slots[0].id; } // nově vložená baterie
+    if (!v.slots?.[0]) v.batId = null;
+  }
+  for (const [id, m] of vehMeshes) if (!vehicles.has(id)) { scene.remove(m.group); vehMeshes.delete(id); }
+  updateVehHud();
+  // reflektor auta, ve kterém sedíš
+  const v = vehicles.get(player.vehicle);
+  if (v && v.lights && v.type !== 'plane') {
+    const [hx, hz] = carLocal(v, 0, -2.2), [tx, tz] = carLocal(v, 0, -14);
+    carSpot.position.set(hx, v.y + 0.9, hz);
+    carSpot.target.position.set(tx, v.y - 0.5, tz);
+    carSpot.intensity = 60;
+    U.headPos.value.set(hx, v.y + 0.9, hz);
+    U.headDir.value.set(tx - hx, -1.4, tz - hz).normalize();
+    U.headOn.value = 1;
+  } else { carSpot.intensity = 0; U.headOn.value = 0; }
+}
+// Hráč pěšky se do auta nepropadne: odsune se z obrysu karoserie
+function vehiclePush(p) {
+  for (const v of vehicles.values()) {
+    if (v.driver === myDriverId()) continue;
+    const dx = p.x - v.x, dz = p.z - v.z;
+    if (dx * dx + dz * dz > 9 || p.y > v.y + 1.6 || p.y + PH < v.y + 0.2) continue;
+    const c = Math.cos(v.yaw), s = Math.sin(v.yaw), lx = c * dx - s * dz, lz = s * dx + c * dz;
+    const dm = vehDim(v.type), hx = dm.push / 2 + PW, hz = dm.len / 2 + PW;
+    if (Math.abs(lx) >= hx || Math.abs(lz) >= hz) continue;
+    let nx = lx, nz = lz;
+    if (hx - Math.abs(lx) < hz - Math.abs(lz)) nx = Math.sign(lx || 1) * hx; else nz = Math.sign(lz || 1) * hz;
+    p.x = v.x + c * nx + s * nz;
+    p.z = v.z - s * nx + c * nz;
+  }
+}
+// Paprsek na auto (míření): obdélník karoserie v souřadnicích auta
+function rayVehicle(o, d, maxT) {
+  let best = null;
+  for (const [id, v] of vehicles) {
+    if (id === player.vehicle || (v.x - o.x) ** 2 + (v.z - o.z) ** 2 > 100) continue;
+    const c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+    const lo = [c * (o.x - v.x) - s * (o.z - v.z), o.y - v.y, s * (o.x - v.x) + c * (o.z - v.z)], ld = [c * d.x - s * d.z, d.y, s * d.x + c * d.z];
+    const dm = vehDim(v.type), mn = [-dm.wid / 2, 0.15, -dm.len / 2], mx = [dm.wid / 2, dm.h, dm.len / 2];
+    let t0 = 0, t1 = maxT;
+    for (let a = 0; a < 3 && t0 <= t1; a++) {
+      if (Math.abs(ld[a]) < 1e-9) { if (lo[a] < mn[a] || lo[a] > mx[a]) t0 = Infinity; continue; }
+      let ta = (mn[a] - lo[a]) / ld[a], tb = (mx[a] - lo[a]) / ld[a];
+      if (ta > tb) [ta, tb] = [tb, ta];
+      t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+    }
+    if (t0 <= t1 && t0 < maxT && (!best || t0 < best.t)) best = { t: t0, id };
+  }
+  return best;
+}
+// Okno auta: palivo, baterie, kufr
+function renderCarUI(area) {
+  const v = vehicles.get(ui.fireKey);
+  if (!v) { area.innerHTML = '<div class="mc-note">Auto tu už není.</div>'; return; }
+  const bar = (p, color) => `<div class="parrow" style="width:160px"><i style="width:${clamp(p, 0, 100)}%;background:${color}"></i></div>`;
+  const dm = vehDim(v.type), plane = v.type === 'plane';
+  area.innerHTML = `<div class="mc-title">${dm.name}</div>
+    <div class="car-ui">
+      <div><div class="k-label">Palivo ${v.fuel.toFixed(1)} / ${dm.fuelMax} l</div>${bar((v.fuel / dm.fuelMax) * 100, '#e0a03b')}
+        ${plane ? '' : `<div class="k-label">Autobaterie ${v.slots[0]?.id === 'car_battery' ? Math.round(v.bat) + ' %' : v.slots[0] ? 'vybitá' : 'chybí'}</div>
+        <div style="display:flex;gap:8px;align-items:center">${slotHTML(v.slots[0], 0, '', 'car')}${bar(v.slots[0]?.id === 'car_battery' ? v.bat : 0, '#3aff5a')}</div>`}</div>
+      <button class="mc-btn" data-car-enter>${v.driver && v.driver !== myDriverId() ? 'Obsazeno' : 'Nastoupit (F)'}</button>
+    </div>
+    <div class="k-label">${plane ? 'Zavazadlový prostor' : 'Kufr'}</div><div class="grid">${v.slots.slice(1).map((s, i) => slotHTML(s, i + 1, '', 'car')).join('')}</div>
+    <div class="mc-note">${plane ? 'Natankuješ kanystrem s palivem (pravé tl. s kanystrem). Startuje se plynem (mezerník), vzlétne se při rychlosti kolem 21 m/s.' : 'Natankuješ kanystrem s palivem (pravé tl. s kanystrem na auto). Vybitou autobaterii nabiješ v nabíječce.'}</div>`;
+}
+Object.assign(Sound, {
+  // Motor: pila přes dolní propust, výška tónu podle otáček
+  engine(on, rpm) {
+    const c = this.ctx;
+    if (!c) return;
+    if (!this.eng) {
+      const o = c.createOscillator(), f = c.createBiquadFilter(), gn = c.createGain();
+      o.type = 'sawtooth';
+      f.type = 'lowpass';
+      gn.gain.value = 0;
+      o.connect(f).connect(gn).connect(this.master);
+      o.start();
+      this.eng = { o, f, gn };
+    }
+    const t = c.currentTime;
+    this.eng.gn.gain.setTargetAtTime(on ? 0.07 : 0, t, 0.15);
+    this.eng.o.frequency.setTargetAtTime(36 + rpm * 95, t, 0.1);
+    this.eng.f.frequency.setTargetAtTime(220 + rpm * 600, t, 0.1);
+  },
+  horn() { this.tone(415, 0.5, 0.16, 'square'); this.tone(523, 0.5, 0.12, 'square'); },
+});
+
+// ============================================================ dvouplošník: model a letová fyzika
+// Zjednodušená, ale fyzikální: tah motoru, odpor vzduchu ~ v², vztlak ~ v² × součinitel podle úhlu náběhu,
+// nad kritickým úhlem nebo pod pádovou rychlostí vztlak zmizí (pád rychlosti) a nos klesá. Zatáčí se náklonem.
+// Na zemi jezdí po podvozku (ostruhové kolo řídí A/D, s plynem na nule kola brzdí).
+// tah 9 m/s² a odpor 0,009·v² = nejvyšší rychlost ~32 m/s (115 km/h); při stoupání nad ~45° rychlost spadne pod pádovou
+const PLANE = { span: 9.2, len: 7, stall: 15, vTake: 21, maxThrust: 9, drag: 0.009, fuelMax: 60, groundPitch: 0.14 };
+const planeEuler = new THREE.Euler(0, 0, 0, 'YXZ'), planeMat = new THREE.Matrix4(), planeVec = new THREE.Vector3();
+// Bod v souřadnicích letadla (x vpravo, y nahoru, z dozadu) -> svět, podle polohy a náklonů
+function planePoint(v, lx, ly, lz, out = planeVec) {
+  planeEuler.set(v.pitch || 0, v.yaw, -(v.roll || 0), 'YXZ');
+  planeMat.makeRotationFromEuler(planeEuler);
+  return out.set(lx, ly, lz).applyMatrix4(planeMat).add(tmpV.set(v.x, v.y, v.z));
+}
+function buildPlaneModel(color) {
+  const g = new THREE.Group();
+  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.75, ...o });
+  const fabric = M({ color }), wingM = M({ color: 0xd8c8a0 }), dark = M({ color: 0x2a2a2e, roughness: 0.5, metalness: 0.4 }), wood = M({ color: 0x7a4a24, roughness: 0.6 });
+  const box = (w, h, d, m, x, y, z, parent = g) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); parent.add(me); return me; };
+  const cyl = (r, l, m, x, y, z, axis = 'z') => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, 14), m); c.position.set(x, y, z); if (axis === 'z') c.rotation.x = Math.PI / 2; else if (axis === 'x') c.rotation.z = Math.PI / 2; g.add(c); return c; };
+  box(0.95, 0.95, 4.6, fabric, 0, 1.35, 0.1);            // trup
+  box(0.62, 0.62, 1.6, fabric, 0, 1.45, 3.1);            // zúžená zadní část
+  box(0.7, 0.08, 0.95, dark, 0, 1.84, 0.55);             // otevřený kokpit
+  box(0.6, 0.3, 0.04, M({ color: 0x9ab8c8, transparent: true, opacity: 0.5 }), 0, 1.98, -0.05); // štítek proti větru
+  cyl(0.56, 0.75, dark, 0, 1.35, -2.45);                 // kryt motoru
+  for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; box(0.12, 0.12, 0.3, dark, Math.cos(a) * 0.5, 1.35 + Math.sin(a) * 0.5, -2.7); } // válce rotačního motoru
+  cyl(0.12, 0.3, dark, 0, 1.35, -2.95);                  // náboj vrtule
+  const prop = new THREE.Group();
+  prop.position.set(0, 1.35, -3.12);
+  g.add(prop);
+  box(0.16, 2.7, 0.06, wood, 0, 0, 0, prop);
+  box(0.06, 0.3, 0.08, wood, 0, 0, 0, prop);
+  // dvě patra křídel se vzpěrami, výsostné znaky
+  box(9.0, 0.12, 1.5, wingM, 0, 0.95, -0.9);
+  box(9.2, 0.12, 1.5, wingM, 0, 2.38, -1.1);
+  for (const x of [-3.3, 3.3]) for (const z of [-1.5, -0.4]) box(0.07, 1.36, 0.07, wood, x, 1.67, z);
+  for (const x of [-0.5, 0.5]) box(0.06, 0.6, 0.06, wood, x, 2.06, -1.1);
+  const roundel = (x, y) => { cyl(0.42, 0.02, M({ color: 0x1a3a8a }), x, y, -1.1, 'y'); cyl(0.28, 0.03, M({ color: 0xf4f4f0 }), x, y, -1.1, 'y'); cyl(0.14, 0.04, M({ color: 0xc82a2a }), x, y, -1.1, 'y'); };
+  roundel(-3.4, 2.45); roundel(3.4, 2.45);
+  // ocasní plochy
+  box(3.2, 0.08, 0.95, wingM, 0, 1.5, 3.55);
+  box(0.08, 1.15, 1.0, fabric, 0, 2.05, 3.65);
+  box(0.09, 0.5, 0.35, M({ color: 0xf4f4f0 }), 0, 2.2, 3.95);
+  // podvozek: dvě kola na vzpěrách, ostruha vzadu
+  const wheels = [];
+  for (const x of [-0.85, 0.85]) {
+    box(0.07, 0.9, 0.07, dark, x * 0.75, 0.82, -1.15).rotation.z = x > 0 ? -0.3 : 0.3;
+    const w = new THREE.Group();
+    w.position.set(x, 0.42, -1.3);
+    g.add(w);
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.18, 16), dark);
+    tire.rotation.z = Math.PI / 2;
+    w.add(tire);
+    box(0.2, 0.06, 0.6, M({ color: 0xc8c8c8 }), 0, 0, 0, w);
+    wheels.push(w);
+  }
+  box(1.8, 0.06, 0.06, dark, 0, 0.42, -1.3);
+  box(0.06, 0.5, 0.06, dark, 0, 0.55, 3.75).rotation.x = 0.5;
+  // poziční světla: červené vlevo, zelené vpravo, bílé na ocasu
+  const nav = M({ color: 0x220000, emissive: 0xff2020, emissiveIntensity: 0 }), navG = M({ color: 0x002200, emissive: 0x20ff40, emissiveIntensity: 0 }), navW = M({ color: 0x222222, emissive: 0xffffff, emissiveIntensity: 0 });
+  box(0.12, 0.1, 0.12, nav, -4.6, 2.38, -1.1);
+  box(0.12, 0.1, 0.12, navG, 4.6, 2.38, -1.1);
+  box(0.1, 0.1, 0.1, navW, 0, 2.62, 4.1);
+  return { group: g, prop, wheels, pivots: [], navs: [nav, navG, navW], head: null, tail: null };
+}
+// Narazí letadlo (příď, konce křídel, ocas) do bloku, stromu nebo do země?
+function planeHits(v) {
+  for (const [lx, ly, lz] of [[0, 1.35, -3.3], [-4.5, 0.95, -0.9], [4.5, 0.95, -0.9], [-4.5, 2.38, -1.1], [4.5, 2.38, -1.1], [0, 2.4, 4.0], [0, 0.6, -1.3]]) {
+    const p = planePoint(v, lx, ly, lz);
+    if (solidAny(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z))) return true;
+    const g = groundHeight(p.x, p.z);
+    if (!v.ground && isFinite(g) && p.y < g - 0.15 && ly > 0.7) return true; // konec křídla v zemi (jen za letu, na zemi jede po podvozku)
+    for (const c of forestColliders) {
+      if ((p.x - c.x) ** 2 + (p.z - c.z) ** 2 > (c.r + 1.6) ** 2) continue;
+      const t = forestTrees.find((tr) => tr.x === c.x && tr.z === c.z);
+      if (t && p.y > t.y && p.y < t.y + t.trunkH + 3 * t.s) return true; // kmen i koruna
+    }
+  }
+  return false;
+}
+// Místo pro položení letadla: střed se hledá před hráčem (letadlo je větší než dosah ruky), nos od hráče, ocas k němu.
+// Vrátí { ok, x, y, z } nebo { ok: false, why } s důvodem, co překáží.
+// Půdorys letadla (místní souřadnice: x do stran, z dozadu): křídla, trup, ocasní plocha
+const PLANE_RECTS = [[-4.7, 4.7, -1.9, -0.1], [-0.8, 0.8, -3.7, 4.4], [-1.9, 1.9, 3.3, 4.4]];
+const PLANE_FIT = [];
+for (let lx = -4.5; lx <= 4.51; lx += 0.5) PLANE_FIT.push([lx, 0.95, -0.9], [lx, 2.38, -1.1]); // spodní a horní křídlo
+for (let lz = -3.3; lz <= 4.01; lz += 0.5) PLANE_FIT.push([0, 0.7, lz], [0, 1.4, lz]); // trup
+function planeBlocker(v) {
+  if (!isFinite(v.y)) return 'chybí rovná zem';
+  for (const [lx, ly, lz] of PLANE_FIT) {
+    const p = planePoint(v, lx, ly, lz);
+    if (solidAny(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z))) return 'překáží blok';
+    const g = groundHeight(p.x, p.z);
+    if (isFinite(g) && p.y < g - 0.4) return 'terén je moc nerovný';
+  }
+  // stromy a balvany: leží kmen (s rezervou) nebo koruna v půdorysu letadla?
+  const c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+  for (const col of forestColliders) {
+    const dx = col.x - v.x, dz = col.z - v.z;
+    if (dx * dx + dz * dz > 100) continue;
+    const lx = c * dx - s * dz, lz = s * dx + c * dz; // do místních souřadnic letadla
+    const t = forestTrees.find((tr) => tr.x === col.x && tr.z === col.z);
+    if (t && t.y + t.trunkH + 3 * t.s < v.y) continue; // strom pod letadlem (ve svahu)
+    const crown = t && t.y + t.trunkH * 0.8 < v.y + 2.6 ? Math.min(1.6, 0.9 * t.s) : 0; // nízká koruna zasáhne horní křídlo
+    const m = col.r + 0.3 + crown;
+    if (PLANE_RECTS.some(([x0, x1, z0, z1]) => lx > x0 - m && lx < x1 + m && lz > z0 - m && lz < z1 + m)) return t ? 'překáží strom' : 'překáží balvan';
+  }
+  return '';
+}
+function planeSpot(pt) {
+  const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
+  const d0 = Math.max(0, (pt[0] - player.pos.x) * fx + (pt[2] - player.pos.z) * fz);
+  let why = '';
+  for (const d of [d0 + 5.2, d0 + 7, d0 + 9]) { // ocas musí minout hráče; když překáží, zkusí se kousek dál
+    const x = player.pos.x + fx * d, z = player.pos.z + fz * d, y = floorAt(x, z, Math.max(pt[1], terrainH(x, z)) + 0.5);
+    why = planeBlocker({ x, y, z, yaw: player.yaw, pitch: PLANE.groundPitch, roll: 0 });
+    if (!why) return { ok: true, x, y, z };
+  }
+  return { ok: false, why };
+}
+let stallWarnT = 0;
+function flyPlane(v, dt) {
+  const joy = input.joy;
+  // knipl: S / joystick dolů = nos nahoru, W = nos dolů; A/D = náklon (na zemi řízení)
+  const pitchIn = clamp((keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) - (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) + (joy ? joy.y : 0), -1, 1);
+  const rollIn = clamp((keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) + (joy ? joy.x : 0), -1, 1);
+  const up = keys.has('Space') || keys.has('KeyR'), down = keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyX');
+  v.thr = clamp((v.thr || 0) + ((up ? 1 : 0) - (down ? 1 : 0)) * 0.45 * dt, 0, 1);
+  if (v.thr > 0 && v.fuel <= 0 && (carWarnT -= dt) <= 0) { carWarnT = 3; toast('Došlo palivo – natankuj z kanystru (na zemi)'); }
+  v.engine = v.fuel > 0 && v.thr > 0;
+  v.vx ||= 0; v.vy ||= 0; v.vz ||= 0;
+  const cy = Math.cos(v.yaw), sy = Math.sin(v.yaw), cp = Math.cos(v.pitch), sp = Math.sin(v.pitch), cr = Math.cos(v.roll || 0), sr = Math.sin(v.roll || 0);
+  const fwd = [-sy * cp, sp, -cy * cp], right = [cy, 0, -sy], up0 = [-sy * -sp, cp, -cy * -sp];
+  const upv = [up0[0] * cr + right[0] * sr, up0[1] * cr + right[1] * sr, up0[2] * cr + right[2] * sr];
+  const speed = Math.hypot(v.vx, v.vy, v.vz);
+  const air = Math.max(0, v.vx * fwd[0] + v.vy * fwd[1] + v.vz * fwd[2]);
+  const fpa = speed > 1 ? Math.asin(clamp(v.vy / speed, -1, 1)) : 0;
+  const aoa = v.ground ? v.pitch : v.pitch - fpa; // úhel náběhu
+  const stalled = !v.ground && (air < PLANE.stall || aoa > 0.38);
+  const cl = stalled ? 0.2 : clamp(0.55 + aoa * 2.2, 0, 1.45);
+  const lift = 9.8 * cl * (air / PLANE.vTake) ** 2;
+  const thrust = v.engine ? v.thr * PLANE.maxThrust : 0;
+  const drag = PLANE.drag * speed * speed + (stalled ? 0.4 * speed : 0);
+  const inv = speed > 0.01 ? 1 / speed : 0;
+  v.vx += (fwd[0] * thrust + upv[0] * lift - v.vx * inv * drag) * dt;
+  v.vy += (fwd[1] * thrust + upv[1] * lift - v.vy * inv * drag - 9.8) * dt;
+  v.vz += (fwd[2] * thrust + upv[2] * lift - v.vz * inv * drag) * dt;
+  const eff = clamp(air / 18, 0.12, 1.2); // kormidla účinkují podle rychlosti
+  if (!v.ground) {
+    // let: výškovka a křidélka, zatáčka z náklonu, při pádu rychlosti nos padá
+    v.pitch += pitchIn * 0.9 * eff * dt;
+    v.roll = (v.roll || 0) + rollIn * 1.05 * eff * dt;
+    if (!rollIn) v.roll *= 1 - Math.min(1, dt * 0.7);
+    v.yaw -= (Math.tan(clamp(v.roll, -1.2, 1.2)) * 9.8) / Math.max(air, 8) * dt * 0.9;
+    if (stalled) {
+      v.pitch -= 0.75 * dt;
+      if ((stallWarnT -= dt) <= 0) { stallWarnT = 2.5; toast('⚠ Ztráta rychlosti! Potlač (W) a přidej plyn'); Sound.burst({ dur: 0.4, f0: 900, f1: 900, q: 8, vol: 0.12 }); }
+    }
+    // rychlost se stáčí do směru nosu (letadlo letí kam míří)
+    const k = Math.min(1, dt * 1.3 * clamp(air / 15, 0.1, 1)), s = Math.hypot(v.vx, v.vy, v.vz);
+    v.vx += (fwd[0] * s - v.vx) * k; v.vy += (fwd[1] * s - v.vy) * k; v.vz += (fwd[2] * s - v.vz) * k;
+  }
+  v.pitch = clamp(v.pitch, -1.3, 1.3);
+  v.roll = clamp(v.roll || 0, -1.1, 1.1);
+  const ox = v.x, oy = v.y, oz = v.z, opitch = v.pitch, oyaw = v.yaw;
+  v.x += v.vx * dt; v.y += v.vy * dt; v.z += v.vz * dt;
+  // země: dosednutí, rozjezd a brzdy
+  const floor = floorAt(v.x, v.z, oy + 0.5);
+  if (v.y <= floor + 0.02) {
+    const impact = -v.vy;
+    if (!v.ground) {
+      if (impact > 7.5 || Math.abs(v.roll) > 0.55) planeCrash(v, Math.max(impact, speed * 0.5));
+      else if (impact > 1) Sound.burst({ dur: 0.2, f0: 300, f1: 100, q: 1, vol: 0.3, type: 'lowpass' });
+    }
+    v.ground = true;
+    v.y = floor;
+    if (v.vy < 0) v.vy = 0;
+    v.roll *= 1 - Math.min(1, dt * 6);
+    // zvednutí ocasu a rotace při vzletu jen při dostatečné rychlosti, jinak sedí na ostruze
+    if (air > PLANE.vTake * 0.75) v.pitch = clamp(v.pitch + pitchIn * 0.6 * dt, 0, 0.4);
+    else v.pitch += (PLANE.groundPitch - v.pitch) * Math.min(1, dt * 3);
+    v.yaw -= rollIn * 0.9 * dt * clamp(air / 6, 0.25, 1); // řízení ostruhovým kolem
+    const hx = -Math.sin(v.yaw), hz = -Math.cos(v.yaw);
+    let gs = v.vx * hx + v.vz * hz;
+    if (v.thr < 0.05) gs -= Math.sign(gs) * Math.min(Math.abs(gs), 5 * dt); // brzdy kol
+    gs *= 1 - Math.min(1, 0.15 * dt);
+    v.vx = hx * gs; v.vz = hz * gs;
+  } else v.ground = false;
+  if (planeHits(v)) {
+    // náraz: letadlo se zastaví vodorovně, ale ve vzduchu dál padá (nezůstane viset)
+    if (speed > 8) planeCrash(v, speed);
+    v.x = ox; v.z = oz; v.yaw = oyaw;
+    if (v.ground) { v.y = Math.max(oy, floor); v.pitch = opitch; }
+    v.vx = v.vz = 0;
+    if (v.vy > 0) v.vy = 0;
+  }
+  if (waterAt(v.x, v.y + 0.3, v.z) !== null && v.ground) { v.vx *= 1 - Math.min(1, dt * 3); v.vz *= 1 - Math.min(1, dt * 3); }
+  if (v.engine) v.fuel = Math.max(0, v.fuel - (0.02 + v.thr * 0.1) * dt);
+  v.spd = Math.hypot(v.vx, v.vz) * (v.ground ? 1 : 1); // pro kola a síť
+  // pilot v kokpitu
+  const seat = planePoint(v, 0, 1.4, 0.6);
+  player.pos.set(seat.x, seat.y, seat.z);
+  player.vel.set(0, 0, 0);
+  player.onGround = true;
+  placePlaneCamera(v);
+  Sound.engine(v.engine, v.thr * 0.8 + air / 60);
+  if (v.engine && Math.random() < dt * 8) { const ex = planePoint(v, 0.6, 1.1, -2.2); debris.emit(ex.x, ex.y, ex.z, [0.35, 0.35, 0.35], 1, 0.5, 0.5); } // kouř z výfuku
+  return speed;
+}
+function planeCrash(v, force) {
+  player.shake = 0.6;
+  Sound.burst({ dur: 0.6, f0: 400, f1: 60, q: 0.8, vol: 0.6, type: 'lowpass' });
+  sparks.emit(v.x, v.y + 1, v.z, [1, 0.6, 0.2], 40, 5, 3);
+  if (force > 9) { damagePlayer(Math.min(60, force * 2), 0, 0); toast('Náraz! Letadlo tvrdě dosedlo'); } else toast('Tvrdé přistání');
+  v.vx *= 0.2; v.vz *= 0.2; v.vy = 0; v.thr = Math.min(v.thr, 0.2);
+}
+function placePlaneCamera(v) {
+  if (carCam === 0) { // z kokpitu, s náklonem letadla
+    const e = planePoint(v, 0, 2.12, 1.0);
+    camera.position.copy(e);
+    camera.rotation.set((v.pitch || 0) + player.pitch, v.yaw + clamp(player.yaw, -2.6, 2.6), -(v.roll || 0) * 0.85, 'YXZ');
+  } else { // zezadu, horizont zůstává rovný
+    const yaw = v.yaw + player.yaw, d = 14;
+    let cx = v.x + Math.sin(yaw) * d, cz = v.z + Math.cos(yaw) * d, cy = v.y + 4 - player.pitch * 8 + Math.sin(v.pitch || 0) * -4;
+    cy = Math.max(cy, terrainH(cx, cz) + 0.8);
+    camera.position.set(cx, cy, cz);
+    camera.rotation.set(Math.atan2(v.y + 1.6 - cy, d), yaw, 0, 'YXZ');
+  }
+}
+
 // ============================================================ stolování: stůl, židle, příbor
 const tableItems = new Map(Object.entries(save?.tableItems || {})); // klíč stolu -> { food, cutlery }
 const chairRot = new Map(Object.entries(save?.chairRot || {}).map(([k, v]) => [k, Number(v)]));
@@ -7724,6 +9587,7 @@ function damagePlayer(amount, dx, dz) {
   if (player.hp <= 0) die();
 }
 function die() {
+  if (player.vehicle) exitVehicle();
   player.alive = false;
   player.hp = 0;
   $('fade').style.opacity = 1;
@@ -7950,16 +9814,21 @@ function worldState() {
     vox: [...voxEdits.values()].flatMap((m) => [...m]),
     ground: groundItems.filter((g) => g.n > 0).map((g) => ({ gid: g.gid, id: g.id, n: g.n, x: g.pos.x, y: g.pos.y, z: g.pos.z })),
     stoves: Object.fromEntries(stoves), tableItems: Object.fromEntries(tableItems), chairRot: Object.fromEntries(chairRot), crops: Object.fromEntries(crops),
-    spawners: Object.fromEntries(spawners), furnaces: Object.fromEntries(furnaces), power: Object.fromEntries(power), chests: Object.fromEntries(chests), ruins: [...ruinsBuilt], ruinsOpened: [...ruinsOpened], portal: portalActive,
+    spawners: Object.fromEntries(spawners), furnaces: Object.fromEntries(furnaces), power: Object.fromEntries(power), vehicles: Object.fromEntries(vehicles), papers: Object.fromEntries(papers), pcDisks: Object.fromEntries(pcDisks), paperSpots: Object.fromEntries(paperSpots), chests: Object.fromEntries(chests), ruins: [...ruinsBuilt], ruinsOpened: [...ruinsOpened], portal: portalActive,
   };
 }
+let saveWarned = false;
 function saveGame() {
   if (resetting || NET.leaving) return;
   // hráč: batoh, pozice, zdraví… (klient na cizím serveru ukládá jen tohle)
   const me = { inv: inv.slots, pos: player.pos.toArray(), yaw: player.yaw, hp: Math.max(player.hp, 1), hunger: player.hunger, crafted, placedAny, creative, flying: player.flying, flyT: player.flyT || 0, armor };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(NET.client ? me : { ...me, ...worldState(), ...(NET.host ? NET.hostSave() : {}) }));
-  } catch {}
+    saveWarned = false;
+  } catch {
+    // plné úložiště prohlížeče (nebo zakázané): upozornit jednou, ať hráč neztratí postup potichu
+    if (!saveWarned) { saveWarned = true; toast('Hru se nepodařilo uložit – v prohlížeči není místo nebo je ukládání zakázané'); }
+  }
 }
 setInterval(saveGame, 10000);
 addEventListener('beforeunload', saveGame);
@@ -7987,6 +9856,13 @@ const touchUI = (() => {
       ${MP ? '<div class="tbtn small" data-act="chat"><span>💬</span><small>Chat</small></div>' : ''}
       <div class="tbtn small" data-act="menu"><span>⏸</span><small>${MP ? 'Menu' : 'Pauza'}</small></div>
     </div>
+    <div class="tcar">
+      <div class="tbtn small" data-act="vhorn"><span>📯</span><small>Klakson</small></div>
+      <div class="tbtn small" data-act="vlights"><span>💡</span><small>Světla</small></div>
+      <div class="tbtn small" data-act="vcam"><span>🎥</span><small>Kamera</small></div>
+      <div class="tbtn small" data-act="vexit"><span>🚪</span><small>Vystoupit</small></div>
+    </div>
+    <div class="tbtn" data-act="venter" id="tEnter" hidden><span>🚗</span><small>Nastoupit</small></div>
     <div id="tTap">Klepni pro hraní</div>`;
   document.body.append(root);
   const rotate = document.createElement('div');
@@ -8027,6 +9903,11 @@ const touchUI = (() => {
     else if (a === 'guide') toggleGuide();
     else if (a === 'chat') openChat();
     else if (a === 'menu') unlockPointer();
+    else if (a === 'vexit') exitVehicle();
+    else if (a === 'venter' && target?.kind === 'vehicle') enterVehicle(target.id);
+    else if (a === 'vhorn') honk();
+    else if (a === 'vcam') { carCam = 1 - carCam; player.yaw = 0; }
+    else if (a === 'vlights') key('KeyL', true);
   }
   root.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -8096,8 +9977,14 @@ const touchUI = (() => {
       const flying = (creative && player.flying) || player.flyT > 0;
       el('tDown').hidden = !flying;
       el('tSprint').hidden = flying;
-      const wantShift = flying ? [...held.values()].some((b) => b.id === 'tDown') : sprint;
+      const wantShift = flying || player.vehicle ? [...held.values()].some((b) => b.id === 'tDown') : sprint;
       if (wantShift) keys.add('ShiftLeft'); else keys.delete('ShiftLeft');
+      root.classList.toggle('incar', !!player.vehicle);
+      el('tEnter').hidden = !!player.vehicle || target?.kind !== 'vehicle';
+      const inPlane = vehicles.get(player.vehicle)?.type === 'plane';
+      root.classList.toggle('inplane', inPlane);
+      if (inPlane) { label(el('tJump'), '⇧', 'Plyn +'); label(el('tDown'), '⇩', 'Plyn −'); el('tDown').hidden = false; }
+      else if (player.vehicle) label(el('tJump'), '■', 'Brzda');
       if ((labelT -= dt) > 0) return;
       labelT = 0.2;
       const s = heldStack(), d = s && ITEMS[s.id];
@@ -8159,7 +10046,7 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 const clock = new THREE.Clock();
-let gameTime = 0, gameClock = 0, envTimer = 0, frames = 0, fpsTimer = 0, settle = 0;
+let envDay = 0, gameTime = 0, gameClock = 0, envTimer = 0, frames = 0, fpsTimer = 0, settle = 0;
 rebuildForest(player.pos.x, player.pos.z, true);
 rebuildBlocks();
 updateDay(0);
@@ -8169,15 +10056,17 @@ updateTips();
 if (!save) $('intro').style.display = 'grid';
 
 function tick(realDt) {
-  const playing = (isLocked() || game.testMode) && !invOpen && !guideOpen;
+  const playing = (isLocked() || game.testMode) && !invOpen && !guideOpen && !pcOpen && !docOpen;
   const dt = playing ? realDt : 0;
   gameClock += realDt;
   gameTime += dt;
   U.time.value = gameClock;
 
   let moving = 0;
-  if (playing && player.alive) moving = updatePlayer(dt);
+  if (playing && player.alive) moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt);
+  else if (player.vehicle && vehicles.has(player.vehicle)) { placeCarCamera(vehicles.get(player.vehicle)); Sound.engine(false, 0); }
   else { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
+  updateVehicles(realDt);
   updateHeldModel();
   updateSwing(dt, moving);
 
@@ -8190,7 +10079,7 @@ function tick(realDt) {
   updateRuins(realDt);
   if ((playing || MP) && !NET.client) updateSpawners(realDt);
   if (playing) {
-    if (player.alive && !dining) updateInteraction(dt);
+    if (player.alive && !dining && !player.vehicle) updateInteraction(dt); // z auta se netěží
     updateDining(dt);
     updateSurvival(dt);
     if (!MP) { updateMobs(dt, day); updateSpawns(dt, night); }
@@ -8209,6 +10098,8 @@ function tick(realDt) {
   updateFurnaceGlow(gameClock);
   updatePower(realDt, day); // elektrické sítě (energie 4× za sekundu)
   updatePowerVisuals(realDt, gameClock);
+  updatePC(realDt); // počítač: start, napájení, aplikace
+  updateDocs(realDt); // papíry a rámečky ve světě
   updateStoves(realDt);
   if (!NET.client) updateCrops(W);
   updatePortals(realDt);
@@ -8224,7 +10115,9 @@ function tick(realDt) {
   sky.position.copy(camera.position);
   ground.position.set(Math.round(camera.position.x / 4) * 4, 0, Math.round(camera.position.z / 4) * 4);
   stars.position.copy(camera.position);
-  if ((envTimer += realDt) > 3) { envTimer = 0; updateEnvironment(); }
+  // odlesky oblohy (drahé, ~10 ms) jen když se znatelně posunul čas dne, nejpozději po 12 s
+  if ((envTimer += realDt) > 3 && (Math.abs(dayTime - envDay) > 0.012 || envTimer > 12)) { envTimer = 0; envDay = dayTime; updateEnvironment(); }
+  cullFar(realDt);
 
   frames++;
   if ((fpsTimer += realDt) >= 2) {
@@ -8237,6 +10130,27 @@ function tick(realDt) {
   NET.update(realDt);
   if (performance.now() - lastFrameAt < 300) renderer.render(scene, camera); // na pozadí se nevykresluje
 }
+// Objekty za mlhou (stroje, zříceniny, krystaly, vozidla, papíry…) se nekreslí. Skupiny se světlem viditelným zdálky
+// (sprity, materiály bez mlhy) a skupiny v počátku souřadnic (obsah rozmístěný po světě) zůstávají. Skrývá jen to, co sama skryla.
+let cullT = 0;
+function cullFar(dt) {
+  if ((cullT -= dt) > 0) return;
+  cullT = 0.5;
+  const R2 = (2.4 / GFX.fog) ** 2, cx = camera.position.x, cz = camera.position.z;
+  for (const o of scene.children) {
+    if (!o.isGroup) continue;
+    const U = o.userData;
+    if (U.noCull === undefined) {
+      let keep = o.position.lengthSq() < 1;
+      o.traverse((c) => { if (c.isSprite || c.isLight || (c.material && c.material.fog === false)) keep = true; });
+      U.noCull = keep;
+    }
+    if (U.noCull) continue;
+    const far = (o.position.x - cx) ** 2 + (o.position.z - cz) ** 2 > R2;
+    if (far && o.visible) { o.visible = false; U.culled = true; }
+    else if (!far && U.culled) { o.visible = true; U.culled = false; }
+  }
+}
 let lastFrameAt = 0;
 function frame() {
   lastFrameAt = performance.now();
@@ -8248,7 +10162,7 @@ function frame() {
 // Hostitel drží svět: klienti mu posílají změny (bloky, stromy, podzemí…), on je provede a rozešle ostatním.
 // Tvory simuluje jen hostitel. Malé mapy (táboráky, truhly, sporáky, pole…) se porovnávají a posílají změněné klíče.
 const MAX_PLAYERS = 6;
-const KV_MAPS = { fires, stoves, crops, tableItems, chairRot, chests, spawners, furnaces, power };
+const KV_MAPS = { fires, stoves, crops, tableItems, chairRot, chests, spawners, furnaces, power, vehicles, papers, pcDisks, paperSpots };
 const others = new Map(); // ostatní hráči: pid -> { pid, name, pose, perm, conn?, avatar? }
 const puppets = new Map(); // klient: tvorové podle hostitele (nid -> tvor)
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -8288,7 +10202,8 @@ function kvDiff() {
   const ch = [];
   for (const [m, map] of Object.entries(KV_MAPS)) {
     const L = (NET.kvLast[m] ||= new Map());
-    for (const [k, v] of map) { const j = JSON.stringify(v); if (L.get(k) !== j) { L.set(k, j); ch.push([m, k, v]); } }
+    const once = m === 'papers'; // vytištěné papíry se nemění: stačí poslat nové
+    for (const [k, v] of map) { if (once && L.has(k)) continue; const j = JSON.stringify(v); if (L.get(k) !== j) { L.set(k, j); ch.push([m, k, v]); } }
     for (const k of [...L.keys()]) if (!map.has(k)) { L.delete(k); ch.push([m, k, null]); }
   }
   return ch;
@@ -8326,6 +10241,7 @@ function hostAccept(conn) {
 function dropPlayer(pid) {
   const P = others.get(pid);
   if (!P) return;
+  for (const v of vehicles.values()) if (v.driver === pid) { v.driver = null; v.spd = 0; v.engine = false; } // auto odcházejícího hráče zůstane stát
   others.delete(pid);
   if (P.avatar) scene.remove(P.avatar.group);
   if (NET.host) broadcast(['leave', P.name]);
@@ -8353,6 +10269,10 @@ function onClientMsg(P, msg) {
       const q = msg[1];
       if (!P.pose) renderPause();
       P.pose = q;
+      if (typeof q.ui === 'string') {
+        if (!isBusy(q.ui)) NET.kvT = 0; // hráč právě otevřel truhlu / stroj: hned mu poslat aktuální stav
+        uiBusy.set(q.ui, performance.now() + 1200);
+      }
       // létání nebo kreativní režim bez povolení: hostitel ho hráči znovu vypne
       if (!P.perm && (q.cr || (q.fly && !q.flyT)) && (P.permNag = (P.permNag || 0) - 1) < 0) { P.permNag = 12; sendTo(P.pid, ['perm', false]); }
       break;
@@ -8377,6 +10297,13 @@ function onClientMsg(P, msg) {
       if (!m) return;
       if (m.type === 'chicken') { if (m.eggs > 0) { sendTo(P.pid, ['give', 'egg', m.eggs]); m.eggs = 0; } else sendTo(P.pid, ['toast', 'Slepice ještě nesnesla vejce']); }
       else if (m.type === 'cow') { if (m.milkT > 0) sendTo(P.pid, ['toast', 'Kráva potřebuje chvíli odpočinout']); else { m.milkT = 40; sendTo(P.pid, ['swap', 'bucket', 'milk_bucket']); } }
+      break;
+    }
+    case 'print': queuePrint(String(msg[1]), msg[2], Number(msg[3])); break; // tisk z počítače hráče
+    case 'giveTo': { // hráč předává dokument jinému hráči
+      const id = String(msg[2]);
+      if (!id.startsWith('doc_')) return;
+      if (msg[1] === 'host') receiveGift(id, P.name); else if (others.has(msg[1])) sendTo(msg[1], ['gift', id, P.name]);
       break;
     }
     case 'chat': { const text = String(msg[1] || '').slice(0, 200).trim(); if (!text) return; chatLine(P.name, text); broadcast(['chat', P.name, text], P.pid); break; }
@@ -8422,6 +10349,7 @@ function onHostMsg(msg) {
       for (const pid of [...others.keys()]) if (!seen.has(pid)) { const P = others.get(pid); if (P.avatar) scene.remove(P.avatar.group); others.delete(pid); renderPause(); }
       break;
     }
+    case 'gift': receiveGift(String(msg[1]), String(msg[2] || 'Hráč')); break;
     case 'mobs': dayTime = msg[1]; dayCount = msg[2]; syncPuppets(msg[3]); break;
     case 'give': { const left = addItem(msg[1], msg[2]); if (left > 0) spawnGroundItem(msg[1], left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3); else Sound.pop(); break; }
     case 'swap': {
@@ -8585,7 +10513,7 @@ function updateAvatars(dt) {
     const q = P.pose;
     if (!q) continue;
     const A = (P.avatar ||= makeAvatar(P.name));
-    A.group.visible = q.alive !== false;
+    A.group.visible = q.alive !== false && !q.veh; // v autě není postavička vidět (sedí uvnitř)
     const tx = q.x, ty = q.y - (q.sit ? 0.42 : 0), tz = q.z;
     if (!A.init || Math.hypot(A.group.position.x - tx, A.group.position.z - tz) > 12) { A.group.position.set(tx, ty, tz); A.yaw = q.yaw; A.init = true; }
     else A.group.position.lerp(tmpV.set(tx, ty, tz), k);
@@ -8609,7 +10537,9 @@ function updateAvatars(dt) {
 function myPose() {
   return {
     x: r2(player.pos.x), y: r2(player.pos.y), z: r2(player.pos.z), yaw: r2(player.yaw), pitch: r2(player.pitch), held: heldStack()?.id || null,
+    ui: invOpen && ui.fireKey != null ? String(ui.fireKey) : null, // otevřená truhla / stroj (zámek)
     mv: r2(Math.hypot(player.vel.x, player.vel.z)), sw: swingT >= 0 || (input.lmb && isLocked()) ? 1 : 0, eat: player.eating || dining ? 1 : 0,
+    veh: (() => { const v = vehicles.get(player.vehicle); return v ? { id: player.vehicle, x: r2(v.x), y: r2(v.y), z: r2(v.z), yaw: r2(v.yaw), pitch: r2(v.pitch || 0), roll: r2(v.roll || 0), spd: r2(v.spd), steer: r2(v.steer), thr: r2(v.thr || 0), lights: v.lights ? 1 : 0 } : null; })(), hn: hornN,
     ar: armor.map((a) => a?.id || null), sit: player.sitting ? 1 : 0, fly: player.flying ? 1 : 0, flyT: player.flyT > 0 ? 1 : 0, alive: player.alive, cr: creative ? 1 : 0, set: fullSet(), hp: Math.round(player.hp),
   };
 }
@@ -8773,7 +10703,7 @@ if (MP) {
   $('hint').textContent += ' · T chat · Esc menu a hráči';
   document.addEventListener('pointerlockchange', () => {
     if (isLocked()) { hidePause(); return; }
-    if (!invOpen && !guideOpen && !chatOpen && !NET.leaving) showPause();
+    if (!invOpen && !guideOpen && !chatOpen && !pcOpen && !docOpen && !NET.leaving) showPause();
   });
   window.__netOnPeerError = (e) => { if (NET.client && !BOOT.conn?.open) leaveGame('Spojení s hostitelem se přerušilo.'); else console.warn('PeerJS:', e?.type); };
   if (NET.host) {
@@ -8803,7 +10733,7 @@ const game = window.game = {
   slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
   get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
   get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
-  NET, others, worldState, saveGame, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => (dayTime = t), get target() { return target; }, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite,
+  NET, others, worldState, saveGame, renderer, pc, openPC, closePC, pcPower, openApp, papers, pcDisks, paperSpots, openDoc, closeDoc, useDocs, newPaper, printJob, ensureDoc, vehicles, spawnVehicle, enterVehicle, exitVehicle, CAR, PLANE, planeHits, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => (dayTime = t), get target() { return target; }, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite,
 };
 window.gameStarted = true;
 frame();
