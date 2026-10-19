@@ -45,7 +45,7 @@ addEventListener('rise-costume', (e) => {
 function drawTag(T) {
   const c = T.canvas, g = c.getContext('2d');
   g.clearRect(0, 0, c.width, c.height);
-  g.font = '800 46px Nunito, system-ui, sans-serif';
+  g.font = '700 46px "Exo 2", system-ui, sans-serif';
   const tw = Math.min(400, g.measureText(T.name).width), w = tw + 92, x0 = 256 - w / 2, h = 72, y0 = 14;
   const round = (x, y, ww, hh, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, ww, hh, r) : g.rect(x, y, ww, hh); };
   round(x0, y0, w, h, 14);
@@ -76,7 +76,7 @@ function nameTag(name, light) {
   s.center.set(0.5, 0.3);
   const T = { canvas: c, tex, name, light, hp: 100, sprite: s };
   drawTag(T);
-  document.fonts?.load('800 46px Nunito').then(() => drawTag(T), () => {});
+  document.fonts?.load('700 46px "Exo 2"').then(() => drawTag(T), () => {});
   s.userData.tag = T;
   return s;
 }

@@ -268,8 +268,10 @@ try {
     const p = g.player.pos;
     g.spawnMob('cow', p.x + 3, p.z - 3);
     const m = g.mobs[g.mobs.length - 1]; m.idleT = 99; m.moving = false; m.ry = 0;
-    T.step(60);
+    T.step(1);
     const V = g.mobView(m);
+    V.idleT = 99; V.idle = null; // ať se zrovna nezačne pást (to hlavu skloní a hráče nesleduje)
+    T.step(40);
     const res = { head: !!V.head, eyes: V.eyes.length, shadow: !!V.shadow?.parent, turned: Math.abs(V.head.rotation.y) > 0.2 };
     m.hp = 0.1; g.hitMob(m, 5); T.step(12);
     res.tipping = V.group.rotation.z > 0.3 && g.scene.children.includes(V.group);
