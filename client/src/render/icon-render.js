@@ -54,7 +54,8 @@ export async function renderIcons(items) {
     cam.updateProjectionMatrix();
   };
   aim(shots[0]);
-  try { await renderer.compileAsync(scene, cam); } catch { /* bez paralelního překladu: přeloží se při kreslení */ }
+  // paralelní překlad shaderů (hra se nezastaví); bez něj se přeloží až při kreslení
+  if (renderer.extensions.has('KHR_parallel_shader_compile')) try { await renderer.compileAsync(scene, cam); } catch { /* nevadí */ }
   // všechny ikony do jedné textury (mřížka), pak jedno čtení zpět
   const cols = Math.ceil(Math.sqrt(shots.length)), rows = Math.ceil(shots.length / cols);
   const rt = new THREE.WebGLRenderTarget(cols * SS, rows * SS, { type: THREE.UnsignedByteType });

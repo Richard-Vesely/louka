@@ -30,7 +30,7 @@ export function buildVoxTextures(T = 128) {
     const t = bil(n1, wx, wy) * 12, f = t - Math.floor(t);
     rockH[i] = ((Math.floor(t) + sm(0.55, 1, f)) / 12 - 0.2) * 1.6; // schůdky = ostré hrany odlomených vrstev
     const rg = Math.abs(bil(n2, wx * 0.5, wy * 0.5) - 0.5);
-    rockCrack[i] = sm(0.022, 0.0, rg) * sm(0.35, 0.55, n3[(i * 7) % P]);
+    rockCrack[i] = sm(0.022, 0.0, rg) * sm(0.35, 0.55, bil(n1, x + 64 * S, y + 29 * S));
   }
   const stone = (i, base = [124, 127, 132], crackK = 0.5) => {
     const h = rockH[i], crack = rockCrack[i] * crackK * 2, tone = 0.84 + h * 0.3;

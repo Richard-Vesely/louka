@@ -31,11 +31,14 @@ function voxMaterial() {
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>
 attribute float aTile;
+attribute vec3 aGlow;
 varying float vTile;
+varying vec3 vGlow;
 varying vec2 vVUv;
 varying vec3 vWPos;`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
 vTile = aTile;
+vGlow = aGlow;
 vVUv = uv;
 vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
@@ -43,6 +46,7 @@ vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
 uniform sampler2DArray uVAlb, uVOrm, uVNrm;
 uniform float uTime, uVGlow, uVNrmK, uVEdge;
 varying float vTile;
+varying vec3 vGlow;
 varying vec2 vVUv;
 varying vec3 vWPos;
 ${TERRAIN_GLSL}`)
@@ -82,6 +86,7 @@ reflectedLight.directDiffuse *= mix(1.0, vOrm.r, 0.6);`)
     spk = step(0.72, h) * pow(max(sin(uTime * (1.2 + h * 2.0) + h * 60.0 + dot(vd, vec3(17.0, 23.0, 11.0))), 0.0), 18.0);
   }
   float pulse = 1.0 + 0.12 * sin(uTime * 1.4 + vWPos.x * 0.7 + vWPos.z * 0.9);
+  totalEmissiveRadiance += vAlb.rgb * vGlow * 0.55 * pulse; // odraz světla svítících rud na okolní stěny
   totalEmissiveRadiance += vAlb.rgb * vOrm.a * uVGlow * pulse + spk * mix(vec3(1.0), vAlb.rgb, 0.4) * (vOrm.a > 0.02 ? 1.4 : 0.45);
 }
 #include <emissivemap_fragment>`);
@@ -99,6 +104,7 @@ const VFACES = [
   { dir: [0, 0, 1], corners: [[0, 0, 1, 0, 0], [1, 0, 1, 1, 0], [0, 1, 1, 0, 1], [1, 1, 1, 1, 1]] },
 ].map((f) => ({ ...f, axis: f.dir.findIndex((v) => v !== 0) }));
 const AO_LIGHT = [0.4, 0.62, 0.8, 1.0];
+const GLOW_TINT = { [V.CRYSTAL]: [0.25, 0.85, 1.0], [V.MARKORITE]: [0.85, 0.3, 1.0], def: [0.6, 0.6, 0.6] };
 
 // Postaví 3D model podzemí jednoho chunku. Kreslí jen stěny, které sousedí se vzduchem v jeskyni nebo v díře.
 function buildVoxGeometry(cx, cz) {
@@ -128,7 +134,14 @@ function buildVoxGeometry(cx, cz) {
     return yi + VMIN <= tops[i] || dug[i] === 1;
   };
 
-  const pos = [], nor = [], uv = [], col = [], tile = [], idx = [];
+  // Svítící rudy (krystal, markorit), které jsou vidět, slabě nasvítí stěny kolem sebe (do ~3 bloků) svou barvou.
+  const glowSrc = [];
+  for (let yi = 0; yi < H; yi++) for (let z = 0; z < P; z++) for (let x = 0; x < P; x++) {
+    const v = data[(yi * P + z) * P + x];
+    if (!VOX[v]?.glow || !VFACES.some((f) => openAir(x + f.dir[0], yi + f.dir[1], z + f.dir[2]))) continue;
+    glowSrc.push([x - 0.5, yi + 0.5, z - 0.5, GLOW_TINT[v] || GLOW_TINT.def]);
+  }
+  const pos = [], nor = [], uv = [], col = [], tile = [], idx = [], glow = glowSrc.length ? [] : null;
   const q = [0, 0, 0], ao = [0, 0, 0, 0];
   for (let yi = 0; yi < H; yi++) for (let z = 1; z <= 16; z++) for (let x = 1; x <= 16; x++) {
     const v = data[(yi * P + z) * P + x];
@@ -153,6 +166,17 @@ function buildVoxGeometry(cx, cz) {
         ao[i] = s1 && s2 ? 0 : 3 - (s1 + s2 + cc);
         const l = AO_LIGHT[ao[i]];
         col.push(l, l, l);
+        if (glow) {
+          const px = x - 1 + c[0] + f.dir[0] * 0.3, py = yi + c[1] + f.dir[1] * 0.3, pz = z - 1 + c[2] + f.dir[2] * 0.3;
+          let r = 0, gg = 0, b = 0;
+          for (const [sx, sy, sz, tint] of glowSrc) {
+            const d = Math.hypot(px - sx, py - sy, pz - sz);
+            if (d >= 3) continue;
+            const k = (1 - d / 3) ** 2 * l;
+            r += tint[0] * k; gg += tint[1] * k; b += tint[2] * k;
+          }
+          glow.push(Math.min(r, 1), Math.min(gg, 1), Math.min(b, 1));
+        }
       }
       if (ao[1] + ao[2] > ao[0] + ao[3]) idx.push(n, n + 1, n + 3, n, n + 3, n + 2);
       else idx.push(n, n + 1, n + 2, n + 2, n + 1, n + 3);
@@ -165,6 +189,7 @@ function buildVoxGeometry(cx, cz) {
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.setAttribute('aTile', new THREE.Float32BufferAttribute(tile, 1));
+  if (glow) geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glow, 3)); // bez svítících rud atribut chybí = 0
   geo.setIndex(idx);
   geo.computeBoundingSphere();
   return geo;
