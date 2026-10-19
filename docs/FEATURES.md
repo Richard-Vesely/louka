@@ -56,6 +56,12 @@ When you add or change a feature, update this file in the same pull request.
 - **Underground**: caves (tunnels and domes), rock layers (stone, granite, marble, basalt, sandstone, obsidian),
   ores in nests: coal, iron, copper, gold, quartz, crystal, markorite (Mark dimension only).
   No digging within 10.5 m of a shrine.
+  - **Look**: 128 px textures made by code (64 px on *nízká*), one layer per block type in a texture array (no colour
+    bleeding at a distance): natural rock with chipped ledges and thin cracks in a cool grey, dirt with pebbles, every
+    ore on the same stone as plain stone. Each pixel also has relief (normal map, softer with distance, *střední* and
+    *vysoká*), roughness, metal and glow: gold, copper and iron nuggets shine like metal and glint; **crystal and
+    markorite glow only in their shards**, pulse gently and sparkle, and **light the cave walls around them** (cyan or
+    violet, up to ~3 blocks). Block edges are slightly darker so every block reads, also in caves.
 - **Day and night**: a day is 8 minutes, nights run twice as fast. Sun, moon, stars, fog.
 - **Light shards** (*Úlomky světla*): glowing crystals with a light beam, scattered far apart. Walk into one to collect it.
 - **Shrine** (*Svatyně*) at the start. Bring **3 shards** and right-click the portal to wake it (*Svatyně se probudila!*).
@@ -64,7 +70,7 @@ When you add or change a feature, update this file in the same pull request.
   with a spawner), desert pyramid, jungle temple, igloo, cherry pavilion, savanna hut, mushroom house, obsidian altar.
   The compass shows the nearest unexplored one.
 
-*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh`, `sky`, `daylight`), shrine and portal `client/src/world/shrine.js`.
+*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh` + underground textures `vox-tex`, `sky`, `daylight`), shrine and portal `client/src/world/shrine.js`.
 
 ## 3. Player
 - **Survival**: health ❤️, hunger 🍗 (drops faster when running), armor 🛡. Starving hurts; full stomach heals.
@@ -82,9 +88,19 @@ When you add or change a feature, update this file in the same pull request.
   Axe, pickaxe, shovel, sword (and hoe). Some ores need a better pickaxe (*Potřebuješ…*).
 - **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window.
 - **Drop items** (G one, Shift+G whole stack): they lie on the ground, anyone can pick them up; they vanish after 5 min.
-- **Building**: ~110 block types: planks of 5 woods, stones and polished stones, bricks, tiles, glass and panes,
+- **Building**: ~115 block types: planks of 5 woods, stones and polished stones, bricks, tiles, glass and panes,
   sandstone, snow, obsidian, mushroom blocks, roof tiles, concrete in 8 colours (from flower dyes), copper,
-  gold, steel, quartz, lanterns, torches. **Stairs and slabs** (two slabs make a full block), bars, railings,
+  gold, steel, quartz, lanterns, torches, and futuristic blocks: **Technický panel** (graphite metal panels with
+  screws and vents, 4 from steel plates), **Bílý panel** (quartz + plastic) and **neons** that glow and light their
+  surroundings in their colour (they keep shadow-eaters away like torches): **Tyrkysový neon** (glass + shard),
+  **Jantarový neon** (glass + torch), **Fialový neon** (glass + raw markorite).
+- **Block materials**: every block family has its own physical material (`client/src/render/materials.js`): stone is
+  rough, polished stone and marble are glossy, metal blocks reflect the sky, glass is clear but keeps its reflections,
+  bricks have recessed mortar, planks grooves and nails, metal blocks seams, rivets and brushed streaks. On *střední*
+  and *vysoká* each texture also gets a normal map and a roughness/metal/cavity map (made once, only for blocks that
+  are actually built); *nízká* keeps flat textures. Block edges are slightly darker so every block's outline reads.
+- **Icons**: building blocks and machines have **3D icons** rendered from their real model and material (metal shines,
+  machine strips glow); they are drawn in the background right after the start. Items keep their pixel-art icons. **Stairs and slabs** (two slabs make a full block), bars, railings,
   rotation from where you look. Pillar jumping (place under your feet).
 - **Crafting**: 2×2 in the inventory, 3×3 at the **workbench** (*Pracovní stůl*), advanced recipes at the
   **workshop** (*Dílna*). ~260 recipes in 12 categories with a recipe book and "only what I can make".
@@ -92,7 +108,7 @@ When you add or change a feature, update this file in the same pull request.
 - **Farm traps**: spikes (*Bodce*) hurt mobs; loot of mobs killed on spikes goes to a chest nearby.
 - **Mob spawner** blocks in dungeons and fortresses.
 
-*Kód:* mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
+*Kód:* block textures `client/src/render/textures.js` (helpers `texgen.js`), materials `client/src/render/materials.js`, 3D icons `client/src/render/icon-render.js`, mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
 
 ## 5. Food and cooking
 - **Campfire** (*Táborák*): roast meat and fish, smelt iron, bake sand into glass, clay into tiles.
@@ -132,8 +148,17 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 - **Electricity** (*Elektrická síť*): copper and gold cables, coal generator, solar panel, battery block, switch;
   devices: electric lamp, bulb, motor, electric furnace, charger (charges car batteries), computer, printer.
   Cable capacity limits the power; devices switch off when there is not enough.
+- **Futuristic machines**: graphite metal housings with panel seams and screws, white trim, one glowing strip in the
+  colour of its job (cyan = electricity, amber = heat), and a **status light** (green = working, amber blinking = no
+  power). The generator has a spinning side fan and an amber firebox, solar cells glow cyan at their edges in
+  sunshine, the battery shows its charge with cyan bars, the electric lamp is a street lamp with a warm white panel,
+  the computer has a lit keyboard and scanlines running over the screen. Above every running machine floats a
+  **hologram** with its icon and a live value (*+60 W*, *40 W*, *75 %*): cyan, flickering, with scanlines, turned
+  to the player, visible within ~22 m. A machine nearby that starts makes a short electric sound.
+- **Cables** show their metal (copper, gold) and carry **cyan energy pulses** when power flows: faster and brighter
+  the more the network produces or uses; a cable without power is dark.
 
-*Kód:* furnace `shared/sim/machines.js`, power grid and printer `shared/sim/power.js`, data `shared/data/tech.js`, models and windows `client/src/machines/furnace.js` + `power.js`.
+*Kód:* furnace `shared/sim/machines.js`, power grid and printer `shared/sim/power.js`, data `shared/data/tech.js`, models and windows `client/src/machines/furnace.js` + `power.js`, machine look (materials, status lights, holograms) `client/src/machines/machine-models.js`.
 
 ## 8. Vehicles
 - **Car** (*Auto*): place it, fill fuel (canister), put in a charged car battery, F to get in. Drive with WASD,
