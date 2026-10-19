@@ -1,0 +1,4 @@
+# Same line endings on Windows, Mac, Linux and in Codespaces.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

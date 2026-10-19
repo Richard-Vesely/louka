@@ -150,3 +150,9 @@ clients' machines; trap kill without chest gives loot to the host or loses it; i
 
 ## Progress
 - 19.10.2026: analysis done, FEATURES.md + this plan written, branch `v2` created from Marek's `2778d1b`.
+- 19.10.2026, phase 0 done: `package.json` (single package: three 0.169.0, peerjs 1.5.4, ws; dev: vite, playwright 1.55.0),
+  Marek's file moved to `legacy/index.html` (unchanged). Play-tests written and green against legacy:
+  `node tests/playtest/playtest.mjs legacy` (single player, 36 checks: menu, HUD, move, chop, craft, build/break, dig, mobs,
+  day/night, campfire, furnace, power, crops, stove, structures, portal, creative, car, eating, save/reload, screenshot) and
+  `node tests/playtest/peer.mjs legacy` (browser host + browser client over the public PeerJS broker, 18 checks).
+  Next: phase 1 (split into modules).
