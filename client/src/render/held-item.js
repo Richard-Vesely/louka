@@ -2,7 +2,7 @@
 import '../player/player.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { ITEMS } from '../../../shared/data/index.js';
-import { lerp, smoothstep } from '../../../shared/util.js';
+import { clamp, lerp, smoothstep, wrapAngle } from '../../../shared/util.js';
 import { WALK } from '../../../shared/world/constants.js';
 import { iconVoxels } from '../dining/food-models.js';
 import { heldStack } from '../player/inventory.js';
@@ -11,6 +11,10 @@ import { blockMat } from './blocks.js';
 import { ICONS } from './icons.js';
 import { camera } from './renderer.js';
 import { glowTex } from './sky.js';
+import { SWING_TIME, buildFPArm, disposeCharacter, swingKindOf } from './character.js';
+import { loadCostume } from '../menu/costume.js';
+import { NET } from '../../../shared/net/net.js';
+import { Sound } from '../audio/sound.js';
 
 // ============================================================ předmět v ruce
 export const holder = new THREE.Group();
@@ -33,7 +37,7 @@ function iconTexture(id) {
   return t;
 }
 const heldCache = {};
-function buildHeld(id) {
+export function buildHeld(id) {
   const d = ITEMS[id], g = new THREE.Group();
   const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
   if (d.tool === 'sword') {
@@ -69,33 +73,66 @@ function buildHeld(id) {
   g.scale.setScalar(0.7);
   return g;
 }
-let heldId = undefined;
+// ---------- ruka v obleku (pohled z první osoby): předloktí a rukavice v barvách obleku drží předmět
+const itemSlot = new THREE.Group();
+// směr předloktí od rukavice (dolů, doprava a ke kameře)
+const UP = new THREE.Vector3(0, 1, 0);
+const ARM_HOLD = new THREE.Quaternion().setFromUnitVectors(UP, new THREE.Vector3(0.3, -0.72, 0.62).normalize());
+const ARM_EMPTY = new THREE.Quaternion().setFromUnitVectors(UP, new THREE.Vector3(0.22, -0.5, 0.84).normalize());
+holder.add(itemSlot);
+let arm = null;
+function rebuildArm() {
+  if (arm) { holder.remove(arm); disposeCharacter(arm); }
+  arm = buildFPArm(loadCostume(NET.name));
+  arm.scale.setScalar(0.72);
+  holder.add(arm);
+}
+rebuildArm();
+addEventListener('rise-costume', rebuildArm);
+
+let heldId = undefined, equipT = 0;
 export function updateHeldModel() {
   const s = heldStack();
   const id = player.eating ? player.eating.id : s ? s.id : null;
   if (id === heldId) return;
+  if (heldId !== undefined && !player.eating) { equipT = 1; Sound.burst?.({ dur: 0.08, f0: 700, f1: 2000, q: 1.2, vol: 0.035 }); } // výměna: ruka klesne a vrátí se
   heldId = id;
-  holder.clear();
-  if (id) holder.add(heldCache[id] ||= buildHeld(id));
+  itemSlot.clear();
+  if (id) itemSlot.add(heldCache[id] ||= buildHeld(id));
 }
-const SWING_KEYS = [
-  { t: 0, p: [0.34, -0.36, -0.62], r: [-0.3, 0.15, -0.4] },
-  { t: 0.22, p: [0.44, -0.22, -0.56], r: [0.2, 0.45, -1.05] },
-  { t: 0.5, p: [-0.2, -0.42, -0.66], r: [-1.15, -0.35, 1.2] },
-  { t: 1, p: [0.34, -0.36, -0.62], r: [-0.3, 0.15, -0.4] },
-];
+// Klíčové polohy máchnutí podle nástroje: p = poloha, r = natočení ruky. Meč máchne do strany, sekera a krumpáč
+// seknou shora, lopata nabírá, ruka a ostatní předměty udeří dopředu.
+const REST = { p: [0.33, -0.3, -0.6], r: [-0.3, 0.15, -0.4] };
+const REST_EMPTY = { p: [0.3, -0.24, -0.52], r: [0.15, 0.25, 0.05] };
+const SWINGS = {
+  chop: [{ t: 0, ...REST }, { t: 0.25, p: [0.4, -0.1, -0.55], r: [0.45, 0.3, -0.55] }, { t: 0.55, p: [0.06, -0.44, -0.7], r: [-1.25, -0.2, 0.6] }, { t: 1, ...REST }],
+  sweep: [{ t: 0, ...REST }, { t: 0.2, p: [0.5, -0.2, -0.58], r: [-0.1, 0.55, -1.1] }, { t: 0.55, p: [-0.24, -0.34, -0.66], r: [-0.9, -0.5, 1.15] }, { t: 1, ...REST }],
+  scoop: [{ t: 0, ...REST }, { t: 0.3, p: [0.26, -0.5, -0.78], r: [-0.95, 0.1, -0.2] }, { t: 0.62, p: [0.3, -0.16, -0.6], r: [0.45, 0.2, -0.3] }, { t: 1, ...REST }],
+};
 export let swingT = -1;
-export const startSwing = () => { if (swingT < 0) swingT = 0; };
+let swingKind = 'punch';
+export const startSwing = () => { if (swingT < 0) { swingT = 0; swingKind = swingKindOf(heldId); } };
+let lagYaw = null, lagPitch = 0, hurtSeen = -99, hurtT = 0;
+const v3 = (a, b, c) => [a, b, c];
 export function updateSwing(dt, moving) {
-  let p = SWING_KEYS[0].p, r = SWING_KEYS[0].r;
+  const empty = !heldId;
+  const base = empty ? REST_EMPTY : REST;
+  let p = base.p, r = base.r;
   if (swingT >= 0) {
-    swingT += dt / 0.32;
+    swingT += dt / SWING_TIME;
     const t = Math.min(swingT, 1);
-    let i = 0;
-    while (i < SWING_KEYS.length - 2 && t > SWING_KEYS[i + 1].t) i++;
-    const a = SWING_KEYS[i], b = SWING_KEYS[i + 1], k = smoothstep(0, 1, (t - a.t) / (b.t - a.t));
-    p = a.p.map((v, j) => lerp(v, b.p[j], k));
-    r = a.r.map((v, j) => lerp(v, b.r[j], k));
+    const keys = SWINGS[swingKind];
+    if (keys) {
+      let i = 0;
+      while (i < keys.length - 2 && t > keys[i + 1].t) i++;
+      const a = keys[i], b = keys[i + 1], k = smoothstep(0, 1, (t - a.t) / (b.t - a.t));
+      p = a.p.map((v, j) => lerp(v, b.p[j], k));
+      r = a.r.map((v, j) => lerp(v, b.r[j], k));
+    } else { // úder: dopředu a zpět (jako v Minecraftu: sin √t)
+      const q = Math.sin(Math.sqrt(t) * Math.PI), q2 = Math.sin(Math.sqrt(t) * Math.PI * 2), q3 = Math.sin(t * Math.PI);
+      p = v3(base.p[0] - 0.22 * q, base.p[1] + 0.12 * q2, base.p[2] - 0.3 * q3);
+      r = v3(base.r[0] - 0.5 * q3, base.r[1] + 0.45 * q, base.r[2] + 0.35 * q);
+    }
     if (swingT >= 1) swingT = -1;
   }
   if (player.eating) { // nese jídlo k puse a "kouše"
@@ -103,7 +140,28 @@ export function updateSwing(dt, moving) {
     p = [lerp(p[0], 0.06, k), lerp(p[1], -0.26, k) + Math.abs(Math.sin(e.t * 9)) * 0.04 * k, lerp(p[2], -0.38, k)];
     r = [lerp(r[0], 0.5, k), lerp(r[1], 0, k), lerp(r[2], 0.15, k)];
   }
-  const sway = Math.min(moving / WALK, 1.5);
-  holder.position.set(p[0] + Math.cos(player.bob * 0.5) * 0.012 * sway, p[1] + Math.abs(Math.sin(player.bob * 0.5)) * 0.015 * sway, p[2]);
-  holder.rotation.set(r[0], r[1], r[2]);
+  // houpání při chůzi (krok = půl otočky player.bob)
+  const bk = player.onGround ? Math.min(moving / WALK, 1.5) : 0, ph = player.bob;
+  // setrvačnost: ruka se za otočením kamery trochu opozdí
+  if (lagYaw === null) { lagYaw = player.yaw; lagPitch = player.pitch; }
+  const kk = 1 - Math.exp(-dt * 11);
+  lagYaw += wrapAngle(player.yaw - lagYaw) * kk;
+  lagPitch += (player.pitch - lagPitch) * kk;
+  const dy = clamp(wrapAngle(player.yaw - lagYaw), -0.5, 0.5), dp = clamp(player.pitch - lagPitch, -0.5, 0.5);
+  // výměna předmětu a zásah
+  equipT = Math.max(0, equipT - dt / 0.2);
+  if (player.lastHurt !== hurtSeen) { if (hurtSeen !== -99) hurtT = 1; hurtSeen = player.lastHurt; }
+  hurtT = Math.max(0, hurtT - dt * 4);
+  const dip = smoothstep(0, 1, equipT) * 0.38 + hurtT * 0.05;
+  holder.position.set(
+    p[0] + Math.sin(ph) * bk * 0.022 + dy * 0.1,
+    p[1] - Math.abs(Math.cos(ph)) * bk * 0.026 - dp * 0.09 - dip,
+    p[2],
+  );
+  holder.rotation.set(r[0] + Math.abs(Math.cos(ph - 0.2)) * bk * 0.05 - dp * 0.25, r[1] + dy * 0.35, r[2] + Math.sin(ph) * bk * 0.035 + hurtT * 0.15);
+  // ruka bez předmětu: pěst trochu vpředu; s předmětem rukavice svírá rukojeť
+  if (arm) {
+    arm.quaternion.copy(empty ? ARM_EMPTY : ARM_HOLD);
+    arm.position.set(0, empty ? 0 : -0.035, empty ? 0 : 0.015);
+  }
 }

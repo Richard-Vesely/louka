@@ -1,138 +1,235 @@
-// Postavičky ostatních hráčů.
+// Postavičky: ostatní hráči (podle jejich pozice `pose`) a vlastní postava v pohledu ze třetí osoby (klávesa V).
+// Model, brnění a animace jsou v render/character.js, oblek v menu/costume.js.
 import './multiplayer.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { ITEMS } from '../../../shared/data/index.js';
-import { r2 } from '../../../shared/net/net.js';
+import { ITEMS, cleanCostume, encodeCostume, LIGHT_COLORS, newerCostume } from '../../../shared/data/index.js';
+import { NET, r2 } from '../../../shared/net/net.js';
 import { others } from '../../../shared/net/room.js';
-import { clamp, wrapAngle } from '../../../shared/util.js';
+import { clamp } from '../../../shared/util.js';
+import { solidAny } from '../../../shared/world/collision.js';
 import { vehicles } from '../../../shared/world/state.js';
+import { terrainH } from '../../../shared/world/terrain.js';
+import { columnDug, topY } from '../../../shared/world/voxels.js';
+import { Sound } from '../audio/sound.js';
 import { dining } from '../dining/dining.js';
-import { iconVoxels } from '../dining/food-models.js';
+import { BOOT } from '../game/boot.js';
+import { loadCostume, saveCostume } from '../menu/costume.js';
 import { heldStack } from '../player/inventory.js';
 import { creative, input, isLocked, player } from '../player/player.js';
-import { blockMat } from '../render/blocks.js';
-import { tmpV } from '../render/daylight.js';
-import { swingT } from '../render/held-item.js';
+import { animateCharacter, buildCharacter, disposeCharacter, setCharacterArmor } from '../render/character.js';
+import { buildHeld, holder, swingT } from '../render/held-item.js';
 import { ICONS } from '../render/icons.js';
-import { scene } from '../render/renderer.js';
+import { debris, sparks } from '../render/particles.js';
+import { camera, scene } from '../render/renderer.js';
+import { toast } from '../ui/hud.js';
 import { armor, fullSet, invOpen, ui } from '../ui/inventory-ui.js';
 import { hornN } from '../vehicles/car.js';
 
-// ---------- postavičky ostatních hráčů
-function nameTag(name) {
+// ---------- můj oblek: z prohlížeče (podle jména), na serveru kroužku novější verze z profilu
+let myCostume = loadCostume(NET.name);
+const fromServer = BOOT.welcome?.me?.look;
+if (fromServer) {
+  const best = newerCostume(myCostume, cleanCostume(fromServer, NET.name));
+  if (best !== myCostume) myCostume = saveCostume(NET.name, best, best.t || Date.now());
+}
+let myLk = encodeCostume(myCostume);
+addEventListener('rise-costume', (e) => {
+  myCostume = cleanCostume(e.detail, NET.name);
+  if (e.detail?.t) myCostume.t = e.detail.t;
+  myLk = encodeCostume(myCostume);
+  if (me) { scene.remove(me.group); disposeCharacter(me); me = null; }
+  if (window.gameStarted) toast('Nový oblek je na tobě!');
+});
+
+// ---------- jmenovka: skleněná cedulka se jménem, tečkou v barvě světel obleku a ukazatelem zdraví
+function drawTag(T) {
+  const c = T.canvas, g = c.getContext('2d');
+  g.clearRect(0, 0, c.width, c.height);
+  g.font = '800 46px Nunito, system-ui, sans-serif';
+  const tw = Math.min(400, g.measureText(T.name).width), w = tw + 92, x0 = 256 - w / 2, h = 72, y0 = 14;
+  const round = (x, y, ww, hh, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, ww, hh, r) : g.rect(x, y, ww, hh); };
+  round(x0, y0, w, h, 14);
+  g.fillStyle = 'rgba(15,20,28,0.82)'; g.fill();
+  g.lineWidth = 3; g.strokeStyle = 'rgba(56,232,255,0.55)';
+  round(x0 + 2.5, y0 + 2.5, w - 5, h - 5, 12); g.stroke();
+  g.fillStyle = T.light; g.shadowColor = T.light; g.shadowBlur = 12;
+  g.beginPath(); g.arc(x0 + 34, y0 + h / 2, 10, 0, 7); g.fill();
+  g.shadowBlur = 0;
+  g.fillStyle = '#f2f7fc'; g.textBaseline = 'middle';
+  g.fillText(T.name, x0 + 56, y0 + h / 2 + 2, 400);
+  if (T.hp < 100) { // zdraví jen když není plné
+    const bw = w - 40, k = clamp(T.hp / 100, 0, 1);
+    g.fillStyle = 'rgba(15,20,28,0.8)'; round(256 - bw / 2 - 3, y0 + h + 8, bw + 6, 16, 8); g.fill();
+    g.fillStyle = k > 0.5 ? '#5cff8a' : k > 0.25 ? '#ffb066' : '#ff5a5a';
+    round(256 - bw / 2, y0 + h + 11, Math.max(10, bw * k), 10, 5); g.fill();
+  }
+  T.tex.needsUpdate = true;
+}
+function nameTag(name, light) {
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 64;
-  const g = c.getContext('2d');
-  g.font = '600 34px "Pixelify Sans", monospace';
-  const w = Math.min(248, g.measureText(name).width + 24);
-  g.fillStyle = 'rgba(0,0,0,0.5)';
-  g.fillRect(128 - w / 2, 8, w, 48);
-  g.fillStyle = '#fff';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(name, 128, 33, 236);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: false }));
-  s.scale.set(1.3, 0.325, 1);
+  c.width = 512; c.height = 128;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }));
+  s.scale.set(1.5, 0.375, 1);
+  s.center.set(0.5, 0.3);
+  const T = { canvas: c, tex, name, light, hp: 100, sprite: s };
+  drawTag(T);
+  document.fonts?.load('800 46px Nunito').then(() => drawTag(T), () => {});
+  s.userData.tag = T;
   return s;
 }
-function makeAvatar(name) {
-  const g = new THREE.Group();
-  let h = 0;
-  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const M = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85 });
-  const shirt = M(new THREE.Color().setHSL((h % 360) / 360, 0.55, 0.42)), pants = M(0x2f3a52), skin = M(0xe0b088), hair = M(new THREE.Color().setHSL(0.07, 0.5, 0.12 + ((h >> 8) % 5) * 0.06)), dark = M(0x1a1a1a);
-  const box = (w, hh, d, m, x, y, z, parent = g) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), m); me.position.set(x, y, z); parent.add(me); return me; };
-  const pivot = (x, y, z) => { const p = new THREE.Group(); p.position.set(x, y, z); g.add(p); return p; };
-  const legL = pivot(-0.12, 0.76, 0), legR = pivot(0.12, 0.76, 0);
-  for (const l of [legL, legR]) { box(0.22, 0.64, 0.24, pants, 0, -0.32, 0, l); box(0.23, 0.12, 0.27, dark, 0, -0.7, -0.015, l); }
-  box(0.48, 0.66, 0.27, shirt, 0, 1.09, 0);
-  const armL = pivot(-0.33, 1.38, 0), armR = pivot(0.33, 1.38, 0);
-  for (const a of [armL, armR]) { box(0.18, 0.46, 0.2, shirt, 0, -0.2, 0, a); box(0.16, 0.18, 0.18, skin, 0, -0.52, 0, a); }
-  const head = pivot(0, 1.42, 0);
-  box(0.42, 0.42, 0.42, skin, 0, 0.21, 0, head);
-  box(0.44, 0.12, 0.44, hair, 0, 0.42, 0, head);
-  box(0.44, 0.3, 0.1, hair, 0, 0.3, 0.18, head);
-  for (const x of [-0.09, 0.09]) box(0.07, 0.06, 0.02, dark, x, 0.24, -0.215, head);
-  const hand = new THREE.Group();
-  hand.position.set(0, -0.62, -0.06);
-  armR.add(hand);
-  const tag = nameTag(name);
-  tag.position.y = 2.15;
-  g.add(tag);
-  scene.add(g);
-  return { group: g, head, legL, legR, armL, armR, hand, armorKey: '', held: undefined, phase: 0, atk: 0, yaw: 0, init: false };
+
+// ---------- předmět v ruce postavičky (stejný model jako v první osobě, otočený dopředu)
+function setHeld(R, id) {
+  R.held = id;
+  R.hand.clear();
+  if (!id || !ITEMS[id] || !ICONS[id]) return;
+  const m = buildHeld(id);
+  m.rotation.x = -Math.PI / 2;
+  m.position.set(0, -0.02, -0.02);
+  m.scale.multiplyScalar(0.95);
+  m.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  R.hand.add(m);
 }
-// Barva kusu brnění = průměrná barva jeho ikony (bez obrysu a tmavých pixelů)
-const armorMatCache = {};
-function armorMat(id) {
-  if (armorMatCache[id]) return armorMatCache[id];
-  const d = ICONS[id].canvas.getContext('2d').getImageData(0, 0, 16, 16).data;
-  let r = 0, g = 0, b = 0, n = 0;
-  for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200 || d[i] + d[i + 1] + d[i + 2] < 120) continue; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
-  const c = n ? new THREE.Color(r / n / 255, g / n / 255, b / n / 255).convertSRGBToLinear() : new THREE.Color(0.6, 0.6, 0.6);
-  const t = ITEMS[id].tier, shiny = t === 3 || t === 4 || t === 5;
-  return (armorMatCache[id] = new THREE.MeshStandardMaterial({ color: c, roughness: shiny ? 0.35 : 0.8, metalness: shiny ? 0.6 : 0,
-    emissive: t === 4 || t === 5 || t === 'sky' ? c : 0x000000, emissiveIntensity: t === 4 || t === 5 || t === 'sky' ? 0.25 : 0 }));
+// průměrná barva ikony předmětu (drobky při jídle)
+const iconCol = {};
+function iconColor(id) {
+  if (iconCol[id]) return iconCol[id];
+  let r = 0.8, g = 0.6, b = 0.4;
+  try {
+    const d = ICONS[id].canvas.getContext('2d').getImageData(0, 0, 16, 16).data;
+    let n = 0; r = g = b = 0;
+    for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+    if (n) { r /= n * 255; g /= n * 255; b /= n * 255; } else r = g = b = 0.7;
+  } catch {}
+  return (iconCol[id] = [r, g, b]);
 }
-// Brnění na postavičce: helma, hrudní plát s nárameníky, kalhoty, boty (podle toho, co hráč nosí)
-function setAvatarArmor(A, ids) {
-  A.armorKey = ids.join('|');
-  for (const part of [A.head, A.armL, A.armR, A.legL, A.legR, A.group]) for (const o of [...part.children]) if (o.userData.armor) part.remove(o);
-  const box = (parent, id, w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), armorMat(id)); m.position.set(x, y, z); m.userData.armor = true; parent.add(m); };
-  const [helmet, chest, legs, boots] = ids;
-  if (helmet) { box(A.head, helmet, 0.48, 0.2, 0.48, 0, 0.42, 0); box(A.head, helmet, 0.48, 0.24, 0.06, 0, 0.26, 0.22); for (const x of [-0.235, 0.235]) box(A.head, helmet, 0.04, 0.24, 0.46, x, 0.27, 0); }
-  if (chest) { box(A.group, chest, 0.52, 0.62, 0.31, 0, 1.11, 0); for (const a of [A.armL, A.armR]) box(a, chest, 0.22, 0.26, 0.24, 0, -0.08, 0); }
-  if (legs) { box(A.group, legs, 0.5, 0.12, 0.29, 0, 0.78, 0); for (const l of [A.legL, A.legR]) box(l, legs, 0.25, 0.46, 0.27, 0, -0.24, 0); }
-  if (boots) for (const l of [A.legL, A.legR]) box(l, boots, 0.26, 0.2, 0.3, 0, -0.68, -0.015);
+// Kroky a prach od nohou, trysky při letu, drobky při jídle (pro ostatní hráče i vlastní postavu ze třetí osoby).
+function effects(R, s, pos, dt, near) {
+  const A = R.anim, step = Math.floor(A.phase / Math.PI);
+  if (step !== R.lastStep) {
+    R.lastStep = step;
+    if (s.ground !== false && !s.fly && !s.sit && s.speed > 1) {
+      if (s.speed > 6) debris.emit(pos.x, pos.y + 0.05, pos.z, [0.55, 0.5, 0.42], 3, 1.2, 0.8); // prach při běhu
+      if (near > 0) Sound.burst({ dur: 0.08, f0: 1700, f1: 500, q: 0.8, vol: 0.05 * near });
+    }
+  }
+  if (s.fly && (R.costume.s === 'pilot' || R.costume.s === 'sky') && Math.random() < dt * 30) {
+    const back = new THREE.Vector3(0, 0, 0.24).applyAxisAngle(THREE.Object3D.DEFAULT_UP, R.group.rotation.y);
+    const c = new THREE.Color(LIGHT_COLORS[R.costume.l][1]);
+    sparks.emit(pos.x + back.x, pos.y + 0.95, pos.z + back.z, [c.r, c.g, c.b], 1, 0.6, -2.5);
+  }
+  if (s.eat && s.held && Math.random() < dt * 5) {
+    const f = new THREE.Vector3(0, 0, -0.3).applyAxisAngle(THREE.Object3D.DEFAULT_UP, R.group.rotation.y);
+    debris.emit(pos.x + f.x, pos.y + 1.5, pos.z + f.z, iconColor(s.held), 2, 1, 0.5);
+  }
 }
-function setAvatarHeld(A, id) {
-  A.held = id;
-  A.hand.clear();
-  if (!id || !ITEMS[id]) return;
-  const d = ITEMS[id];
-  let m;
-  if (d.block && blockMat(d.block)) { m = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), blockMat(d.block)); m.position.set(0, -0.05, -0.08); }
-  else { m = iconVoxels(id, 0.026); m.rotation.set(-Math.PI / 2, Math.PI / 2, 0); m.position.set(0, -0.02, -0.18); }
-  A.hand.add(m);
+function makeAvatar(P) {
+  const look = cleanCostume(P.pose?.lk, P.name);
+  const R = buildCharacter(look);
+  R.lk = P.pose?.lk || '';
+  R.tag = nameTag(P.name, LIGHT_COLORS[look.l][1]);
+  R.tag.position.y = 2.12;
+  R.group.add(R.tag);
+  scene.add(R.group);
+  R.init = false;
+  return R;
 }
 const shown = new Map(); // hráč -> postavička ve scéně
 export function updateAvatars(dt) {
-  for (const [P, A] of shown) if (others.get(P.pid) !== P) { scene.remove(A.group); shown.delete(P); } // hráč odešel
+  for (const [P, A] of shown) if (others.get(P.pid) !== P) { scene.remove(A.group); disposeCharacter(A); shown.delete(P); } // hráč odešel
   const k = 1 - Math.exp(-dt * 12);
   for (const P of others.values()) {
     const q = P.pose;
     if (!q) continue;
-    if (!P.avatar) shown.set(P, (P.avatar = makeAvatar(P.name)));
+    if (P.avatar && (q.lk || '') !== P.avatar.lk) { scene.remove(P.avatar.group); disposeCharacter(P.avatar); P.avatar = null; } // jiný oblek
+    if (!P.avatar) shown.set(P, (P.avatar = makeAvatar(P)));
     const A = P.avatar;
     A.group.visible = q.alive !== false && !q.veh; // v autě není postavička vidět (sedí uvnitř)
-    const tx = q.x, ty = q.y - (q.sit ? 0.42 : 0), tz = q.z;
-    if (!A.init || Math.hypot(A.group.position.x - tx, A.group.position.z - tz) > 12) { A.group.position.set(tx, ty, tz); A.yaw = q.yaw; A.init = true; }
-    else A.group.position.lerp(tmpV.set(tx, ty, tz), k);
-    A.yaw += wrapAngle(q.yaw - A.yaw) * k;
-    A.group.rotation.y = A.yaw;
-    A.head.rotation.x = clamp(q.pitch, -1.2, 1.2) * 0.8;
-    if (q.held !== A.held) setAvatarHeld(A, q.held);
+    const tx = q.x, ty = q.y - (q.sit ? 0.42 : 0), tz = q.z, pos = A.group.position;
+    if (!A.init || Math.hypot(pos.x - tx, pos.z - tz) > 12) { pos.set(tx, ty, tz); A.anim.bodyYaw = q.yaw; A.init = true; }
+    else pos.lerp(new THREE.Vector3(tx, ty, tz), k);
+    if (q.held !== A.held) setHeld(A, q.held);
     const ar = (q.ar || []).map((id) => (id && ITEMS[id]?.armor ? id : null));
-    if (ar.join('|') !== A.armorKey) setAvatarArmor(A, ar);
-    A.phase += dt * Math.min(q.mv, 9) * 2.2;
-    const swing = Math.sin(A.phase) * Math.min(q.mv / 4, 1) * 0.7;
-    if (q.sit) { A.legL.rotation.x = A.legR.rotation.x = Math.PI / 2; }
-    else if (q.fly) { A.legL.rotation.x = A.legR.rotation.x = 0.15; }
-    else { A.legL.rotation.x = swing; A.legR.rotation.x = -swing; }
-    A.armL.rotation.x = q.sit ? 0.3 : -swing * 0.8;
-    if (q.sw) { A.atk = (A.atk + dt * 3.2) % 1; A.armR.rotation.x = 1.0 + Math.sin(A.atk * Math.PI * 2) * 0.7; }
-    else if (q.eat) A.armR.rotation.x = 1.9 + Math.sin(performance.now() / 120) * 0.15;
-    else { A.atk = 0; A.armR.rotation.x = q.sit ? 0.3 : swing * 0.8 + (q.held ? 0.25 : 0); }
+    if (ar.join('|') !== A.armorKey) setCharacterArmor(A, ar);
+    const hp = typeof q.hp === 'number' ? q.hp : 100, hurt = hp < (A.lastHp ?? hp) - 0.5;
+    A.lastHp = hp;
+    const T = A.tag.userData.tag, hpStep = Math.ceil(hp / 5) * 5;
+    if (T.hp !== hpStep) { T.hp = hpStep; drawTag(T); }
+    const d = Math.hypot(pos.x - camera.position.x, pos.z - camera.position.z);
+    A.tag.material.opacity = clamp((48 - d) / 16, 0, 1);
+    const s = { speed: Math.min(q.mv || 0, 12), yaw: q.yaw, pitch: q.pitch || 0, run: (q.mv || 0) > 6, sneak: !!q.sn, fly: !!q.fly || !!q.flyT, sit: !!q.sit,
+      swing: !!q.sw, eat: !!q.eat, held: q.held, y: q.y, hurt };
+    if (A.group.visible) { animateCharacter(A, s, dt); effects(A, s, pos, dt, clamp(1 - d / 14, 0, 1)); }
   }
 }
+
+// ---------- vlastní postava a pohled ze třetí osoby (V: z první osoby → zezadu → zepředu)
+export let viewMode = 0;
+const VIEW_NAMES = ['Pohled z první osoby', 'Pohled zezadu', 'Pohled zepředu'];
+export function toggleView() {
+  viewMode = (viewMode + 1) % 3;
+  toast(VIEW_NAMES[viewMode] + ' (V)');
+  Sound.tone?.(viewMode ? 990 : 660, 0.06, 0.05, 'sine', 0, viewMode ? 1320 : 440);
+}
+let me = null, myArmorKey = null, myHeld;
+const eye = new THREE.Vector3(), applied = new THREE.Vector3(), dir = new THREE.Vector3();
+let camDist = 0;
+// Kamera ze třetí osoby: posune se až těsně před první pevný blok, aby nebyla ve zdi.
+function blocked(x, y, z) {
+  const fx = Math.floor(x), fy = Math.floor(y), fz = Math.floor(z);
+  if (solidAny(fx, fy, fz)) return true;
+  return y < terrainH(x, z) + 0.15 && y > topY(fx, fz) - 0.5 && !columnDug(fx, fz);
+}
+function thirdPersonCamera() {
+  if (!(viewMode > 0 && me?.group.visible)) { camDist = 0; return; }
+  if (camera.position.distanceToSquared(applied) < 1e-8) return; // v tomhle snímku už posunutá (scéna se kreslí víckrát)
+  eye.copy(camera.position); // hra kameru každý snímek vrací do očí
+  dir.set(0, 0, viewMode === 1 ? 1 : -1).applyQuaternion(camera.quaternion);
+  let want = 4;
+  for (let t = 0.3; t <= 4.2; t += 0.15) if (blocked(eye.x + dir.x * t, eye.y + dir.y * t, eye.z + dir.z * t)) { want = Math.max(0.3, t - 0.35); break; }
+  camDist = want < camDist ? want : camDist + (want - camDist) * 0.15;
+  camera.position.copy(eye).addScaledVector(dir, camDist);
+  if (viewMode === 2) camera.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(THREE.Object3D.DEFAULT_UP, Math.PI));
+  camera.updateMatrixWorld(true);
+  applied.copy(camera.position);
+}
+// Kamera se posouvá těsně před vykreslením (po míření a těžbě), takže míření zůstává z očí.
+const prevBefore = scene.onBeforeRender;
+scene.onBeforeRender = function (...a) { prevBefore?.apply(this, a); thirdPersonCamera(); };
+
+/** Každý snímek: vlastní postava (vidět jen ze třetí osoby), zvuk při oblékání brnění. */
+export function updateLocalBody(dt, moving) {
+  const ids = armor.map((a) => a?.id || null), key = ids.join('|');
+  if (myArmorKey !== null && key !== myArmorKey && ids.filter(Boolean).length > myArmorKey.split('|').filter(Boolean).length) { // oblékl si kus brnění
+    Sound.tone(520, 0.09, 0.08, 'square', 0, 300); Sound.burst({ dur: 0.12, f0: 3200, f1: 1200, q: 2, vol: 0.12, delay: 0.03 });
+  }
+  myArmorKey = key;
+  const show = viewMode > 0 && player.alive && !player.vehicle;
+  holder.visible = !show;
+  if (!show) { if (me) me.group.visible = false; return; }
+  if (!me) { me = buildCharacter(myCostume); scene.add(me.group); me.anim.bodyYaw = player.yaw; myHeld = undefined; me.armorKey = null; }
+  me.group.visible = true;
+  if (me.armorKey !== key) setCharacterArmor(me, ids);
+  const held = player.eating?.id || heldStack()?.id || null;
+  if (held !== myHeld) { myHeld = held; setHeld(me, held); }
+  me.group.position.set(player.pos.x, player.pos.y - (player.sitting ? 0.42 : 0), player.pos.z);
+  const s = { speed: moving, yaw: player.yaw, pitch: player.pitch, run: !!player.sprinting, sneak: !!player.sneaking, fly: !!player.flying || player.flyT > 0, sit: !!player.sitting,
+    swing: swingT >= 0 || (input.lmb && isLocked()), eat: !!player.eating || !!dining, held, y: player.pos.y, hurt: me.anim.hurtSeen !== undefined && me.anim.hurtSeen !== player.lastHurt };
+  me.anim.hurtSeen = player.lastHurt;
+  animateCharacter(me, s, dt);
+  effects(me, s, me.group.position, dt, 0);
+}
+
 export function myPose() {
   return {
-    x: r2(player.pos.x), y: r2(player.pos.y), z: r2(player.pos.z), yaw: r2(player.yaw), pitch: r2(player.pitch), held: heldStack()?.id || null,
+    x: r2(player.pos.x), y: r2(player.pos.y), z: r2(player.pos.z), yaw: r2(player.yaw), pitch: r2(player.pitch), held: player.eating?.id || heldStack()?.id || null,
     ui: invOpen && ui.fireKey != null ? String(ui.fireKey) : null, // otevřená truhla / stroj (zámek)
     mv: r2(Math.hypot(player.vel.x, player.vel.z)), sw: swingT >= 0 || (input.lmb && isLocked()) ? 1 : 0, eat: player.eating || dining ? 1 : 0,
     veh: (() => { const v = vehicles.get(player.vehicle); return v ? { id: player.vehicle, x: r2(v.x), y: r2(v.y), z: r2(v.z), yaw: r2(v.yaw), pitch: r2(v.pitch || 0), roll: r2(v.roll || 0), spd: r2(v.spd), steer: r2(v.steer), thr: r2(v.thr || 0), lights: v.lights ? 1 : 0 } : null; })(), hn: hornN,
     ar: armor.map((a) => a?.id || null), sit: player.sitting ? 1 : 0, fly: player.flying ? 1 : 0, flyT: player.flyT > 0 ? 1 : 0, alive: player.alive, cr: creative ? 1 : 0, set: fullSet(), hp: Math.round(player.hp),
+    lk: myLk, ...(player.sneaking ? { sn: 1 } : {}),
   };
 }

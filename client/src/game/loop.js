@@ -14,6 +14,7 @@ import { refreshFurnaceUI, updateFurnaceGlow } from '../machines/furnace.js';
 import { stoveVisuals } from '../machines/kitchen.js';
 import { updatePowerVisuals } from '../machines/power.js';
 import { animateMobs, syncMobViews } from '../mobs/mobs.js';
+import { updateLocalBody } from '../net/avatars.js';
 import { updatePuppets } from '../net/multiplayer.js';
 import { pcOpen, updatePC } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
@@ -77,6 +78,7 @@ export function tick(realDt) {
   updateVehicles(realDt);
   updateHeldModel();
   updateSwing(dt, moving);
+  updateLocalBody(realDt, moving); // vlastní postava (pohled ze třetí osoby, klávesa V)
 
   const W = MP ? realDt : dt;
   const { night, day } = updateDay(W);

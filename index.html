@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Říše</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Nunito:wght@600;700;800&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/client/src/styles/game.css">
 </head>
 <body>
@@ -92,7 +92,7 @@
   </div>
   <div id="vignette"></div>
   <div id="fade">Padl jsi…</div>
-  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · G vyhodit (Shift = vše) · H návod · C kreativní · 1–9 výběr</div>
+  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · G vyhodit (Shift = vše) · H návod · C kreativní · V pohled · O oblek · 1–9 výběr</div>
   <div id="inventory">
     <div class="mc-window">
       <div class="mc-panel mc-book">
@@ -106,7 +106,7 @@
         <div class="mc-title">Batoh</div>
         <div class="grid" id="invGrid"></div>
         <div class="grid hot" id="invHot"></div>
-        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="guideBtn">Návod (H)</button> <button class="mc-btn" id="settingsBtn">Nastavení</button> <button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="guideBtn">Návod (H)</button> <button class="mc-btn" id="costumeBtn">Oblek (O)</button> <button class="mc-btn" id="settingsBtn">Nastavení</button> <button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
       </div>
     </div>
   </div>
@@ -125,7 +125,7 @@
         <label class="menu-label" id="mNameRow">Tvoje jméno<input id="mName" maxlength="16" placeholder="Přezdívka" autocomplete="off" spellcheck="false"></label>
         <div class="world-list" id="mWorlds" hidden></div>
         <button class="mc-btn big play-btn" id="mSolo"><b>Hrát sám</b><small>Jen ty, svět se uloží v tomhle prohlížeči</small></button>
-        <div class="menu-links"><button type="button" class="menu-link" id="mSettings">Nastavení</button> · <button type="button" class="menu-link" id="mMore">Další možnosti</button></div>
+        <div class="menu-links"><button type="button" class="menu-link" id="mSettings">Nastavení</button> · <button type="button" class="menu-link" id="mCostume">Můj oblek</button> · <button type="button" class="menu-link" id="mMore">Další možnosti</button></div>
       </div>
       <div class="menu-page" id="pgMore" hidden>
         <div class="mc-title">Další možnosti</div>
