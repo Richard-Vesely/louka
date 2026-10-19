@@ -82,8 +82,8 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
 
   // ---------- hráči
   wss.on('connection', (ws, req) => {
-    ws.isAlive = true;
-    ws.on('pong', () => { ws.isAlive = true; });
+    ws.seen = Date.now();
+    ws.on('pong', () => { ws.seen = Date.now(); });
     // První zpráva je ['hello', { name, pass, v, world }]; teprve potom hráč vstoupí do místnosti svého světa.
     // Nový klient (v: 2) bez světa (nebo s neznámým) dostane seznam ['worlds', …] a pošle hello znovu.
     // Starý klient (bez v) a server s jediným světem: rovnou první svět.
@@ -91,6 +91,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
     let world = null;
     let hello = setTimeout(() => { if (!world) ws.terminate(); }, 10_000);
     ws.on('message', (raw) => {
+      ws.seen = Date.now();
       if (world) { world.worker.postMessage({ t: 'data', cid, raw: raw.toString() }); return; }
       let msg;
       try { msg = JSON.parse(raw.toString()); } catch { return; }
@@ -121,11 +122,12 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
     ws.on('error', gone);
   });
 
-  // Spojení, které neodpovídá (spadlá wifi), se po 10 s zavře.
+  // Spojení, od kterého 30 s nic nepřišlo (ani zpráva, ani odpověď na ping), se zavře (spadlá wifi).
+  // Dřív stačilo 5–10 s ticha, ale prohlížeč, který zrovna načítá hru, nemusí tak rychle odpovědět.
   const heartbeat = setInterval(() => {
+    const now = Date.now();
     for (const ws of wss.clients) {
-      if (!ws.isAlive) { ws.terminate(); continue; }
-      ws.isAlive = false;
+      if (now - ws.seen > 30_000) { log(`Spojení neodpovídá ${Math.round((now - ws.seen) / 1000)} s, zavírám ho.`); ws.terminate(); continue; }
       ws.ping();
     }
   }, 5000);
