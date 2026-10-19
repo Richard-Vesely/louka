@@ -102,7 +102,7 @@ Point a hostname at the VPS IP, e.g. an `A` record `hry.example.cz → 203.0.113
 (No domain? `203-0-113-10.sslip.io` resolves to that IP and works with Let's Encrypt.)
 
 ### 2. One command
-SSH in as root and run (v2 is not merged into `main` yet, so use the `v2` branch):
+SSH in as root and run:
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/Richard-Vesely/rise/main/deploy/setup-vps.sh
 bash setup-vps.sh hry.example.cz 'heslo-pro-kroužek'
