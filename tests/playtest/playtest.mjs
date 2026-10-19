@@ -233,6 +233,10 @@ try {
   check('save + reload keeps world and backpack', after.blocks === before.blocks && after.stone === 7 && after.apple === 3 && after.portal && after.built === before.built && after.vox === before.vox && after.brick === 'bricks', JSON.stringify({ before, after }));
   check('intro not shown after reload', await ev(() => document.getElementById('intro').style.display !== 'grid'));
 
+  // ------------------------------------------------------------ graphics pipeline (render/look.js, post.js, shadows.js)
+  r = await ev(() => { const g = window.game; return { look: g.LK?.name, post: g.FX.post, low: g.QUALITY === 'low', composer: !!g.post.composer, shadows: g.renderer.shadowMap.enabled, tone: g.renderer.toneMapping }; });
+  check('graphics: low = no post-processing and no shadows, medium/high = composer + shadows', !!r.look && (r.low ? !r.post && !r.composer && !r.shadows : r.post && r.composer && r.shadows), JSON.stringify(r));
+
   // ------------------------------------------------------------ picture
   await ev(() => { const g = window.game; g.setTime(0.32); T.tp(0, 16, 0.45); g.player.yaw = 0; g.player.pitch = 0.05; T.step(30); });
   if (await shot(page, `${out}.png`)) check('screenshot written', fs.existsSync(`${out}.png`));

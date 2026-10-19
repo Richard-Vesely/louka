@@ -64,7 +64,24 @@ When you add or change a feature, update this file in the same pull request.
   with a spawner), desert pyramid, jungle temple, igloo, cherry pavilion, savanna hut, mushroom house, obsidian altar.
   The compass shows the nearest unexplored one.
 
-*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh`, `sky`, `daylight`), shrine and portal `client/src/world/shrine.js`.
+- **Graphics look** (trial, three looks to choose from with the URL parameter `?look=a|b|c`, default `c`):
+  - **a** *Stylizovaný* (Hytale-like): saturated warm colours, purple-tinted shadows, soft shadows, puffy clouds, turquoise water.
+  - **b** *Realistické sci-fi*: filmic AgX, sharp contrasty shadows, sun shafts through trees, cool grade, film grain,
+    strong neon, deep reflective water.
+  - **c** *Jasná budoucnost* (mix): realistic light on clean shapes, lush nature, blue sky, cyan/magenta neon.
+  - **Grafika: střední / vysoká** draws through a post-processing chain (`postprocessing` + `n8ao`): HDR, sun/moon
+    **shadows** (map follows the player, 20–30 updates per second; trees cast shadows through invisible near copies),
+    **height fog** with sun glow (valleys hazy, hills clear), **bloom** on lights, lava, crystals and neon,
+    tone mapping + colour grade per look, **clouds**, **normal maps** on blocks and cave walls; *vysoká* adds
+    ambient occlusion (N8AO, half resolution) and, in looks b/c, **sun shafts** raymarched through the shadow map.
+    **Dynamic resolution** drops to 60 % when a frame takes over ~18 ms and comes back when there is headroom.
+  - All qualities: **torches, campfires and lamps light the ground and grass** around them, **tree crowns sway in the
+    wind**, **ponds** have waves, sky reflection, depth colour and shore foam (low: simple water),
+    **powered cables** carry glowing pulses (speed = how much the network uses).
+  - **Grafika: nízká** stays as cheap as before (no composer, no shadows, ACES like the old look); CI renders with it.
+  - Screenshots for comparing looks: `node tests/playtest/shots.mjs dist <out> --look c [--quality high] [--perf]`
+    (8 fixed views at 1600×900; `--perf` writes ms per frame).
+*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh`, `sky`, `daylight`; looks `look.js`, post-processing `post.js`, shadows `shadows.js`, clouds `clouds.js`, water `water.js`, light shader bits `light-glsl.js`), shrine and portal `client/src/world/shrine.js`.
 
 ## 3. Player
 - **Survival**: health ❤️, hunger 🍗 (drops faster when running), armor 🛡. Starving hurts; full stomach heals.
