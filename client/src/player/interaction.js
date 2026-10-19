@@ -11,8 +11,9 @@ import { bkey, blockMeta, blocks, chairRot, chests, crops, fires, furnaces, pcDi
 import { structuresNear } from '../../../shared/world/structures.js';
 import { biomeAt, forest } from '../../../shared/world/terrain.js';
 import { V, VOX, columnDug, getVox, setVox, topY } from '../../../shared/world/voxels.js';
+import { blockMaterial, targetMaterial, voxMaterial } from '../audio/materials.js';
 import { Sound } from '../audio/sound.js';
-import { blockMatFamily, materialSound, matOf, toolSound } from '../audio/tool-sounds.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { MP } from '../game/boot.js';
 import { harvestCrop } from '../machines/kitchen.js';
 import { toggleSwitch } from '../machines/power.js';
@@ -72,6 +73,8 @@ export function cellFree(x, y, z) {
   return getVox(x, y, z, top) === V.AIR;
 }
 const mining = { key: null, p: 0, tick: 0, pause: 0, time: 1 };
+// Zvuk z místa, kde se těží nebo staví (do 5 m plná hlasitost, jen směr zleva / zprava)
+const sfxAt = (pt, fn) => (pt ? Sound.at(pt[0], pt[1], pt[2], fn, { ref: 5 }) : fn());
 const CHIP = { tree: [0.42, 0.3, 0.17], rock: [0.5, 0.5, 0.48], iron: [0.65, 0.35, 0.15], grass: [0.25, 0.5, 0.12], planks: [0.6, 0.45, 0.28], cobble: [0.5, 0.5, 0.48], bricks: [0.55, 0.52, 0.48], dirt: [0.42, 0.3, 0.2] };
 const shade = (c, k) => c.map((v) => Math.min(1, v * k));
 // Barvy úlomků cíle: z textury bloku, z barvy podzemního bloku, kůra stromu…
@@ -91,18 +94,17 @@ function chipColors(t) {
   return [CHIP.planks];
 }
 const hitPoint = (t) => t.point || t.at || (t.cell ? t.cell.map((v) => v + 0.5) : [player.pos.x, player.pos.y, player.pos.z]);
-// Každých 0,2 s při těžbě: drobky z místa úderu a tichý úder podle materiálu (u stromu občas spadne list)
-function mineTick(t) {
+// Každých 0,2 s při těžbě: drobky z místa úderu a úder podle materiálu (audio/sfx.js; u stromu občas spadne list)
+function mineTick(t, heldId) {
   const at = hitPoint(t), n = t.normal || [0, 1, 0];
   emitChips([at[0] + n[0] * 0.06, at[1] + n[1] * 0.06, at[2] + n[2] * 0.06], chipColors(t), 2 + ((Math.random() * 3) | 0), { speed: 1.2, up: 1.6, size: [0.035, 0.07], life: [0.25, 0.7], spread: 0.08, dir: n.map((v) => v * 0.5) });
-  materialSound('hit', matOf(t));
+  sfxAt(t.at || at, () => Sound.blockHit(targetMaterial(t), ITEMS[heldId]?.tool));
   if (t.kind === 'tree' && !t.tree.mark && Math.random() < 0.6) debris.emit(t.tree.x + (Math.random() - 0.5) * 2, t.tree.y + t.tree.trunkH, t.tree.z + (Math.random() - 0.5) * 2, [0.22, 0.45, 0.12], 2, 0.6, 0.2);
 }
-// Rozbití: hromada úlomků (64 na vysoké grafice, 16 na nízké) a zvuk materiálu
+// Rozbití: hromada úlomků (64 na vysoké grafice, 16 na nízké); zvuk materiálu hraje každá větev breakTarget
 function breakFx(t, at) {
   if (t.kind === 'grass') emitChips(at, chipColors(t), Math.ceil(breakCount() / 4), { speed: 1.4, up: 2, size: [0.025, 0.045], life: [0.3, 0.8], spread: 0.3 }); // jen pár stébel
   else emitChips(at, chipColors(t), breakCount(), { speed: 2.4, up: 2.4, spread: t.kind === 'tree' ? 0.6 : 0.45 });
-  materialSound('break', matOf(t));
 }
 
 // Útok: nabití úderu roste od posledního máchnutí (proužek pod zaměřovačem).
@@ -166,14 +168,14 @@ export function updateInteraction(dt) {
     if (lacksTool(target.req, heldId)) {
       warn = `Potřebuješ ${target.reqName || (target.req.tier > 1 ? 'kamenný krumpáč' : 'krumpáč')}`;
       mining.p = 0;
-      if (swingCd <= 0) { startSwing(0.3, 0.6); swingCd = 0.4; Sound.mine(); emitChips(hitPoint(target), chipColors(target), 1, { speed: 0.8, up: 1, size: [0.03, 0.05], life: [0.2, 0.4] }); }
+      if (swingCd <= 0) { startSwing(0.3, 0.6); swingCd = 0.4; sfxAt(target.at, () => Sound.denied()); emitChips(hitPoint(target), chipColors(target), 1, { speed: 0.8, up: 1, size: [0.03, 0.05], life: [0.2, 0.4] }); }
     } else if (mining.pause <= 0) {
       const flying = (creative && player.flying) || player.flyT > 0;
       const eye = camera.position;
       mining.time = breakTime(target, heldId, { underwater: waterAt(eye.x, eye.y, eye.z) !== null, airborne: !player.onGround && !flying });
       mining.p += dt / mining.time;
       if (swingCd <= 0) { startSwing(0.26); swingCd = 0.26; } // ruka máchá pořád dokola
-      if ((mining.tick -= dt) <= 0) { mining.tick = 0.2; mineTick(target); }
+      if ((mining.tick -= dt) <= 0) { mining.tick = 0.2; mineTick(target, heldId); }
       if (mining.p >= 1) {
         const t = target, instant = mining.time <= INSTANT;
         breakTarget(t);
@@ -227,6 +229,8 @@ export function breakTarget(t) {
     }
     debris.emit(tr.x, tr.y + tr.trunkH, tr.z, [0.2, 0.45, 0.12], 60, 5, 2);
     breakFx(t, t.at || [tr.x, tr.y + 1, tr.z]);
+    sfxAt(t.at, () => { Sound.blockBreak(targetMaterial(t)); Sound.crack(); });
+    Sound.at(tr.x, tr.y + tr.trunkH, tr.z, () => Sound.mat('leaves', 'break', 1.4), { ref: 5 }); // padající koruna
     rebuildForest(player.pos.x, player.pos.z, true);
   } else if (t.kind === 'paper') takeSpot(t.id);
   else if (t.kind === 'vehicle') { // rozebrané auto se vrátí do batohu i s kufrem a baterií
@@ -237,6 +241,7 @@ export function breakTarget(t) {
     addItem(v.type === 'plane' ? 'biplane' : v.type, 1);
     vehicles.delete(t.id);
     breakFx(t, t.at || [v.x, v.y + 0.6, v.z]);
+    sfxAt(t.at, () => { Sound.blockBreak('metal'); Sound.crack(); });
   } else if (t.kind === 'rock') {
     removed.add(t.key);
     const r = t.rock;
@@ -244,6 +249,7 @@ export function breakTarget(t) {
     else addItem('stone', 2 + Math.floor(r.s * 3));
     if (Math.random() < 0.3) addItem('salt', randInt(1, 2)); // solné krystalky v kameni
     breakFx(t, [r.x, r.y + 0.3, r.z]);
+    sfxAt(t.at, () => { Sound.blockBreak('stone'); Sound.crack(); });
     rebuildForest(player.pos.x, player.pos.z, true);
   } else if (t.kind === 'block') {
     const k = bkey(...t.cell);
@@ -265,6 +271,7 @@ export function breakTarget(t) {
     furnaces.delete(k);
     chests.delete(k);
     breakFx(t, t.at);
+    sfxAt(t.at, () => Sound.blockBreak(blockMaterial(t.type)));
     rebuildBlocks();
   } else if (t.kind === 'grass') {
     addItem('fiber', randInt(1, 2));
@@ -285,6 +292,7 @@ export function breakTarget(t) {
     cutGrass(t.point[0], t.point[2]);
     debris.emit(...t.point, CHIP.grass, 12, 2, 2.5);
     breakFx(t, t.point);
+    sfxAt(t.point, () => Sound.blockBreak('grass'));
   } else if (t.kind === 'vox') {
     const [x, y, z] = t.cell, def = VOX[t.vox];
     setVox(x, y, z, V.AIR);
@@ -297,6 +305,7 @@ export function breakTarget(t) {
     if (t.surface) dropSpotsAt(x, y + 1, z);
     breakFx(t, [x + 0.5, y + 0.5, z + 0.5]);
     if (def.glow) { sparks.emit(x + 0.5, y + 0.5, z + 0.5, def.chip, 50, 4, 2); Sound.pickup(); }
+    sfxAt([x + 0.5, y + 0.5, z + 0.5], () => Sound.blockBreak(voxMaterial(t.vox)));
   }
 }
 
@@ -311,7 +320,7 @@ export function useItem() {
       if (v.fuel >= fmax - 0.5) { toast('Nádrž je plná'); return; }
       v.fuel = Math.min(fmax, v.fuel + 15);
       consumeSelected();
-      Sound.rustle();
+      Sound.pour();
       toast(`Natankováno: ${v.fuel.toFixed(1)} / ${fmax} l`);
     } else openInventory('car', target.id);
     return;
@@ -340,7 +349,7 @@ export function useItem() {
   if (held0?.id === 'fishing_rod') { useRod(); return; }
   // Studna: prázdný kbelík naplníš vodou
   if (target?.kind === 'block' && target.type === 'well') {
-    if (held0?.id === 'bucket') { swapHeld('water_bucket'); Sound.rustle(); toast('Načerpal jsi vodu'); } else toast('Na vodu potřebuješ prázdný kbelík');
+    if (held0?.id === 'bucket') { swapHeld('water_bucket'); Sound.pour(); toast('Načerpal jsi vodu'); } else toast('Na vodu potřebuješ prázdný kbelík');
     return;
   }
   // Elektrická zařízení a kabely: vypínač se přepne, ostatní otevřou přehled sítě (s blokem v ruce se staví dál)
@@ -351,7 +360,7 @@ export function useItem() {
   }
   if (target?.kind === 'block' && STATION_UI[target.type]) {
     openInventory(STATION_UI[target.type], bkey(...target.cell));
-    if (target.type === 'chest') { Sound.place(); for (const r of structuresNear(target.cell[0], target.cell[2], 14)) ruinsOpened.add(r.key); }
+    if (target.type === 'chest') { Sound.chest(); for (const r of structuresNear(target.cell[0], target.cell[2], 14)) ruinsOpened.add(r.key); }
     return;
   }
   if (target?.kind === 'portal') return usePortal(target.shrine);
@@ -365,7 +374,7 @@ export function useItem() {
     }
     if (m.type === 'cow' && held0?.id === 'bucket') {
       if (m.milkT > 0) { toast('Kráva potřebuje chvíli odpočinout'); return; }
-      m.milkT = 40; swapHeld('milk_bucket'); Sound.rustle(); toast('Podojil jsi krávu');
+      m.milkT = 40; swapHeld('milk_bucket'); Sound.pour(); toast('Podojil jsi krávu');
       return;
     }
   }
@@ -382,7 +391,7 @@ export function useItem() {
     crops.set(k, { stage: 0, t: 0, next: 25 + Math.random() * 30 });
     consumeSelected();
     rebuildBlocks();
-    Sound.place();
+    sfxAt([x + 0.5, y + 1, z + 0.5], () => Sound.blockPlace('leaves'));
     return;
   }
   if (d.food) {
@@ -397,7 +406,7 @@ export function useItem() {
       blockMeta.delete(k);
       consumeSelected();
       rebuildBlocks();
-      Sound.place();
+      sfxAt(target.point, () => Sound.blockPlace(blockMaterial(d.block)));
       return;
     }
   }
@@ -430,7 +439,7 @@ function tillGround() {
   startSwing(0.3);
   wearHeld(useCost('hoe', 'use'));
   debris.emit(cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5, [0.4, 0.28, 0.18], 14, 2, 1.5);
-  Sound.rustle();
+  sfxAt([cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5], () => Sound.blockPlace('dirt'));
 }
 // Otočení a poloha tvarovaného bloku při položení: schody stoupají směrem od hráče,
 // půlblok je nahoře, když míříš na horní polovinu stěny nebo na spodek bloku.
@@ -456,7 +465,7 @@ export function placeBlock(d, [x, y, z]) {
     rebuildBlocks();
   }
   consumeSelected();
-  materialSound('place', blockMatFamily(d.block));
+  sfxAt([x + 0.5, y + 0.5, z + 0.5], () => Sound.blockPlace(blockMaterial(d.block)));
   startSwing(0.22, 0.5);
   return true;
 }

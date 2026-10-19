@@ -9,6 +9,7 @@ import { updatePower } from '../../../shared/sim/power.js';
 import { EYE } from '../../../shared/world/constants.js';
 import { vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
+import { updateSoundscape } from '../audio/soundscape.js';
 import { dining, updateDining } from '../dining/dining.js';
 import { refreshFurnaceUI, updateFurnaceGlow } from '../machines/furnace.js';
 import { stoveVisuals } from '../machines/kitchen.js';
@@ -124,7 +125,7 @@ export function tick(realDt) {
   updateChips(realDt);
   updateStars(realDt);
   const gust = 0.5 + 0.5 * Math.sin(gameClock * 0.35) * Math.sin(gameClock * 0.13 + 1);
-  Sound.update(gust, night, realDt);
+  updateSoundscape(realDt, gust); // zvuky okolí, hudba, stroje, kroky ostatních
 
   U.cam.value.copy(camera.position);
   sky.position.copy(camera.position);

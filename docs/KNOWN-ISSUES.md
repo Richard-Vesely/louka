@@ -15,7 +15,8 @@ changed. Pick one, open an issue, fix it in a small PR (ask Richard for anything
 - **Machine credit:** when any machine finishes (campfire, furnace, stove…), the *host's* tips progress counts it.
 - **Trap loot:** a mob killed on spikes with no chest nearby gives its loot to the host if the host is within 24 m,
   otherwise the loot is lost (always lost on the Node server).
-- **Animal sounds** play only for the host (joined players don't hear mobs).
+- **Animal sounds** for joined players are made in their own browser (same voices, from the right place), so two players
+  don't hear the same sheep bleat at the same moment.
 - **Chat is free text** (kept from Marek's version; Richard decides whether it stays).
 
 ## Node server

@@ -56,7 +56,7 @@ export function throwItem(id, n, w = 0) {
   camera.getWorldDirection(dir);
   const pos = camera.position.clone().addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.3, 0));
   spawnGroundItem(id, n, pos, dir.multiplyScalar(5.5).add(new THREE.Vector3(0, 2, 0)), 1.2, undefined, w);
-  Sound.pop();
+  Sound.toss();
   feed(id, `−${n} ${ITEMS[id].name}`);
 }
 // Sebrání předmětu hráčem u této obrazovky (volá shared/sim/ground-items.js pro každý předmět)
@@ -67,7 +67,7 @@ function pickupLocal(it) {
       if (it.req <= 0 && roomFor(it.id)) { it.req = 2; NET.req(['pk', it.gid]); }
     } else {
       const left = addItem(it.id, it.n, true, it.w || 0);
-      if (left < it.n) { Sound.pop(); feed(it.id, `+${it.n - left} ${ITEMS[it.id].name}`); NET.op(['gx', it.gid, left]); }
+      if (left < it.n) { Sound.plip(); feed(it.id, `+${it.n - left} ${ITEMS[it.id].name}`); NET.op(['gx', it.gid, left]); }
       it.n = left;
     }
   }

@@ -94,7 +94,7 @@ export function onHostMsg(msg) {
     case 'give': { const w = Number(msg[3]) || 0, left = addItem(msg[1], msg[2], false, w); if (left > 0) spawnGroundItem(msg[1], left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3, undefined, w); else Sound.pop(); break; }
     case 'swap': {
       if (heldStack()?.id === msg[1]) swapHeld(msg[2]); else if (countItem(msg[1])) { removeItem(msg[1], 1); addItem(msg[2], 1, true); }
-      Sound.rustle(); toast('Podojil jsi krávu');
+      Sound.pour(); toast('Podojil jsi krávu');
       break;
     }
     case 'dmg': damagePlayer(msg[1], msg[2], msg[3]); break;
