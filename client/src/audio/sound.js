@@ -83,4 +83,11 @@ export const Sound = {
   howl() { this.tone(380, 1.4, 0.06, 'sine', 0, 520); this.tone(390, 1.4, 0.04, 'triangle', 0.05, 530); },
   grunt() { this.tone(110, 0.25, 0.12, 'sawtooth', 0, 70); },
   chirp() { const f = 4200 + Math.random() * 600; for (let i = 0; i < 3; i++) this.tone(f, 0.035, 0.015, 'sine', i * 0.06); },
+  // stroj poblíž se rozběhl: stoupající elektrický „vzzum“ a třpyt hologramu
+  powerUp() {
+    const k = 0.92 + Math.random() * 0.16;
+    this.tone(180 * k, 0.4, 0.05, 'sawtooth', 0, 520 * k);
+    this.tone(880 * k, 0.25, 0.025, 'sine', 0.12, 1320 * k);
+    this.tone(1760 * k, 0.18, 0.012, 'triangle', 0.2, 2200 * k);
+  },
 };
