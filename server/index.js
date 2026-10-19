@@ -37,6 +37,10 @@ const srv = await startServer({
 log(`Server Říše běží: http://localhost:${srv.port}/  (hráči se připojí na ws://<adresa>:${srv.port}/ws, světy: ${srv.worlds.join(', ')})`);
 if (!env.ROOM_PASSWORD) log('Pozor: ROOM_PASSWORD není nastavené – připojit se může kdokoli, kdo zná adresu.');
 
+// Neočekávaná chyba: zapsat do logu celou, ať se dá najít. Server běží dál (spadlý svět se restartuje sám).
+process.on('uncaughtException', (e) => log('Neočekávaná chyba: ' + (e.stack || e)));
+process.on('unhandledRejection', (e) => log('Neošetřená chyba: ' + (e?.stack || e)));
+
 let stopping = false;
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {

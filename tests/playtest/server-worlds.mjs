@@ -19,9 +19,10 @@ function startServer() {
     const t = setTimeout(() => fail(new Error('server did not start: ' + log)), 20000);
     child.stdout.on('data', (d) => { log += d; const m = log.match(/http:\/\/localhost:(\d+)\//); if (m) { clearTimeout(t); ok({ child, port: m[1], url: `http://127.0.0.1:${m[1]}/`, log: () => log }); } });
     child.stderr.on('data', (d) => { log += d; });
+    child.on('exit', (code, sig) => { if (!child.stopping) console.log(`server exited early (code ${code}, signal ${sig}); log:\n${log.split('\n').slice(-30).join('\n')}`); });
   });
 }
-const stop = (s) => new Promise((ok) => { s.child.on('exit', ok); s.child.kill(); });
+const stop = (s) => new Promise((ok) => { if (s.child.exitCode !== null || s.child.signalCode) return ok(); s.child.stopping = true; s.child.on('exit', ok); s.child.kill(); });
 const until = async (page, fn, arg, timeout = 15000) => { try { await page.waitForFunction(fn, arg, { timeout, polling: 100 }); return true; } catch { return false; } };
 // Hlavní menu -> "Hrát na serveru" -> heslo -> Připojit -> výběr světa
 async function toWorlds(page, name) {

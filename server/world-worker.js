@@ -82,8 +82,8 @@ const saver = setInterval(() => { try { save(); } catch (e) { log('Uložení sel
 parentPort.on('message', (m) => {
   switch (m.t) {
     case 'join': join(m.cid, m.name); break;
-    case 'data': try { onData(m.cid, m.raw); } catch (e) { console.error(e); } break;
-    case 'gone': gone(m.cid); break;
+    case 'data': try { onData(m.cid, m.raw); } catch (e) { log('Chyba ve zprávě hráče: ' + (e.stack || e)); } break;
+    case 'gone': try { gone(m.cid); } catch (e) { log('Chyba při odchodu hráče: ' + (e.stack || e)); } break;
     case 'save': try { save(); } catch (e) { log('Uložení selhalo: ' + e.message); } break;
     case 'stop':
       clearInterval(ticker); clearInterval(statsTimer); clearInterval(saver);
