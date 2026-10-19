@@ -58,8 +58,9 @@ tested (installing `cloudflared` and opening a public tunnel needs Richard's OK)
 
 ## C. VPS server (always on)
 
-**Status:** scripted (`deploy/`), **not yet run on a real VPS** (none has been bought). Everything the script starts is
-tested locally and in CI.
+**Status:** live since 19.10.2026 on the club VPS (Hetzner CPX02, 1 vCPU / 1 GB, Ubuntu 26.04) at
+`https://91-99-88-84.sslip.io`, installed with `deploy/setup-vps.sh` and checked with two browsers over the internet.
+An off-site copy of `/opt/louka/server/data` is pulled daily by Richard's other VPS (30 days kept).
 
 ### What to buy
 A small Linux VPS with Ubuntu 24.04. **1 vCPU and 1 GB RAM are enough** (measured below). Use a separate VPS for the club,
