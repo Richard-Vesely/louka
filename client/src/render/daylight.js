@@ -1,4 +1,4 @@
-// Den a noc, tma v podzemí.
+// Den a noc na obloze a tma v podzemí (čas dne: shared/sim/day.js).
 import '../player/survival.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { advanceDay, dayCount, dayTime, sunElevation } from '../../../shared/sim/day.js';

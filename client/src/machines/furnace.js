@@ -1,4 +1,4 @@
-// Pec: tavení s palivem.
+// Pec a táborák v prohlížeči: obnovení oken, žhnoucí otvor a jiskry (tavení a pečení: shared/sim/machines.js).
 import './kitchen.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { FUEL, ITEMS, SMELT_TIME, smeltResult } from '../../../shared/data/index.js';
 import { on } from '../../../shared/events.js';

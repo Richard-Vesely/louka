@@ -1,4 +1,4 @@
-// Vytištěné dokumenty jako předměty (doc_<id>).
+// Ikona vytištěného dokumentu (předmět doc_<id> vzniká v shared/world/papers.js).
 import '../render/icons-blocks.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { ICONS } from '../render/icons.js';
 

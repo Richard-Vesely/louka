@@ -182,3 +182,13 @@ clients' machines; trap kill without chest gives loot to the host or loses it; i
     `npm run build`, `node tests/playtest/playtest.mjs dist` 36/36, `node tests/playtest/peer.mjs dist` 18/18,
     `node tests/playtest/server-mp.mjs` 22/22 (server + 2 browsers, password, edits, mobs, pickup, chat, restart).
   - Next: phase 4 (CI, deploy, docs, message for the kids).
+- 19.10.2026, phase 4 (docs, CI, deploy) + Richard's 1 GB VPS requirements:
+  - Docs: `AGENTS.md` (architecture map, module order, protocol, rules incl. core files, recipes), `CLAUDE.md`,
+    `README.md` + `CONTRIBUTING.md` (Czech), `docs/HOSTING.md`, `docs/KNOWN-ISSUES.md`, `docs/MESSAGE-KIDS.md`,
+    `docs/FEATURES.md` with code locations. GitHub templates and `.devcontainer` from v1.
+  - CI (`.github/workflows/ci.yml`): build, `npm test`, single-player play-test, server + 2 browsers, PeerJS (allowed to fail);
+    on push the job *publish dist* puts the built game into branch `dist-<branch>`. `pages.yml` deploys on `main` only.
+  - VPS for 1 GB RAM: nothing is built there (`dist-<branch>` is cloned/pulled), only `ws` is installed (`npm ci --omit=dev`),
+    2 GB swap, `node --max-old-space-size=384`, systemd `MemoryMax=600M`. Load test `npm run test:load`: 8 bots → ~75 MB RSS,
+    0.6 ms per world step, 1.6 % CPU (numbers in docs/HOSTING.md). Runtime deps: `ws` only (three, peerjs, vite, playwright are dev).
+  - Not done / not verifiable here: real VPS run, Cloudflare tunnel, GitHub Pages deploy (needs merge to main).

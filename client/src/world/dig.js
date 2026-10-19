@@ -1,4 +1,4 @@
-// Kopání: změna podzemního bloku a maska děr pro shadery.
+// Kopání v prohlížeči: maska děr pro shadery a chunky k překreslení (pravidlo setVox: shared/world/voxels.js).
 import './papers.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { on } from '../../../shared/events.js';

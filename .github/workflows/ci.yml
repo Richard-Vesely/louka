@@ -1,0 +1,75 @@
+# Každý pull request (a každá změna v main a v2): sestavení, testy pravidel a serveru, zahrání hry v prohlížeči.
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main, v2]
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build (Vite)
+        run: npm run build
+      - name: Unit + server tests (node:test)
+        run: npm test
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Play-test – single player
+        run: node tests/playtest/playtest.mjs dist playtest-sp
+      - name: Multiplayer – Node server + 2 browsers
+        run: node tests/playtest/server-mp.mjs playtest-server
+      - name: Multiplayer – browser host + browser client (PeerJS, needs the public broker)
+        continue-on-error: true
+        run: node tests/playtest/peer.mjs dist playtest-peer
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playtest
+          path: |
+            playtest-*.json
+            playtest-*.png
+  # Sestavená hra pro server: po úspěšných testech se složka dist/ uloží do větve dist-<větev> (např. dist-v2).
+  # VPS si ji jen stáhne (deploy/update.sh), takže na malém serveru se nic nesestavuje.
+  publish:
+    name: publish dist
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Push dist/ to branch dist-${{ github.ref_name }}
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BR="dist-${GITHUB_REF_NAME}"
+          mkdir "$RUNNER_TEMP/out" && cd "$RUNNER_TEMP/out"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 origin "$BR"; then git checkout -q -b "$BR" FETCH_HEAD; git rm -rqf . ; else git checkout -q --orphan "$BR"; fi
+          cp -r "$GITHUB_WORKSPACE/dist/." .
+          echo "$GITHUB_SHA" > VERSION
+          git add -A
+          git commit -qm "Build ${GITHUB_SHA::7} (${GITHUB_REF_NAME})" || exit 0
+          git push -q origin "$BR"

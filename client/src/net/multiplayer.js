@@ -1,4 +1,4 @@
-// Hra pro více hráčů: hostitel a klient (zprávy, změny světa, tvorové).
+// Hra pro více hráčů, strana připojeného hráče: zprávy od hostitele a loutky tvorů; obrázky ke změnám světa od ostatních.
 import '../game/loop.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { on } from '../../../shared/events.js';

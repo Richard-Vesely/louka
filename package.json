@@ -13,18 +13,19 @@
     "playtest": "node tests/playtest/playtest.mjs dist",
     "test:peer": "node tests/playtest/peer.mjs",
     "test:server": "node tests/playtest/server-mp.mjs",
-    "test:all": "npm test && npm run build && npm run playtest && npm run test:server && npm run test:peer"
+    "test:all": "npm test && npm run build && npm run playtest && npm run test:server && npm run test:peer",
+    "test:load": "node tests/load/bots.mjs 8 60"
   },
   "engines": {
     "node": ">=20.19"
   },
   "dependencies": {
-    "peerjs": "1.5.4",
-    "three": "0.169.0",
     "ws": "8.22.0"
   },
   "devDependencies": {
+    "peerjs": "1.5.4",
     "playwright": "1.55.0",
+    "three": "0.169.0",
     "vite": "7.3.7"
   }
 }

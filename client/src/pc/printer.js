@@ -1,4 +1,4 @@
-// Tiskárna a fronta tisku.
+// Tiskárna v prohlížeči: nový dokument, tisk z počítače, okno tiskárny (fronta a tisk: shared/sim/power.js).
 import './tanks.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { NET } from '../../../shared/net/net.js';

@@ -1,4 +1,4 @@
-// Předměty ležící na zemi.
+// Předměty na zemi v prohlížeči: 3D modely, vyhazování (G) a sbírání (pravidla: shared/sim/ground-items.js).
 import '../render/dimension.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { ITEMS } from '../../../shared/data/index.js';

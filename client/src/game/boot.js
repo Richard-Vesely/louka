@@ -1,4 +1,4 @@
-// Start hry: počká na volbu v hlavním menu a připraví síťovou vrstvu NET.
+// Start hry: počká na volbu v hlavním menu a nastaví síťovou vrstvu NET (shared/net/net.js).
 import { NET } from '../../../shared/net/net.js';
 import { playerSafe } from '../mobs/mobs.js';
 import { creative, player } from '../player/player.js';

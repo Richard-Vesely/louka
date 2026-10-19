@@ -1,4 +1,4 @@
-// Sporák (kuchařka) a pole s plodinami.
+// Sporák a pole v prohlížeči: kuchařka, modely plodin, pára (vaření a růst: shared/sim/machines.js).
 import '../ui/inventory-ui.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { CROPS, ITEMS, KITCHEN } from '../../../shared/data/index.js';

@@ -1,6 +1,7 @@
 # Říše: what the game can do (feature list)
 
-The full list of features in *Říše* (repo *Louka*), as of Marek's version `2778d1b` (17.10.2026).
+The full list of features in *Říše* (repo *Louka*), as of Marek's version `2778d1b` (17.10.2026), plus the v2 server.
+Each section ends with *Kód:* = where it lives in the code (rules in `shared/`, the browser in `client/src/`).
 It is for AI helpers and kids: read it to know what already exists before adding something, and use it as the
 checklist that nothing got lost when the code moves around. Czech names are what players see in the game.
 
@@ -17,6 +18,8 @@ When you add or change a feature, update this file in the same pull request.
 - **Nastavení**: graphics quality (auto/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity.
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
+
+*Kód:* `index.html` (menu, Návod text), `client/src/menu/menu.js`, `client/src/menu/settings.js`, tips in `client/src/ui/hud.js`.
 
 ## 2. World
 - **Endless terrain** with smooth hills and a **voxel underground** (1 m blocks down to bedrock at y = −48).
@@ -38,6 +41,8 @@ When you add or change a feature, update this file in the same pull request.
   with a spawner), desert pyramid, jungle temple, igloo, cherry pavilion, savanna hut, mushroom house, obsidian altar.
   The compass shows the nearest unexplored one.
 
+*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh`, `sky`, `daylight`), shrine and portal `client/src/world/shrine.js`.
+
 ## 3. Player
 - **Survival**: health ❤️, hunger 🍗 (drops faster when running), armor 🛡. Starving hurts; full stomach heals.
   Death: *Padl jsi…*, you respawn at the shrine.
@@ -46,6 +51,8 @@ When you add or change a feature, update this file in the same pull request.
 - **Armor**: helmet, chestplate, leggings, boots in iron, crystal, markorite; special sets:
   *Stínové* (shadow: faster, shadow-eaters ignore you) and *Nebeské* (sky: double jump, slow fall, healing; chests only).
 - **Mark apple** (*Markojablko*) lets you fly for 10 s.
+
+*Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`.
 
 ## 4. Mining, building, items
 - **Mining** with hold-to-break and tool tiers: wood → stone → iron → crystal → markorite.
@@ -62,6 +69,8 @@ When you add or change a feature, update this file in the same pull request.
 - **Farm traps**: spikes (*Bodce*) hurt mobs; loot of mobs killed on spikes goes to a chest nearby.
 - **Mob spawner** blocks in dungeons and fortresses.
 
+*Kód:* mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
+
 ## 5. Food and cooking
 - **Campfire** (*Táborák*): roast meat and fish, smelt iron, bake sand into glass, clay into tiles.
 - **Stove kitchen** (*Sporák*, cookbook *Kuchařka*): 36 dishes (goulash, schnitzel, dumplings, pizza, pancakes,
@@ -72,6 +81,8 @@ When you add or change a feature, update this file in the same pull request.
 - **Eating**: hold right-click. With **cutlery** (and chopsticks for sushi) you eat bite by bite with an animation
   (twirl spaghetti, cut steak, spoon soup); sitting at a **table** with cutlery gives a bigger bonus.
   Food can be put on a table. Every dish has its own 3D model.
+
+*Kód:* campfire, stove, crops `shared/sim/machines.js` + `client/src/machines/kitchen.js`, recipes `KITCHEN`/`CROPS`/`COOKING` in `shared/data/items.js`, fishing `client/src/world/fishing.js`, eating `client/src/player/eating.js`, table manners and food models `client/src/dining/`.
 
 ## 6. Animals and monsters
 | | HP | Behaviour |
@@ -88,6 +99,8 @@ When you add or change a feature, update this file in the same pull request.
 
 Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 
+*Kód:* behaviour, spawning, loot `shared/sim/mobs.js`; models, animation, sounds `client/src/mobs/mobs.js`.
+
 ## 7. Technology
 - **Furnace** (*Pec*): ores → ingots (iron, copper, gold), quartz → silicon, iron → steel, resin → rubber,
   glass → lens, logs → charcoal; needs fuel.
@@ -97,11 +110,15 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
   devices: electric lamp, bulb, motor, electric furnace, charger (charges car batteries), computer, printer.
   Cable capacity limits the power; devices switch off when there is not enough.
 
+*Kód:* furnace `shared/sim/machines.js`, power grid and printer `shared/sim/power.js`, data `shared/data/tech.js`, models and windows `client/src/machines/furnace.js` + `power.js`.
+
 ## 8. Vehicles
 - **Car** (*Auto*): place it, fill fuel (canister), put in a charged car battery, F to get in. Drive with WASD,
   Space handbrake, L lights, B horn, V camera. Trunk with 18 slots. Hits animals and monsters.
 - **Biplane** (*Dvouplošník*): needs flat ground to place. Throttle Space/Shift, pitch W/S, roll A/D; stall if too slow;
   crash landing hurts.
+
+*Kód:* `client/src/vehicles/car.js`, `client/src/vehicles/plane.js` (state in `vehicles`, `shared/world/state.js`).
 
 ## 9. Computer and documents
 - **Computer** (*Počítač*, OS *ŘíšeOS*): needs power. Desktop with windows, start menu, clock.
@@ -109,14 +126,23 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 - **Documents**: write in the editor, **print** on a printer in the same network (needs paper). A printed document
   is an item: read it, put it on a table, hang it on a wall or in a picture frame, give it to another player.
 
-## 10. Multiplayer (Marek's version)
+*Kód:* `client/src/pc/` (computer, Tanks, editor, printer window, papers in the world, reading), printing `shared/sim/power.js`, document items `shared/world/papers.js`.
+
+## 10. Multiplayer
 - Host in the browser via code, max 6 players, the host's tab is the server, world saved in the host's browser.
+- **Server** (Node.js, `npm start`, v2): always-on world on a VPS or a laptop, saved to disk every 30 s with daily backups,
+  serves the game itself; players join by address (**Připojit se** accepts a code or an address, **Hrát na serveru** when
+  the game comes from the server or a `?server=` link), optional password, max. 8 players by default.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
 - **Chat** (T).
 - Everyone sees other players (name tag, armor, held item, walking, sitting, eating), their blocks, vehicles,
   animals, day/night. Only one player can have a chest or machine open at a time.
 
+*Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/`; menu `client/src/menu/menu.js`.
+
 ## 11. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
 E inventory · G drop · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
 Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba…*), landscape only.
+
+*Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.

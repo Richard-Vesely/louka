@@ -1,6 +1,5 @@
 // Síťová smyčka a spuštění hry pro více hráčů.
 import './mp-ui.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import * as THREE from 'three';
 import { NET } from '../../../shared/net/net.js';
 import { kvDiff } from '../../../shared/net/ops.js';
 import { accept, others, startRoom, updateRoom } from '../../../shared/net/room.js';

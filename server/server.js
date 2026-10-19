@@ -25,7 +25,17 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
   setupWorld({ world, maxPlayers, allowCreative, code: 'server', log });
   log(world ? 'Svět načten ze souboru.' : 'Nový svět.');
   const started = Date.now();
-  const health = () => ({ ok: true, louka: 2, players: others.size, max: maxPlayers, password: !!password, uptime: Math.round((Date.now() - started) / 1000) });
+  // Zatížení: kolik ms trvá jeden krok světa (průměr a maximum za posledních ~10 s) a kolik paměti server bere.
+  const ticks = [];
+  const health = () => {
+    const avg = ticks.length ? ticks.reduce((a, b) => a + b, 0) / ticks.length : 0;
+    return {
+      ok: true, louka: 2, players: others.size, max: maxPlayers, password: !!password, uptime: Math.round((Date.now() - started) / 1000),
+      cpuSec: Math.round((process.cpuUsage().user + process.cpuUsage().system) / 1e4) / 100,
+      rssMB: Math.round(process.memoryUsage().rss / 1048576), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576),
+      tickMs: { avg: Math.round(avg * 100) / 100, max: Math.round(Math.max(0, ...ticks) * 100) / 100, budget: Math.round(1000 / tickHz) },
+    };
+  };
   const server = http.createServer(staticHandler(staticDir, health));
   const wss = new WebSocketServer({ server, maxPayload: 2 * 1024 * 1024 });
 
@@ -69,6 +79,8 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
   const ticker = setInterval(() => {
     const now = performance.now();
     try { stepWorld(Math.min((now - last) / 1000, 0.25)); } catch (e) { log('Chyba ve světě: ' + (e.stack || e)); }
+    ticks.push(performance.now() - now);
+    if (ticks.length > 10 * tickHz) ticks.shift();
     last = now;
   }, 1000 / tickHz);
   // Spojení, které neodpovídá (spadlá wifi), se po 10 s zavře.

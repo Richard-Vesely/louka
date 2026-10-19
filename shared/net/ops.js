@@ -1,4 +1,4 @@
-// Změny světa, které si hráči posílají (protokol: viz shared/net/protocol.md).
+// Změny světa, které si hráči posílají (celý protokol: AGENTS.md, oddíl Protocol).
 // Operace (ops): ['m', mapa, klíč, hodnota] bloky, ['s', množina, klíč], ['r', stavba], ['v', x, y, z, id] podzemí,
 // ['c', x, z, r] posekaná tráva, ['p'] probuzená svatyně, ['g', gid, id, n, pos, vel, delay] předmět na zemi, ['gx', gid, n].
 // Malé mapy (kv): táboráky, truhly, sporáky, pole… se porovnávají jako JSON a posílají se změněné klíče (vyhrává poslední změna).

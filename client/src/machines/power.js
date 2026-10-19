@@ -1,4 +1,4 @@
-// Elektrická síť: kabely, zdroje, baterie, spotřebiče.
+// Elektrická síť v prohlížeči: modely kabelů a zařízení, jejich svícení a okno se stavem sítě.
 import './furnace.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { BLOCKS } from '../../../shared/data/index.js';
@@ -16,11 +16,7 @@ import { toast } from '../ui/hud.js';
 import { iconImg, slotHTML, ui } from '../ui/inventory-ui.js';
 
 // ============================================================ elektrická síť
-// Síť = souvislá skupina elektrických bloků (kabely a zařízení, která se dotýkají stěnou). Vypnutý vypínač síť rozpojí.
-// Tvar sítí se přepočítá jen při změně bloků (powerDirty), energie se počítá 4× za sekundu:
-// výroba (generátory + slunce, omezená kapacitou kabelů) -> spotřebiče podle pořadí; přebytek nabíjí baterie, nedostatek z nich čerpá.
-// Když energie nestačí, zařízení, na která nezbude, se vypnou.
-// (síť, energie a tiskárna: shared/sim/power.js)
+// Pravidla sítě (výroba, spotřeba, baterie, vypínač, tiskárna) jsou v shared/sim/power.js; tady jsou modely a okno zařízení.
 
 // ---------- vykreslení kabelů: středový uzel + ramena k sousedním elektrickým blokům (InstancedMesh)
 const cableMats = {

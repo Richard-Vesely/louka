@@ -1,0 +1,30 @@
+# systemd služba: herní server Říše běží pořád a po pádu nebo restartu VPS naběhne sám.
+# Instalace: deploy/setup-vps.sh (nebo ručně: cp deploy/louka.service /etc/systemd/system/ && systemctl enable --now louka)
+[Unit]
+Description=Říše (Louka) – herní server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=louka
+Group=louka
+WorkingDirectory=/opt/louka
+EnvironmentFile=/etc/louka.env
+# Malý VPS (1 GB RAM): server bere kolem 80 MB, strop haldy 384 MB, systemd ho při 600 MB restartuje.
+ExecStart=/usr/bin/node --max-old-space-size=384 server/index.js
+MemoryHigh=450M
+MemoryMax=600M
+Restart=always
+RestartSec=3
+# SIGTERM = server uloží svět a skončí
+KillSignal=SIGTERM
+TimeoutStopSec=20
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/louka/server/data
+
+[Install]
+WantedBy=multi-user.target
