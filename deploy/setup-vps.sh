@@ -7,7 +7,7 @@
 set -euo pipefail
 DOMAIN="${1:?Použití: setup-vps.sh <doména> <heslo>}"
 PASSWORD="${2:?Použití: setup-vps.sh <doména> <heslo>}"
-REPO="${REPO:-https://github.com/Richard-Vesely/louka.git}"
+REPO="${REPO:-https://github.com/Richard-Vesely/rise.git}"
 BRANCH="${BRANCH:-main}"
 
 echo "== Swap 2 GB (malý VPS: ať instalace ani server nezpadnou na nedostatek paměti)"
@@ -61,6 +61,8 @@ ALLOW_CREATIVE=0
 # Víc světů na jednom serveru (id:jméno[:creative], oddělené čárkou). Bez WORLDS je jeden "Hlavní svět".
 # Každý svět má složku DATA_DIR/<id>/ (world.json + backups/). Po změně: systemctl restart louka
 #WORLDS="svet:Hlavní svět,kreativ:Kreativní svět:creative"
+# Správa hráčů na https://<doména>/admin (seznam hráčů, reset PINu). Bez hesla je stránka vypnutá.
+#ADMIN_PASSWORD=
 ENV
   chmod 600 /etc/louka.env
 fi

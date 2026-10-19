@@ -10,7 +10,7 @@
 
 Deadline: **Wednesday 21.10.2026** (club session). Fallback if not stable: play Marek's current version.
 
-Branch: `v2` in `Richard-Vesely/louka` (based on Marek's history, authorship kept).
+Branch: `v2` in `Richard-Vesely/louka` (renamed to `Richard-Vesely/rise` on 19.10.2026) (based on Marek's history, authorship kept).
 Old engine (v1, heightmap + Node server) stays in branches `v1-*`; reuse its server/persist/deploy/test code.
 
 Feature checklist: [FEATURES.md](FEATURES.md). Technical inventory of the original file: section "Inventory" below.

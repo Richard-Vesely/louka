@@ -9,7 +9,7 @@ const TYPES = {
 
 /**
  * Vytvoří obsluhu HTTP požadavků pro složku `root` (nebo jen JSON adresy, když složka není).
- * Do index.html vloží značku <meta name="louka-server">, podle které menu nabídne "Hrát na serveru".
+ * Do index.html vloží značku <meta name="louka-server">, podle které menu ukáže světy tohoto serveru (a ví, jestli chce heslo).
  * @param {string|null} root složka se sestavenou hrou (dist/)
  * @param {Record<string, () => unknown>} api JSON adresy, např. { '/health': …, '/worlds': … } (bez hesla, smí je číst i jiné stránky)
  * @param {() => { password: boolean }} meta co vložit do index.html

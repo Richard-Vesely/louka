@@ -1,11 +1,14 @@
 // Herní server: HTTP (hra ze složky dist/, /health, /worlds) a na stejném portu WebSocket pro hráče.
 // Server může mít víc světů (server/worlds.js); každý běží ve vlastním vlákně (server/world-worker.js) se svou
-// místností, simulací a ukládáním. Tohle hlavní vlákno jen drží spojení a posílá zprávy hráčů do jejich světa.
+// místností, simulací a ukládáním. Tohle hlavní vlákno drží spojení, přihlašuje hráče (profily: server/profiles.js)
+// a posílá zprávy hráčů do jejich světa. Správa pro lektora: /admin a node server/admin.js (server/admin-http.js).
 import http from 'node:http';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { WebSocketServer } from 'ws';
+import { adminPage, startAdminListener } from './admin-http.js';
+import { createProfiles, profilesFile } from './profiles.js';
 import { staticHandler } from './static.js';
 import { migrateOldLayout } from './worlds.js';
 
@@ -23,10 +26,12 @@ const WORKER = new URL('./world-worker.js', import.meta.url);
  * @param {boolean} [o.allowCreative] kreativní režim pro výchozí svět (když není `worlds`)
  * @param {number} [o.tickHz] kolikrát za sekundu běží svět
  * @param {number} [o.saveEveryMs] jak často ukládat (výchozí 30 s)
+ * @param {string} [o.adminPassword] heslo stránky /admin (prázdné = stránka vypnutá)
  */
-export async function startServer({ port = 8787, password = '', dataDir = null, staticDir = null, maxPlayers = 8, worlds, allowCreative = false, tickHz = 20, saveEveryMs = 30_000, log = console.log } = {}) {
+export async function startServer({ port = 8787, password = '', dataDir = null, staticDir = null, maxPlayers = 8, worlds, allowCreative = false, tickHz = 20, saveEveryMs = 30_000, adminPassword = '', log = console.log } = {}) {
   worlds ||= [{ id: 'svet', name: 'Hlavní svět', creative: allowCreative }];
   if (dataDir) migrateOldLayout(dataDir, worlds[0].id, log);
+  const profiles = createProfiles(profilesFile(dataDir), { log });
   const started = Date.now();
   let closing = false;
   const W = worlds.map((def, i) => ({ ...def, first: i === 0, sockets: new Map(), players: 0, stats: null, worker: null }));
@@ -77,14 +82,20 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
       worlds: W.map((w) => ({ id: w.id, name: w.name, creative: w.creative, players: w.players, max: maxPlayers, heapMB: w.stats?.heapMB ?? null, tickMs: { avg: w.stats?.tickAvg ?? 0, max: w.stats?.tickMax ?? 0 } })),
     };
   };
-  const server = http.createServer(staticHandler(staticDir, { '/health': health, '/worlds': list }, () => ({ password: !!password })));
+  // kdo právě hraje: id profilu -> jméno světa
+  const online = () => { const m = new Map(); for (const w of W) for (const ws of w.sockets.values()) if (ws.profile) m.set(ws.profile, w.name); return m; };
+  const worldName = (id) => byId.get(id)?.name || id;
+  const admin = adminPage({ password: adminPassword, profiles, online, worldName, log });
+  const files = staticHandler(staticDir, { '/health': health, '/worlds': list }, () => ({ password: !!password }));
+  const server = http.createServer((req, res) => (/^\/admin(\/|$|\?)/.test(req.url || '') ? admin(req, res) : files(req, res)));
+  const closeAdmin = dataDir ? await startAdminListener({ dataDir, profiles, online, log }) : async () => {};
   const wss = new WebSocketServer({ server, maxPayload: 2 * 1024 * 1024 });
 
   // ---------- hráči
   wss.on('connection', (ws, req) => {
     ws.seen = Date.now();
     ws.on('pong', () => { ws.seen = Date.now(); });
-    // První zpráva je ['hello', { name, pass, v, world }]; teprve potom hráč vstoupí do místnosti svého světa.
+    // První zpráva je ['hello', { name, pass, v, world, pin | token }]; teprve potom hráč vstoupí do místnosti svého světa.
     // Nový klient (v: 2) bez světa (nebo s neznámým) dostane seznam ['worlds', …] a pošle hello znovu.
     // Starý klient (bez v) a server s jediným světem: rovnou první svět.
     const cid = 'p-' + crypto.randomBytes(4).toString('hex');
@@ -92,7 +103,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
     let hello = setTimeout(() => { if (!world) ws.terminate(); }, 10_000);
     ws.on('message', (raw) => {
       ws.seen = Date.now();
-      if (world) { world.worker.postMessage({ t: 'data', cid, raw: raw.toString() }); return; }
+      if (world) { if (world.sockets.get(cid) === ws) world.worker.postMessage({ t: 'data', cid, raw: raw.toString() }); return; }
       let msg;
       try { msg = JSON.parse(raw.toString()); } catch { return; }
       if (!Array.isArray(msg) || msg[0] !== 'hello') return;
@@ -113,11 +124,36 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
         return;
       }
       clearTimeout(hello);
+      // Profil hráče: jméno + PIN (nové jméno = nový profil), nebo jméno + token z prohlížeče. PIN se nikde nezapisuje.
+      const ip = clientIp(req);
+      const r = profiles.login({ name: h.name, pin: h.pin, token: h.token, ip, world: w.id });
+      if (!r.ok) {
+        send(['denied', r.reason, { text: r.text, wait: r.wait, left: r.left, exists: r.exists }]);
+        log(`Přihlášení odmítnuto (${r.reason}): ${JSON.stringify(String(h.name ?? '').slice(0, 20))} (${ip}).`);
+        setTimeout(() => ws.close(), 200);
+        return;
+      }
+      const P = r.profile;
+      if (r.token) send(['token', r.token]); // prohlížeč si ho zapamatuje a příště PIN nepotřebuje
+      // Stejný hráč už v tomhle světě hraje (jiný počítač, druhá záložka): staré spojení skončí.
+      for (const [old, ows] of w.sockets) {
+        if (ows.profile !== P.id) continue;
+        w.sockets.delete(old);
+        w.worker.postMessage({ t: 'gone', cid: old });
+        if (ows.readyState === ows.OPEN) ows.send(JSON.stringify(['kick', 'Přihlásil ses jinde.']));
+        setTimeout(() => ows.close(), 300);
+        log(`[${w.id}] ${P.name}: přihlášení z jiného místa, staré spojení zavřeno.`);
+      }
       world = w;
+      ws.profile = P.id;
       w.sockets.set(cid, ws);
-      w.worker.postMessage({ t: 'join', cid, name: String(h.name || 'Hráč').slice(0, 16).trim() || 'Hráč' });
+      log(`[${w.id}] Přihlášen ${P.name}${r.created ? ' (nový hráč)' : r.newPin ? ' (nový PIN)' : ''}.`);
+      w.worker.postMessage({ t: 'join', cid, name: P.name, profile: P.id });
     });
-    const gone = () => { clearTimeout(hello); if (world && world.sockets.get(cid) === ws) { world.sockets.delete(cid); world.worker.postMessage({ t: 'gone', cid }); } };
+    const gone = () => {
+      clearTimeout(hello);
+      if (world && world.sockets.get(cid) === ws) { world.sockets.delete(cid); world.worker.postMessage({ t: 'gone', cid }); profiles.seen(ws.profile); }
+    };
     ws.on('close', gone);
     ws.on('error', gone);
   });
@@ -142,6 +178,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
     async close() {
       closing = true;
       clearInterval(heartbeat);
+      await closeAdmin();
       for (const ws of wss.clients) ws.terminate();
       await Promise.all(W.map((w) => new Promise((ok) => {
         const t = setTimeout(ok, 10_000);
@@ -153,4 +190,12 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
       await new Promise((ok) => server.close(ok));
     },
   };
+}
+
+// Adresa hráče (pro omezení špatných PINů). Za Caddy (VPS) přijde vše z 127.0.0.1 a skutečná adresa je v X-Forwarded-For.
+function clientIp(req) {
+  const ip = req.socket.remoteAddress || '';
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd && /^(127\.|::1$|::ffff:127\.)/.test(ip)) return String(fwd).split(',').pop().trim();
+  return ip;
 }

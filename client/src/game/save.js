@@ -7,7 +7,9 @@ import { creative, player, resetting } from '../player/player.js';
 import { toast } from '../ui/hud.js';
 import { armor } from '../ui/inventory-ui.js';
 import { crafted, placedAny } from '../world/world-state.js';
-import { SAVE_KEY } from './prefs.js';
+import { BOOT } from './boot.js';
+import { OLD_SAVE_KEY, SAVE_KEY } from './prefs.js';
+import { MIGRATED, PROFILE } from './save-load.js';
 
 // ============================================================ ukládání
 // (stav světa: worldState() v shared/world/save.js)
@@ -16,6 +18,7 @@ export function saveGame() {
   if (resetting || NET.leaving) return;
   // hráč: batoh, pozice, zdraví… (klient na cizím serveru ukládá jen tohle)
   const me = { inv: inv.slots, pos: player.pos.toArray(), yaw: player.yaw, hp: Math.max(player.hp, 1), hunger: player.hunger, crafted, placedAny, creative, flying: player.flying, flyT: player.flyT || 0, armor };
+  if (PROFILE) { if (BOOT.conn?.open) BOOT.conn.send(['me', me]); return; } // server kroužku: hráč se ukládá na serveru
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(NET.client ? me : { ...me, ...worldState(), ...(NET.host ? NET.hostSave() : {}) }));
     saveWarned = false;
@@ -26,3 +29,9 @@ export function saveGame() {
 }
 setInterval(saveGame, 10000);
 addEventListener('beforeunload', saveGame);
+addEventListener('pagehide', saveGame);
+if (PROFILE) {
+  if (MIGRATED) saveGame(); // starý batoh z prohlížeče jednou na server
+  // batoh je teď na serveru: staré místní uložení pryč, ať ho nepřevezme jiný hráč na tomhle počítači
+  try { localStorage.removeItem(SAVE_KEY); if (OLD_SAVE_KEY) localStorage.removeItem(OLD_SAVE_KEY); } catch {}
+}

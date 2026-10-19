@@ -5,7 +5,7 @@ explain what you change, keep changes small, and ask before big ones.
 
 ## The game in one minute
 
-*Říše* (repository *Louka*) is Marek's survival/building game in the browser (Three.js): endless terrain with
+*Říše* (repository *rise*, formerly *louka*) is Marek's survival/building game in the browser (Three.js): endless terrain with
 biomes, a voxel underground, trees, animals and night monsters, crafting (~260 recipes), cooking, farming,
 furnaces, electricity, cars, a biplane, a computer with games and a printer, and the Mark dimension behind a portal.
 The full feature list is [docs/FEATURES.md](docs/FEATURES.md); read it before adding something.
@@ -14,12 +14,15 @@ There are **three ways to play, with one set of rules and one protocol**:
 
 | Mode (menu button) | Who holds the world | Connection | Saved in |
 |---|---|---|---|
-| **Hra pro jednoho** | this browser | none | `localStorage` (`rise-svet-v2`) |
-| **Vytvořit server** | the host's browser tab (host = player `'host'`) | PeerJS code `LOUKA-XXXX` | host's `localStorage` (`rise-server-v1`) |
-| **Server** (`npm start`) | Node.js process, no player; one or more worlds (`WORLDS`) | WebSocket, address (+ optional password), then a world | `DATA_DIR/<world>/world.json` + daily backups |
+| **Hrát sám** | this browser | none | `localStorage` (`rise-svet-v2`) |
+| **Další možnosti → Vytvořit hru na svém počítači** | the host's browser tab (host = player `'host'`) | PeerJS code `LOUKA-XXXX` | host's `localStorage` (`rise-server-v1`) |
+| **World buttons** (club server, `npm start`) | Node.js process, no player; one or more worlds (`WORLDS`) | WebSocket straight into the chosen world (+ password, asked once; + player name and PIN, asked once per device) | `DATA_DIR/<world>/world.json` + daily backups; player profiles in `DATA_DIR/players.json` |
 
-Players who join (by code or address) keep their own backpack/position in their browser (`rise-klient-<code or address>`;
-on the Node server per world: `rise-klient-<address>#<world id>`, the first world also reads the old key).
+Players who join a browser host by code keep their own backpack/position in their browser (`rise-klient-<code>`).
+On the Node server every player has a **profile** (nickname + 4-digit PIN, server-wide, `server/profiles.js`), and the
+backpack, armor, position and health live **on the server**, per profile and world (`players` inside that world's
+`world.json`). The browser only remembers a login token per server address (`rise-hrac`). An old backpack from before
+profiles (`rise-klient-<address>#<world id>`, the first world also `rise-klient-<address>`) is sent up once and then removed.
 
 ## Folder map
 
@@ -51,7 +54,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `shared/net/room.js` | **the host**: accepts players, handles their messages, broadcasts (browser host and Node server) |
 | `shared/events.js` | events from rules to the browser (`emit('mobHit', m)` → sparks and sound) |
 | `client/src/main.js` | entry point: menu, then the game modules |
-| `client/src/menu/` | main menu (single player / host / join by code or address) and settings |
+| `client/src/menu/` | main menu (world buttons first from `GET /worlds`, then *Hrát sám*, then *Nastavení · Další možnosti*; club password asked once; player name + PIN asked once per device, then "Hraješ jako X · Změnit hráče"; *Další možnosti*: host in the browser / join by code) and settings |
 | `client/src/game/` | boot (`NET` setup), prefs, save/load in the browser, the frame loop `loop.js` (`tick`), `debug.js` (`window.game`) |
 | `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item, day/night colours |
 | `client/src/player/` | player movement and collisions, aiming, mining/placing/using, backpack, survival, eating |
@@ -59,7 +62,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/ui/` | HUD, inventory window, touch controls |
 | `client/src/machines/`, `pc/`, `vehicles/`, `dining/`, `world/` | the browser side of machines, the computer + Tanks + documents, car + plane, table manners, shrine/fishing/dropped items |
 | `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars, chat + Esc menu, the net loop (`mp-start.js`) |
-| `server/` | `index.js` (env config), `worlds.js` (`WORLDS` list, moving old data), `server.js` (HTTP + WebSocket, sends each player's messages to their world), `world-worker.js` (one world in its own thread: room + 20 Hz loop + saving), `sim.js` (one world step), `persist.js` (saving + backups), `static.js` |
+| `server/` | `index.js` (env config), `worlds.js` (`WORLDS` list, moving old data), `server.js` (HTTP + WebSocket, logs players in, sends each player's messages to their world), `profiles.js` (player profiles: name + PIN, tokens, wrong-PIN throttle, `players.json`), `world-worker.js` (one world in its own thread: room + 20 Hz loop + saving + the players' backpacks), `me.js` (checks a player's state before it is saved), `sim.js` (one world step), `persist.js` (saving + backups), `admin-http.js` (`/admin` page + local admin port), `admin.js` (CLI: `players`, `reset-pin`), `static.js` |
 
 ## How it fits together
 
@@ -93,19 +96,35 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
   `['hit', nid, dmg, yaw]`, `['mu', nid]` eggs/milk, `['print', key, paperId, copies]`, `['giveTo', pid, docId]`, `['chat', text]`.
 - Host → client: `['welcome', { pid, name, perm, world, spawn, max }]`, `['full']`, `['join'|'leave', name]`, `['ops', ops]`,
   `['kv', changes]` (2×/s), `['pl', [[pid, name, pose, perm]…]]` (12×/s), `['mobs', dayTime, day, [[nid, type, x, y, z, ry, hp, flash, dead, eggs, milk]…]]` (5×/s),
-  `['give', id, n]`, `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`, `['kick']`.
+  `['give', id, n]`, `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`,
+  `['kick', reason?]` (the browser host sends no reason; the Node server sends `['kick', 'Přihlásil ses jinde.']` when the same player logs in again in that world).
 - Ops: `['m', 'blocks'|'blockMeta', key, value|null]`, `['s', 'removed'|'ruinsOpened', key]`, `['r', structure]`, `['v', x, y, z, id]`,
   `['c', x, z, r]` grass cut, `['p']` portal, `['g', gid, id, n, pos, vel, delay]` dropped item, `['gx', gid, n]`.
-- WebSocket only (Node server, `server/server.js`): the client first sends `['hello', { name, pass, v: 2, world }]`.
+- WebSocket only (Node server, `server/server.js`): the client first sends `['hello', { name, pass, v: 2, world, pin | token }]`.
   A wrong password gets `['denied', 'password']`. A known `world` id joins that world. A new client (`v: 2`) without
   a world or with an unknown one, on a server with several worlds, gets `['worlds', [{ id, name, creative, players, max }…]]`
-  and sends `hello` again with the chosen `world` (the menu reconnects). An old client (no `v`) and every client on a
+  and can send `hello` again with a chosen `world`. An old client (no `v`) and every client on a
   one-world server join the first world. The welcome then also has `worldInfo: { id, name, creative, first }`
-  (added by `server/world-worker.js`; the browser host doesn't send it). `GET /worlds` returns the same list over HTTP (no password).
+  (added by `server/world-worker.js`; the browser host doesn't send it). `GET /worlds` returns the same list over HTTP
+  (no password, `Access-Control-Allow-Origin: *`): the main menu shows a button per world from it and sends the
+  chosen `world` in the first `hello` (the password comes from `localStorage` `rise-heslo`, per server address).
+- **Player profiles** (Node server only, `server/profiles.js`): after the password and the world, the hello must carry the
+  nickname plus either a 4-digit `pin` or a remembered `token`. New name + PIN creates a profile; existing name + right
+  PIN or a valid token logs in. On a PIN login the server first sends `['token', t]` (the browser stores `{ name, token }`
+  per server address in `rise-hrac`; the server keeps only SHA-256 hashes, last 5 per profile). Refusals:
+  `['denied', reason, { text, wait, left, exists }]` with reason `'needpin'` (no PIN/token; `exists` = name taken),
+  `'pin'` (wrong PIN; `left` tries), `'wait'` (5 wrong PINs per name + IP: wait `wait` s), `'badpin'` (not 4 digits),
+  `'name'` (2–16 characters, not *Hráč*; `text` says why), `'token'` (unknown token, e.g. after a PIN reset). The
+  connection then closes; the client asks again. The same profile already in that world: the old connection gets
+  `['kick', 'Přihlásil ses jinde.']` and is closed. The welcome also has `me`: that player's saved state in this world
+  (`null` = first time; added by `server/world-worker.js`). The client sends `['me', { inv, armor, pos, yaw, hp, hunger,
+  crafted, placedAny, creative, flying, flyT }]` every 10 s and when leaving; the world thread checks it (`server/me.js`:
+  ≤ 64 KB, 36 + 4 slots, known item ids) and saves it in `world.json` → `players[profile id]`. The browser host ignores `me`.
 - Each world of the Node server runs in its own `worker_threads` thread, because `shared/` keeps one world in module
   state. Rooms, chat and players are per world; there are no messages between worlds.
 - Trust model (Marek's, kept for now): the host decides mobs, pick-ups, time and machines; players are trusted for
-  their own position, backpack and world edits. See [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
+  their own position, backpack and world edits (on the Node server the backpack is stored there, but its content still
+  comes from the player's browser). See [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
 
 ## Rules for AI helpers
 
@@ -124,18 +143,19 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
 8. Files stay under ~400 lines (data tables and model builders may be longer). Plain JavaScript ES modules with JSDoc,
    no TypeScript, no frameworks. New dependencies only with Richard's OK.
 9. When you add or change a feature, update [docs/FEATURES.md](docs/FEATURES.md) in the same PR.
-10. No secrets in the repo (the server password lives in an env file on the server). No personal data about the kids.
+10. No secrets in the repo (the server password lives in an env file on the server). No personal data about the kids:
+    a profile is a nickname + a hashed PIN, nothing else. Never log or store a PIN or a token in clear text.
 
 ## Check your change
 
 ```bash
 npm install                     # once
-npm run dev                     # the game: open http://localhost:5173 (Hra pro jednoho)
+npm run dev                     # the game: open http://localhost:5173 (Hrát sám)
 npm test                        # unit tests + the Node server over WebSocket (fast)
 npm run build                   # build into dist/
-npm run playtest                # single player in a real browser (36 checks, needs the build)
-npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart
-npm run test:worlds             # Node server with 2 worlds + 2 browsers: world menu, isolation, creative, saves per world
+npm run playtest                # menu + single player in a real browser (42 checks, needs the build)
+npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart; then player profiles (name + PIN, backpack on the server, admin page)
+npm run test:worlds             # Node server with 2 worlds + 2 browsers: world buttons, password once, isolation, creative, saves per world
 npm run test:peer               # browser host + browser client over PeerJS (needs internet)
 npm start                       # the server on http://localhost:8787 (serves dist/)
 npm run test:load               # 8 simulated players: server memory, CPU, time per world step

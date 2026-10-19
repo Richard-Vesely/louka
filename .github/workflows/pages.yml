@@ -1,6 +1,6 @@
-# Po každém sloučení do main se hra nahraje na GitHub Pages (hra pro jednoho a "Vytvořit server" fungují i odtud).
+# Po každém sloučení do main se hra nahraje na GitHub Pages (hra pro jednoho a "Vytvořit server na svém počítači" fungují i odtud).
 # Adresa serveru kroužku: Settings → Secrets and variables → Actions → Variables: SERVER_URL (např. hry.example.cz).
-# Pak menu ukáže tlačítko "Hrát na serveru". Pages musí mít v Settings → Pages zdroj "GitHub Actions".
+# Pak menu ukáže tlačítka světů serveru kroužku (seznam z https://<SERVER_URL>/worlds). Pages musí mít v Settings → Pages zdroj "GitHub Actions".
 name: Pages
 on:
   push:

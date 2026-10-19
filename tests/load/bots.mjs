@@ -31,7 +31,7 @@ for (let i = 0; i < N; i++) {
     const m = JSON.parse(raw.toString());
     if (m[0] === 'mobs') bot.mobs = m[3];
   });
-  ws.on('open', () => ws.send(JSON.stringify(['hello', { name: `Bot ${i + 1}`, v: 2, world: worldIds[i % WORLDS] }])));
+  ws.on('open', () => ws.send(JSON.stringify(['hello', { name: `Bot ${i + 1}`, pin: '1234', v: 2, world: worldIds[i % WORLDS] }])));
   bots.push(bot);
   await sleep(150);
 }

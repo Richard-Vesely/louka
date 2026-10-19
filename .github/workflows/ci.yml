@@ -35,6 +35,10 @@ jobs:
         env:
           PLAYTEST_QUALITY: low
         run: node tests/playtest/server-mp.mjs playtest-server
+      - name: Multiplayer – player profiles (name + PIN, backpack on the server, admin page)
+        env:
+          PLAYTEST_QUALITY: low
+        run: node tests/playtest/server-profiles.mjs playtest-profiles
       - name: Multiplayer – two worlds on one Node server + 2 browsers
         env:
           PLAYTEST_QUALITY: low
