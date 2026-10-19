@@ -86,7 +86,7 @@ function chipColors(t) {
   }
   if (t.kind === 'tree') return t.tree.mark ? [[0.3, 0.45, 0.75], [0.2, 0.3, 0.55]] : [CHIP.tree, shade(CHIP.tree, 0.7), [0.55, 0.42, 0.28]];
   if (t.kind === 'rock') return t.rock.iron ? [CHIP.iron, CHIP.rock, shade(CHIP.rock, 0.7)] : [CHIP.rock, shade(CHIP.rock, 0.75), shade(CHIP.rock, 1.2)];
-  if (t.kind === 'grass') return [CHIP.grass, shade(CHIP.grass, 1.3), [0.4, 0.55, 0.15]];
+  if (t.kind === 'grass') return [[0.2, 0.36, 0.1], [0.27, 0.42, 0.13], [0.16, 0.29, 0.08]];
   if (t.kind === 'vehicle') return [[0.75, 0.15, 0.12], [0.3, 0.3, 0.32], [0.7, 0.72, 0.75]];
   return [CHIP.planks];
 }
@@ -100,7 +100,8 @@ function mineTick(t) {
 }
 // Rozbití: hromada úlomků (64 na vysoké grafice, 16 na nízké) a zvuk materiálu
 function breakFx(t, at) {
-  emitChips(at, chipColors(t), breakCount(), { speed: 2.4, up: 2.4, spread: t.kind === 'tree' ? 0.6 : 0.45 });
+  if (t.kind === 'grass') emitChips(at, chipColors(t), Math.ceil(breakCount() / 4), { speed: 1.4, up: 2, size: [0.025, 0.045], life: [0.3, 0.8], spread: 0.3 }); // jen pár stébel
+  else emitChips(at, chipColors(t), breakCount(), { speed: 2.4, up: 2.4, spread: t.kind === 'tree' ? 0.6 : 0.45 });
   materialSound('break', matOf(t));
 }
 

@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { BLOCKS, shapeBoxes } from '../../../shared/data/index.js';
 import { blockMeta, bkey } from '../../../shared/world/state.js';
-import { groundHeight } from '../../../shared/world/voxels.js';
+import { terrainH } from '../../../shared/world/terrain.js';
 import { QUALITY } from '../game/prefs.js';
 import { scene } from './renderer.js';
 
@@ -77,7 +77,7 @@ function fitDecal(x, z) {
   if (decalCell === key) return;
   decalCell = key;
   const p = decal.geometry.attributes.position;
-  for (let i = 0; i < p.count; i++) p.setY(i, groundHeight(x + 0.5 + p.getX(i), z + 0.5 + p.getZ(i)) + 0.02);
+  for (let i = 0; i < p.count; i++) p.setY(i, terrainH(x + 0.5 + p.getX(i), z + 0.5 + p.getZ(i)) + 0.02); // hladký povrch terénu
   p.needsUpdate = true;
   decal.geometry.computeBoundingSphere();
   decal.position.set(x + 0.5, 0, z + 0.5);

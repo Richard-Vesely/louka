@@ -203,7 +203,7 @@ function itemInfo(id, el) {
   if (maxDur(id)) {
     const left = s?.id === id ? durLeft(s) : maxDur(id), low = left <= maxDur(id) * 0.1;
     lines.push(`<span class="tt-dur${low ? ' low' : ''}">Odolnost ${left} / ${maxDur(id)}</span>`);
-    if (s?.id === id && isWorn(s)) lines.push(`Oprava: 2 stejné kusy nebo kus + ${repairMatName(id)} v mřížce výroby`);
+    if (s?.id === id && isWorn(s) && !el.dataset.out) lines.push(`Oprava: 2 stejné kusy nebo kus + ${repairMatName(id)} v mřížce výroby`);
   }
   if (d.fly) lines.push(`Po snězení ${d.fly} s létání`);
   if (d.utensil) lines.push(id === 'hoe' ? 'Pravé tl. na trávu/hlínu = zorat pole' : 'Kuchyňské nádobí (pro sporák)');
