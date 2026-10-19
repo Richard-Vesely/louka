@@ -2,6 +2,7 @@
 import '../world/shrine.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
+import { FX, GLOW, LK } from './look.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BLOCKS, CROPS, SHAPES } from '../../../shared/data/index.js';
 import { on } from '../../../shared/events.js';
@@ -17,9 +18,10 @@ import { buildElecModel, rebuildCables } from '../machines/power.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { dummy, lumpy } from './forest.js';
-import { camera, scene } from './renderer.js';
+import { U, camera, scene } from './renderer.js';
 import { glowTex } from './sky.js';
 import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, dirtTex, farmlandTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, markdirtTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, rockTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex } from './textures.js';
+import { normalMapFrom } from './textures.js';
 
 // ============================================================ položené bloky a stavby
 const blockMats = {
@@ -51,6 +53,8 @@ const blockMats = {
   });
   for (const [id, b] of Object.entries(BLOCKS)) if (b.tint) blockMats[id] = M(concreteTex, 0.85, { color: b.tint }); // barevný beton
 }
+// Reliéf textur (normálové mapy z jasu) se střední a vysokou grafikou; hloubka podle vzhledu (LK.normals).
+if (FX.post && LK.normals > 0) for (const v of Object.values(blockMats)) for (const m of [v].flat()) if (m.map && !m.transparent) { m.normalMap = normalMapFrom(m.map); m.normalScale.setScalar(LK.normals); }
 export const blockMat = (type) => blockMats[BLOCKS[type]?.mat || type];
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 // Kvádr části bloku: UV podle polohy v buňce, takže textura na schodech a půlblocích navazuje jako na celých kostkách
@@ -73,7 +77,7 @@ function buildSpecial(type, key) {
   const g = new THREE.Group();
   const flames = [];
   const flame = (scale, y) => {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff8a2a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(0xff8a2a).multiplyScalar(GLOW), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     s.scale.setScalar(scale);
     s.position.y = y;
     s.userData.base = scale;
@@ -248,7 +252,7 @@ function buildSpecial(type, key) {
     const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), new THREE.MeshStandardMaterial({ color: 0x3a0a4a, emissive: 0xc040ff, emissiveIntensity: 2 }));
     core.position.y = 0.48;
     g.add(core);
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xb040ff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(0xb040ff).multiplyScalar(GLOW), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     s.scale.setScalar(1.2);
     s.position.y = 0.48;
     s.userData.base = 1.2;
@@ -400,5 +404,12 @@ export function updateLights(time) {
     l.position.set(s.x + 0.5, s.ry + (s.type === 'campfire' ? 0.6 : s.type === 'electric_lamp' ? 1.2 : s.type === 'bulb_lamp' ? 0.45 : 0.85), s.z + 0.5);
     l.intensity = BLOCKS[s.type].light * (BLOCKS[s.type].elec ? 1 : flick); // žárovka nebliká
   });
+  // stejná světla dostane i terén a tráva (mají vlastní shader, viz POINT_GLSL v light-glsl.js)
+  for (let i = 0; i < U.pl.value.length; i++) {
+    const l = lightPool[i];
+    if (!l || l.intensity <= 0) { U.pl.value[i].w = 0; continue; }
+    U.pl.value[i].set(l.position.x, l.position.y, l.position.z, l.intensity);
+    U.plColor.value[i].set(l.color.r, l.color.g, l.color.b);
+  }
   for (const s of list) for (const f of s.flames) f.scale.setScalar(f.userData.base * (0.85 + 0.2 * Math.sin(time * 17 + s.x + f.position.y * 9)));
 }

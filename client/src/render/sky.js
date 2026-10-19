@@ -3,6 +3,7 @@ import './renderer.js'; // pořadí spouštění: nejdřív předchozí modul (v
 import { Sky } from 'three/addons/objects/Sky.js';
 import * as THREE from 'three';
 import { rng } from '../../../shared/util.js';
+import { LK } from './look.js';
 import { renderer, scene } from './renderer.js';
 
 // ============================================================ obloha, slunce, měsíc, hvězdy
@@ -10,7 +11,10 @@ export const sky = new Sky();
 sky.scale.setScalar(10000);
 scene.add(sky);
 export const skyU = sky.material.uniforms;
-skyU.rayleigh.value = 1.4;
+skyU.rayleigh.value = LK.sky.rayleigh;
+// jas oblohy podle vzhledu (bez toho je obloha proti krajině moc světlá)
+skyU.skyGain = { value: 1 };
+sky.material.fragmentShader = 'uniform float skyGain;\n' +sky.material.fragmentShader.replace('gl_FragColor = vec4( retColor, 1.0 );', 'gl_FragColor = vec4( retColor * skyGain, 1.0 );');
 skyU.mieCoefficient.value = 0.004;
 skyU.mieDirectionalG.value = 0.82;
 export const sunDir = new THREE.Vector3();
@@ -35,6 +39,7 @@ export const moon = new THREE.Sprite(new THREE.SpriteMaterial({
   fog: false, depthWrite: false, transparent: true,
 }));
 moon.scale.setScalar(420);
+moon.renderOrder = -2; // měsíc a hvězdy za mraky (render/clouds.js)
 scene.add(moon);
 export const stars = (() => {
   const n = 2500, pos = new Float32Array(n * 3), r = rng(42);
@@ -46,6 +51,7 @@ export const stars = (() => {
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.7, sizeAttenuation: false, transparent: true, fog: false, depthWrite: false }));
   p.frustumCulled = false;
+  p.renderOrder = -2;
   return p;
 })();
 scene.add(stars);

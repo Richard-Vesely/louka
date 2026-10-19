@@ -6,15 +6,20 @@ import { V, VMIN, VOX, editAt, naturalAt, topY, voxEdits } from '../../../shared
 import { dirtyVoxChunks } from '../world/dig.js';
 import { TERRAIN_GLSL } from './glsl.js';
 import { renderer, scene } from './renderer.js';
-import { stoneField } from './textures.js';
+import { FX, LK } from './look.js';
+import { normalMapFrom, stoneField } from './textures.js';
 
 // ============================================================ podzemí – vykreslení
 // Atlas textur podzemních bloků: hlína, kámen, uhlí, železo, krystal, podloží.
+// Druhý atlas = co svítí: jen tečky krystalu a markoritu (zbytek černý), aby kámen kolem nich nezářil.
+let voxGlowTex = null;
 const voxAtlasTex = (() => {
   const T = 64, N = 18, c = document.createElement('canvas');
   c.width = T * N; c.height = T;
-  const g = c.getContext('2d'), img = g.createImageData(T * N, T);
+  const g = c.getContext('2d'), img = g.createImageData(T * N, T), glow = g.createImageData(T * N, T);
+  for (let i = 3; i < glow.data.length; i += 4) glow.data[i] = 255;
   const put = (tile, x, y, col) => img.data.set([clamp(col[0], 0, 255), clamp(col[1], 0, 255), clamp(col[2], 0, 255), 255], (y * T * N + tile * T + x) * 4);
+  const putGlow = (tile, x, y, col) => glow.data.set([col[0], col[1], col[2], 255], (y * T * N + tile * T + x) * 4);
   const f = (x, y, s) => stoneField[((y * 4 + s * 37) & 255) * 256 + ((x * 4 + s * 91) & 255)];
   const mul = (c3, k) => [c3[0] * k, c3[1] * k, c3[2] * k];
   for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
@@ -40,7 +45,13 @@ const voxAtlasTex = (() => {
     put(15, x, y, spot ? (f(x, y, 13) > 0.6 ? mul([80, 170, 120], 0.9 + grain) : mul([216, 120, 66], 0.8 + grain * 2)) : stone); // měď (s měděnkou)
     put(16, x, y, spot ? mul([250, 206, 70], 0.85 + grain * 2) : stone); // zlato
     put(17, x, y, spot ? mul([246, 242, 255], 0.9 + grain) : stone); // křemen
+    if (spot) { putGlow(4, x, y, [140, 245, 255]); putGlow(7, x, y, [255, 110, 245]); }
   }
+  const gc = document.createElement('canvas');
+  gc.width = T * N; gc.height = T;
+  gc.getContext('2d').putImageData(glow, 0, 0);
+  voxGlowTex = new THREE.CanvasTexture(gc);
+  voxGlowTex.colorSpace = THREE.SRGBColorSpace;
   g.putImageData(img, 0, 0);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -63,8 +74,10 @@ function clipToTerrain(mat) {
 }
 const voxMats = [
   clipToTerrain(new THREE.MeshStandardMaterial({ map: voxAtlasTex, vertexColors: true, roughness: 0.95 })),
-  clipToTerrain(new THREE.MeshStandardMaterial({ map: voxAtlasTex, vertexColors: true, roughness: 0.35, emissive: 0xffffff, emissiveMap: voxAtlasTex, emissiveIntensity: 1.1 })),
+  clipToTerrain(new THREE.MeshStandardMaterial({ map: voxAtlasTex, vertexColors: true, roughness: 0.35, emissive: 0xffffff, emissiveMap: FX.post ? voxGlowTex : voxAtlasTex, emissiveIntensity: FX.post ? 1.6 : 1.1 })),
 ];
+// reliéf kamene (střední a vysoká grafika)
+if (FX.post && LK.normals > 0) for (const m of voxMats) { m.normalMap = normalMapFrom(voxAtlasTex, 64); m.normalScale.setScalar(LK.normals); }
 
 const VFACES = [
   { dir: [-1, 0, 0], corners: [[0, 1, 0, 0, 1], [0, 0, 0, 0, 0], [0, 1, 1, 1, 1], [0, 0, 1, 1, 0]] },

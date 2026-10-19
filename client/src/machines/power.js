@@ -11,7 +11,8 @@ import { buildComputerModel, drawPCScreen } from '../pc/computer.js';
 import { buildPrinterModel, printerDev } from '../pc/printer.js';
 import { specials } from '../render/blocks.js';
 import { dummy } from '../render/forest.js';
-import { scene } from '../render/renderer.js';
+import { LK } from '../render/look.js';
+import { U as UNI, scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { iconImg, slotHTML, ui } from '../ui/inventory-ui.js';
 
@@ -23,6 +24,34 @@ const cableMats = {
   copper: new THREE.MeshStandardMaterial({ color: 0xc8743a, metalness: 0.6, roughness: 0.4 }),
   gold: new THREE.MeshStandardMaterial({ color: 0xf2c440, metalness: 0.8, roughness: 0.3 }),
 };
+// Futuristické kabely (vzhled s LK.neon): kudy teče proud, běží po kabelu svítící pulzy (rychlost podle odběru sítě).
+// aPow = 0 bez proudu, jinak 0,3–1 podle toho, kolik síť právě odebírá.
+const NEON = { copper: 0x2ae8ff, gold: 0xff4ad8 };
+if (LK.neon) for (const [name, m] of Object.entries(cableMats)) {
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = UNI.time;
+    sh.uniforms.uNeon = { value: new THREE.Color(NEON[name]).multiplyScalar(LK.neon) };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', `#include <common>
+attribute float aPow;
+varying float vPow;
+varying vec3 vCW;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+vPow = aPow;
+vCW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform float uTime;
+uniform vec3 uNeon;
+varying float vPow;
+varying vec3 vCW;`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        if (vPow > 0.0) {
+          float run = fract((vCW.x + vCW.y + vCW.z) * 1.5 - uTime * (0.8 + 2.4 * vPow));
+          totalEmissiveRadiance += uNeon * vPow * (0.25 + 2.2 * smoothstep(0.75, 1.0, run));
+        }`);
+  };
+}
 const cableGeos = { c: new THREE.BoxGeometry(0.2, 0.2, 0.2), a: new THREE.BoxGeometry(0.41, 0.12, 0.12).translate(0.295, 0, 0) };
 const ARM_ROT = [[0, 0, 0], [0, Math.PI, 0], [0, 0, Math.PI / 2], [0, 0, -Math.PI / 2], [0, -Math.PI / 2, 0], [0, Math.PI / 2, 0]];
 const cablePool = new Map();
@@ -37,12 +66,12 @@ export function rebuildCables() {
     dummy.scale.set(1, 1, 1);
     dummy.rotation.set(0, 0, 0);
     dummy.updateMatrix();
-    push(`${B.cable}|c`, dummy.matrix.clone());
+    push(`${B.cable}|c`, [dummy.matrix.clone(), k]);
     DIRS6.forEach(([dx, dy, dz], i) => {
       if (!elecOf(blocks.get(bkey(x + dx, y + dy, z + dz)))) return;
       dummy.rotation.set(...ARM_ROT[i]);
       dummy.updateMatrix();
-      push(`${B.cable}|a`, dummy.matrix.clone());
+      push(`${B.cable}|a`, [dummy.matrix.clone(), k]);
     });
   }
   for (const [key, list] of lists) {
@@ -50,12 +79,15 @@ export function rebuildCables() {
     if (!m || m.instanceMatrix.count < list.length) {
       if (m) { scene.remove(m); m.dispose(); }
       const [mat, part] = key.split('|');
-      m = new THREE.InstancedMesh(cableGeos[part], cableMats[mat], Math.max(64, Math.ceil(list.length * 1.5)));
+      const n = Math.max(64, Math.ceil(list.length * 1.5));
+      m = new THREE.InstancedMesh(cableGeos[part].clone(), cableMats[mat], n);
+      m.geometry.setAttribute('aPow', new THREE.InstancedBufferAttribute(new Float32Array(n), 1));
       m.frustumCulled = false;
       scene.add(m);
       cablePool.set(key, m);
     }
-    list.forEach((mt, i) => m.setMatrixAt(i, mt));
+    list.forEach(([mt], i) => m.setMatrixAt(i, mt));
+    m.userData.keys = list.map(([, k]) => k);
     m.count = list.length;
     m.instanceMatrix.needsUpdate = true;
   }
@@ -154,7 +186,16 @@ export function buildElecModel(type, g) {
   else if (type === 'printer') buildPrinterModel(g);
 }
 // Vzhled zařízení podle stavu (svítí, točí se, ukazuje nabití)
+let neonT = 0;
 export function updatePowerVisuals(dt, time) {
+  if (LK.neon && (neonT -= dt) <= 0) { // proud v kabelech (4× za sekundu stačí)
+    neonT = 0.25;
+    for (const m of cablePool.values()) {
+      const a = m.geometry.getAttribute('aPow'), keys = m.userData.keys || [];
+      for (let i = 0; i < keys.length; i++) { const st = netStats(keys[i]); a.array[i] = st && st[1] > 0 ? 0.3 + 0.7 * Math.min(1, st[1] / Math.max(1, st[4] * 0.5)) : 0; }
+      a.needsUpdate = true;
+    }
+  }
   for (const [k, s] of specials) {
     const e = elecOf(s.type);
     if (!e) continue;

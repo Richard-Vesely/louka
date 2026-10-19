@@ -14,6 +14,12 @@ export const GFX = {
   medium: { pr: 1.25, aa: true, grass: [80000, 50000], gs: 0.9, trees: 150, rocks: 120, lights: 4, particles: 0.7, fog: 0.0068 },
   high: { pr: 1.5, aa: true, grass: [150000, 100000], gs: 1, trees: 190, rocks: 150, lights: 6, particles: 1, fog: 0.0058 },
 }[QUALITY];
+// Vzhled grafiky (zkušební): ?look=a (stylizovaný, jako Hytale), ?look=b (realistické sci-fi), ?look=c (mix, výchozí).
+// Parametry vzhledů jsou v client/src/render/look.js.
+export const LOOK = (() => {
+  const q = new URLSearchParams(location.search).get('look');
+  return ['a', 'b', 'c'].includes(q) ? q : ['a', 'b', 'c'].includes(PREFS.look) ? PREFS.look : 'c';
+})();
 export const prefNum = (k, d) => (Number.isFinite(+PREFS[k]) && +PREFS[k] > 0 ? +PREFS[k] : d);
 export let lookSens = prefNum('sens', 1); // citlivost otáčení (myš i dotyk)
 // Hra pro jednoho má svoje uložení; svět serveru i hráč na cizím serveru se ukládají zvlášť.

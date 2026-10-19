@@ -7,7 +7,9 @@ import { TREE_THICK, rockAt, treeAt } from '../../../shared/world/nature.js';
 import { isMark, terrainH } from '../../../shared/world/terrain.js';
 import { GFX } from '../game/prefs.js';
 import { refreshPonds } from '../world/fishing.js';
-import { scene } from './renderer.js';
+import { FX, LK } from './look.js';
+import { U, scene } from './renderer.js';
+import { SHADOW_LAYER } from './shadows.js';
 import { refreshShards } from './shards.js';
 import { rockTex } from './textures.js';
 
@@ -24,11 +26,44 @@ export function lumpy(geo, amt, seed) {
   return geo;
 }
 const MAX_TREES = 3000, TREE_RADIUS = GFX.trees; // dohled lesa podle nastavení grafiky
-const makeInstanced = (geo, mat, n) => { const m = new THREE.InstancedMesh(geo, mat, n); m.frustumCulled = false; m.count = 0; scene.add(m); return m; };
-const trunks = makeInstanced(new THREE.CylinderGeometry(0.16, 0.28, 1, 7).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0x5b4632, roughness: 1 }), MAX_TREES);
-const blobs = makeInstanced(lumpy(new THREE.IcosahedronGeometry(1, 2), 0.22, 1.3).scale(1, 0.85, 1), new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: true }), MAX_TREES * 5);
-const cones = makeInstanced(lumpy(new THREE.ConeGeometry(1, 1, 9, 3).translate(0, 0.5, 0), 0.08, 2.1), new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), MAX_TREES * 4);
+// Vítr v korunách: koruna se kývá (víc nahoře), listí se třepotá. Posun dělá vertex shader, takže to nic nestojí.
+// kmen = true: kmen se ohýbá jen nahoře a málo.
+function windy(mat, trunk = false) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = U.time;
+    sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      diffuseColor.rgb = max(mix(vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), diffuseColor.rgb, ${LK.foliage.toFixed(3)}), 0.0) * ${(trunk ? 1 : LK.leaves).toFixed(3)};`);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime;').replace('#include <begin_vertex>', `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+      {
+        vec3 ip = instanceMatrix[3].xyz;
+        float ph = ip.x * 0.37 + ip.z * 0.21;
+        float gust = 0.55 + 0.45 * sin(uTime * 0.35 + ip.x * 0.02) * sin(uTime * 0.13 + 1.0);
+        vec2 sway = vec2(1.0, 0.35) * (sin(uTime * 1.2 + ph) * 0.6 + sin(uTime * 2.1 + ph * 1.7) * 0.3) * gust * ${(0.045 * LK.wind).toFixed(4)};
+        ${trunk ? 'transformed.xz += sway * transformed.y * transformed.y * 0.6;' : `transformed.xz += sway * (0.6 + 0.4 * clamp(position.y, -1.0, 1.0));
+        transformed += normalize(position + vec3(0.0, 0.001, 0.0)) * sin(uTime * 7.0 + dot(position, vec3(4.0)) + ph) * ${(0.018 * LK.wind).toFixed(4)} * gust;`}
+      }
+      #endif`);
+  };
+  return mat;
+}
+const makeInstanced = (geo, mat, n) => { const m = new THREE.InstancedMesh(geo, mat, n); m.frustumCulled = false; m.count = 0; m.userData.noCast = FX.shadows; scene.add(m); return m; };
+const trunks = makeInstanced(new THREE.CylinderGeometry(0.16, 0.28, 1, 7).translate(0, 0.5, 0), windy(new THREE.MeshStandardMaterial({ color: 0x5b4632, roughness: 1 }), true), MAX_TREES);
+const blobs = makeInstanced(lumpy(new THREE.IcosahedronGeometry(1, 2), 0.22, 1.3).scale(1, 0.85, 1), windy(new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: true })), MAX_TREES * 5);
+const cones = makeInstanced(lumpy(new THREE.ConeGeometry(1, 1, 9, 3).translate(0, 0.5, 0), 0.08, 2.1), windy(new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true })), MAX_TREES * 4);
 const rocks = makeInstanced(lumpy(new THREE.IcosahedronGeometry(1, 1), 0.3, 4.2).scale(1, 0.6, 1), new THREE.MeshStandardMaterial({ map: rockTex, roughness: 0.95, flatShading: true }), 1500);
+// Stínové kopie blízkých stromů a balvanů: vrhají stín, ale vidět nejsou (vrstva SHADOW_LAYER, viz render/shadows.js).
+// Celý les do mapy stínů kreslit nejde (tisíce stromů), tak se do ní dávají jen ty v dosahu stínů.
+const SHADOW_R2 = (FX.shadowRange + 34) ** 2, proxyMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+const proxies = new Map();
+if (FX.shadows) for (const [src, n] of [[trunks, 1200], [blobs, 3000], [cones, 2400], [rocks, 400]]) {
+  const p = new THREE.InstancedMesh(src.geometry, proxyMat, n);
+  Object.assign(p, { frustumCulled: false, count: 0, castShadow: true });
+  p.layers.set(SHADOW_LAYER);
+  p.userData.sh = 1;
+  scene.add(p);
+  proxies.set(src, p);
+}
 // (kde roste který strom a leží který balvan: treeAt a rockAt v shared/world/nature.js)
 
 export const forestTrees = [], forestRocks = [], forestColliders = [];
@@ -43,6 +78,7 @@ export function rebuildForest(px, pz, force = false) {
   forestKey = key;
   forestTrees.length = forestRocks.length = forestColliders.length = 0;
   let nt = 0, nb = 0, nc = 0, nr = 0;
+  for (const p of proxies.values()) p.count = 0;
   const put = (mesh, i, x, y, z, sx, sy, sz, ry, color, rx = 0, rz = 0) => {
     dummy.position.set(x, y, z);
     dummy.rotation.set(rx, ry, rz);
@@ -50,6 +86,8 @@ export function rebuildForest(px, pz, force = false) {
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     mesh.setColorAt(i, color);
+    const p = proxies.get(mesh);
+    if (p && p.count < p.instanceMatrix.count && (x - px) ** 2 + (z - pz) ** 2 < SHADOW_R2) p.setMatrixAt(p.count++, dummy.matrix);
   };
   const R2 = TREE_RADIUS * TREE_RADIUS;
   for (let cz = Math.floor((pz - TREE_RADIUS) / TREE_CELL); cz <= Math.floor((pz + TREE_RADIUS) / TREE_CELL); cz++) {
@@ -120,6 +158,7 @@ export function rebuildForest(px, pz, force = false) {
     m.instanceMatrix.needsUpdate = true;
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }
+  for (const p of proxies.values()) p.instanceMatrix.needsUpdate = true;
   refreshShards(px, pz);
   refreshPonds(px, pz);
 }

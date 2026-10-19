@@ -5,6 +5,7 @@ import { MARK_X } from '../../../shared/world/terrain.js';
 import { DIG_N } from '../../../shared/world/voxels.js';
 import { digTex } from '../world/dig.js';
 import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
+import { AMBIENT_GLSL, POINT_GLSL, SHADOW_PARS_GLSL } from './light-glsl.js';
 import { scene, shaderUniforms } from './renderer.js';
 import { detailTex } from './textures.js';
 
@@ -58,6 +59,9 @@ const groundMat = new THREE.ShaderMaterial({
     varying vec4 vWa, vWb;
     varying float vLava;
     ${NOISE_GLSL}
+    ${SHADOW_PARS_GLSL}
+    ${AMBIENT_GLSL}
+    ${POINT_GLSL}
     void main() {
       vec2 p = vWorld.xz;
       // Vykopaný sloupec: povrch se nekreslí, je vidět díra do podzemí.
@@ -72,8 +76,11 @@ const groundMat = new THREE.ShaderMaterial({
       vec3 far = biomeGround(vWa, vWb, meadowColor(m, coarse, mk) * (0.8 + coarse * 0.4), coarse);
       vec3 near = biomeSoil(vWa, vWb, soil, biomeGround(vWa, vWb, vec3(0.0), fine) / max(0.001, vWa.z + vWb.x + vWb.z + vWa.y + vWa.w + vWb.y + vWb.w));
       vec3 col = mix(near, far, smoothstep(8.0, 45.0, length(p - uCam.xz)));
-      float diff = max(dot(normalize(vN), uSunDir), 0.0);
-      vec3 lit = col * (uAmbient * 0.9 + uSunColor * diff);
+      col = foliage(col);
+      vec3 n = normalize(vN);
+      float diff = max(dot(n, uSunDir), 0.0);
+      if (diff > 0.0) diff *= sunShadow(vWorld, n, ign(gl_FragCoord.xy));
+      vec3 lit = col * (hemiLight(n, uAmbient) * 0.9 + uSunColor * diff + pointLights(vWorld, n, 0.0));
       // Láva v kráteru sopky svítí sama (pulzuje)
       if (vLava > 0.001) lit = mix(lit, vec3(1.0, 0.3, 0.04) * (1.4 + 0.5 * sin(uTime * 1.3 + p.x * 0.4) * sin(uTime * 0.9 + p.y * 0.3)) * (0.7 + fine * 0.6), vLava);
       if (uHeadOn > 0.0) lit += col * headlight(vWorld);

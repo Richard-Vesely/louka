@@ -23,14 +23,18 @@ import { updateInteraction } from '../player/interaction.js';
 import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
 import { updateShards, updateSurvival } from '../player/survival.js';
 import { rebuildBlocks, specials, updateLights } from '../render/blocks.js';
-import { applyUnderground, updateDay } from '../render/daylight.js';
+import { applyUnderground, underground, updateDay } from '../render/daylight.js';
 import { applyDimension } from '../render/dimension.js';
 import { rebuildForest } from '../render/forest.js';
 import { grassLayers, regrowGrass } from '../render/grass.js';
 import { ground } from '../render/ground.js';
 import { updateHeldModel, updateSwing } from '../render/held-item.js';
 import { debris, sparks } from '../render/particles.js';
+import { initClouds, updateClouds } from '../render/clouds.js';
+import { renderFrame } from '../render/post.js';
 import { U, camera, renderer, scene } from '../render/renderer.js';
+import { initShadows, updateShadows } from '../render/shadows.js';
+import { updateWater } from '../render/water.js';
 import { sky, stars, updateEnvironment } from '../render/sky.js';
 import { updateVoxChunks } from '../render/vox-mesh.js';
 import { $ } from '../ui/dom.js';
@@ -59,6 +63,8 @@ rebuildForest(player.pos.x, player.pos.z, true);
 rebuildBlocks();
 updateDay(0);
 updateEnvironment();
+initShadows();
+initClouds();
 renderHotbar();
 updateTips();
 if (!save) $('intro').style.display = 'grid';
@@ -126,6 +132,7 @@ export function tick(realDt) {
   sky.position.copy(camera.position);
   ground.position.set(Math.round(camera.position.x / 4) * 4, 0, Math.round(camera.position.z / 4) * 4);
   stars.position.copy(camera.position);
+  updateClouds();
   // odlesky oblohy (drahé, ~10 ms) jen když se znatelně posunul čas dne, nejpozději po 12 s
   if ((envTimer += realDt) > 3 && (Math.abs(dayTime - envDay) > 0.012 || envTimer > 12)) { envTimer = 0; envDay = dayTime; updateEnvironment(); }
   cullFar(realDt);
@@ -139,7 +146,11 @@ export function tick(realDt) {
   updateHUD(realDt);
   touchUI.update(realDt);
   NET.update(realDt);
-  if (performance.now() - lastFrameAt < 300) renderer.render(scene, camera); // na pozadí se nevykresluje
+  if (performance.now() - lastFrameAt < 300) { // na pozadí se nevykresluje
+    updateShadows(realDt, underground);
+    updateWater();
+    renderFrame(realDt);
+  }
 }
 // Objekty za mlhou (stroje, zříceniny, krystaly, vozidla, papíry…) se nekreslí. Skupiny se světlem viditelným zdálky
 // (sprity, materiály bez mlhy) a skupiny v počátku souřadnic (obsah rozmístěný po světě) zůstávají. Skrývá jen to, co sama skryla.

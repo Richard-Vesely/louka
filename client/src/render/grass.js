@@ -7,6 +7,7 @@ import { DIG_N } from '../../../shared/world/voxels.js';
 import { GRASS_LAYERS } from '../game/prefs.js';
 import { digTex } from '../world/dig.js';
 import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
+import { AMBIENT_GLSL, POINT_GLSL, SHADOW_PARS_GLSL } from './light-glsl.js';
 import { scene, shaderUniforms } from './renderer.js';
 
 // ============================================================ tráva
@@ -74,11 +75,14 @@ function makeGrass(layer) {
       uniform sampler2D uCut, uDig;
       attribute vec2 aOffset, aExtra;
       attribute vec4 aParams;
-      varying float vT, vVar, vFlower, vMeadow;
-      varying vec3 vNormal, vWorld;
+      varying float vT, vVar, vFlower, vMeadow, vShadow;
+      varying vec3 vNormal, vWorld, vPoint;
       varying vec4 vWa, vWb;
+      uniform vec3 uSunDir;
       ${NOISE_GLSL}
       ${TERRAIN_GLSL}
+      ${SHADOW_PARS_GLSL}
+      ${POINT_GLSL}
       void main() {
         vec2 wp = uCam.xz + mod(aOffset - uCam.xz + uSize * 0.5, uSize) - uSize * 0.5;
         float t = position.y;
@@ -109,6 +113,9 @@ function makeGrass(layer) {
         vec3 world = vec3(wp.x, terrainHW(wp, wa, wb), wp.y) + local;
         vNormal = normalize(vec3(dir.x, 0.35 + t * 0.6, dir.y));
         vT = t; vVar = aExtra.x; vFlower = aExtra.y; vMeadow = m; vWorld = world;
+        // stín slunce pro celé stéblo (ve vrcholech je to mnohem levnější než v pixelech)
+        vShadow = h > 0.0 && dist < 70.0 ? sunShadow(world, vec3(0.0, 1.0, 0.0), aExtra.x) : 1.0;
+        vPoint = h > 0.0 ? pointLights(world, vec3(0.0, 1.0, 0.0), 1.0) : vec3(0.0); // pochodně (stébla svítí ze všech stran)
         vec4 mvPosition = viewMatrix * vec4(world, 1.0);
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
@@ -119,10 +126,12 @@ function makeGrass(layer) {
       uniform vec3 uSunDir, uSunColor, uAmbient, uHeadPos, uHeadDir;
       uniform float uHeadOn;
       vec3 headlight(vec3 p) { vec3 L = p - uHeadPos; float d = length(L); return vec3(1.0, 0.94, 0.78) * smoothstep(0.8, 0.95, dot(L / max(d, 0.001), uHeadDir)) * (1.0 - smoothstep(8.0, 38.0, d)) * uHeadOn * 2.2; }
-      varying float vT, vVar, vFlower, vMeadow;
-      varying vec3 vNormal, vWorld;
+      uniform float uSSS;
+      varying float vT, vVar, vFlower, vMeadow, vShadow;
+      varying vec3 vNormal, vWorld, vPoint;
       varying vec4 vWa, vWb;
       ${NOISE_GLSL}
+      ${AMBIENT_GLSL}
       void main() {
         float mk = step(${MARK_X.toFixed(1)}, vWorld.x);
         vec3 base = mix(vec3(0.03, 0.06, 0.012), vec3(0.01, 0.02, 0.07), mk);
@@ -134,6 +143,7 @@ function makeGrass(layer) {
           base = mix(base, btip * 0.3, other);
         }
         vec3 col = mix(base, tip, smoothstep(0.0, 0.9, vT));
+        col = foliage(col);
         if (vFlower > 0.5 && vT > 0.8) {
           col = vFlower < 1.5 ? vec3(0.95, 0.72, 0.08) : vFlower < 2.5 ? vec3(0.92, 0.92, 0.88) : vec3(0.45, 0.24, 0.75);
         }
@@ -142,9 +152,10 @@ function makeGrass(layer) {
         if (glow) col = vFlower < 2.0 ? vec3(0.3, 0.95, 1.0) : vec3(1.0, 0.35, 0.6);
         float diff = abs(dot(normalize(vNormal), uSunDir)) * 0.55 + 0.45;
         float ao = mix(0.3, 1.0, smoothstep(0.0, 0.7, vT));
-        vec3 lit = col * (uAmbient + uSunColor * diff) * ao;
+        vec3 lit = col * (hemiLight(vec3(0.0, 0.6 + vT * 0.4, 0.0), uAmbient) + uSunColor * diff * vShadow + vPoint) * ao;
         vec3 view = normalize(vWorld - cameraPosition);
-        lit += col * uSunColor * pow(max(dot(view, uSunDir), 0.0), 5.0) * vT * 0.9;
+        // proti slunci stébla prosvítají (žlutozeleně)
+        lit += col * vec3(1.0, 1.05, 0.7) * uSunColor * pow(max(dot(view, uSunDir), 0.0), 5.0) * vT * uSSS * 1.6 * vShadow;
         if (uHeadOn > 0.0) lit += col * headlight(vWorld);
         if (glow) lit = col * 1.6;
         gl_FragColor = vec4(lit, 1.0);
