@@ -154,7 +154,7 @@ npm install                     # once
 npm run dev                     # the game: open http://localhost:5173 (Hrát sám)
 npm test                        # unit tests + the Node server over WebSocket (fast)
 npm run build                   # build into dist/
-npm run playtest                # menu + single player in a real browser (42 checks, needs the build)
+npm run playtest                # menu + single player in a real browser (43 checks), then the inventory tricks (27 checks); needs the build
 npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart; then player profiles (name + PIN, backpack on the server, admin page)
 npm run test:worlds             # Node server with 2 worlds + 2 browsers: world buttons, password once, isolation, creative, saves per world
 npm run test:peer               # browser host + browser client over PeerJS (needs internet)

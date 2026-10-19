@@ -1,0 +1,151 @@
+/* Inventář, hotbar, tooltip a předměty: skleněný futuristický vzhled (přepisuje starší pixelový styl z game.css). */
+:root {
+  --inv-edge: rgba(130, 210, 255, 0.24);
+  --inv-glow: #46e0ff;
+  --inv-glow-soft: rgba(70, 224, 255, 0.38);
+  --inv-accent: #ff5fd2;
+  --inv-ok: #5dffb0;
+  --inv-text: #e8f4ff;
+  --inv-dim: #94a9c0;
+  --slot-bg: rgba(6, 12, 22, 0.62);
+  --rar0: #f2f6fb; --rar1: #ffe066; --rar2: #5ff0ff; --rar3: #d48bff;
+  --ui-font: 'Exo 2', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ---------- okno ---------- */
+#inventory { font-family: var(--ui-font); background: radial-gradient(ellipse at 50% 45%, rgba(10, 34, 56, 0.32), rgba(2, 5, 12, 0.8)); }
+#inventory .mc-window { gap: 12px; animation: invIn 0.18s ease-out; }
+body.touch #inventory .mc-window { animation-name: invFade; }
+@keyframes invIn { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+@keyframes invFade { from { opacity: 0; } }
+#inventory .mc-panel {
+  position: relative; padding: 14px 16px 16px; border: 1px solid var(--inv-edge); border-radius: 16px;
+  background: linear-gradient(160deg, rgba(36, 56, 84, 0.8), rgba(10, 15, 26, 0.88) 55%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 50px rgba(70, 224, 255, 0.05);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+#inventory .mc-panel::before { content: ''; position: absolute; left: 22px; right: 22px; top: -1px; height: 2px; border-radius: 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--inv-glow), var(--inv-accent), transparent); opacity: 0.8; }
+body.gfx-low #inventory .mc-panel, body.gfx-low #hotbar { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body.gfx-low #inventory .mc-panel { background: linear-gradient(160deg, rgb(30, 46, 70), rgb(10, 15, 26) 55%); }
+#inventory .mc-title { display: flex; align-items: center; gap: 8px; margin: 0 0 10px 2px; font: 700 14px var(--ui-font); letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--inv-text); text-shadow: 0 0 12px rgba(70, 224, 255, 0.35); }
+#inventory .mc-title::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--inv-glow); box-shadow: 0 0 8px var(--inv-glow); }
+#inventory .mc-note, #inventory .mc-foot { color: var(--inv-dim); font-size: 12.5px; }
+#inventory .mc-toggle { color: #c9dcef; font-size: 12.5px; }
+#inventory .mc-toggle input { accent-color: var(--inv-glow); }
+#inventory .mc-btn { font: 600 13px var(--ui-font); color: var(--inv-text); padding: 6px 12px; border-radius: 9px; border: 1px solid rgba(130, 210, 255, 0.28);
+  background: linear-gradient(180deg, rgba(62, 94, 134, 0.6), rgba(20, 32, 52, 0.8)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-shadow: none; transition: box-shadow 0.12s, border-color 0.12s, background 0.12s; }
+#inventory .mc-btn:hover { border-color: var(--inv-glow); background: linear-gradient(180deg, rgba(72, 124, 176, 0.7), rgba(24, 42, 66, 0.85));
+  box-shadow: 0 0 14px var(--inv-glow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+#inventory .mc-btn.on { border-color: var(--inv-glow); background: linear-gradient(180deg, rgba(38, 170, 204, 0.7), rgba(14, 80, 112, 0.85)); }
+#inventory .mc-btn.mini { margin-left: auto; padding: 3px 10px; font-size: 11.5px; letter-spacing: 0.02em; text-transform: none; }
+#inventory .mc-window > .mc-panel:not(.mc-book) { width: min-content; min-width: 392px; } /* tak široké jako batoh, nápověda se zalomí */
+#inventory .mc-foot { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+#inventory .mc-foot > span { flex-basis: 100%; margin-bottom: 2px; }
+.ico-sort { display: inline-block; width: 11px; height: 9px; margin-right: 5px; vertical-align: -1px;
+  background: linear-gradient(currentColor, currentColor) 0 0 / 100% 2px no-repeat, linear-gradient(currentColor, currentColor) 0 50% / 70% 2px no-repeat, linear-gradient(currentColor, currentColor) 0 100% / 40% 2px no-repeat; }
+#inventory .cat-tabs .mc-btn { padding: 3px 8px; font-size: 11.5px; border-radius: 7px; }
+#inventory .cat-tabs { gap: 4px; }
+
+/* ---------- políčka ---------- */
+.slot { border-radius: 9px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 45%), var(--slot-bg);
+  box-shadow: inset 0 0 0 1px rgba(140, 200, 255, 0.14), inset 0 3px 8px rgba(0, 0, 0, 0.45); transition: box-shadow 0.12s, background 0.12s, transform 0.12s; }
+.slot img { width: 30px; height: 30px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45)); }
+.slot b { right: 3px; bottom: 1px; font: 700 13px var(--ui-font); color: #fff; text-shadow: 0 1px 2px #000, 0 0 4px rgba(0, 0, 0, 0.9); }
+.grid, .rgrid, .cgrid { gap: 4px; }
+.grid { grid-template-columns: repeat(9, 40px); }
+.grid .slot:hover::before, .rgrid .slot:hover::before { display: none; }
+#inventory .slot[data-c]:not([data-c="cursor"]):hover, #inventory .rgrid .slot:hover, #inventory .slot[data-out]:hover {
+  background: linear-gradient(180deg, rgba(110, 235, 255, 0.16), rgba(70, 224, 255, 0.04)), var(--slot-bg);
+  box-shadow: inset 0 0 0 1px rgba(110, 235, 255, 0.85), 0 0 14px rgba(70, 224, 255, 0.45), inset 0 0 12px rgba(70, 224, 255, 0.18); transform: translateY(-1px); }
+.slot.rar1 { box-shadow: inset 0 0 0 1px rgba(255, 224, 102, 0.3), inset 0 -10px 14px -8px rgba(255, 224, 102, 0.35), inset 0 3px 8px rgba(0, 0, 0, 0.45); }
+.slot.rar2 { box-shadow: inset 0 0 0 1px rgba(95, 240, 255, 0.35), inset 0 -10px 14px -8px rgba(95, 240, 255, 0.45), inset 0 3px 8px rgba(0, 0, 0, 0.45); }
+.slot.rar3 { box-shadow: inset 0 0 0 1px rgba(212, 139, 255, 0.4), inset 0 -10px 14px -8px rgba(212, 139, 255, 0.55), inset 0 3px 8px rgba(0, 0, 0, 0.45); }
+#inventory .slot.drag, #inventory .slot.drag[data-c]:hover { background: linear-gradient(180deg, rgba(255, 95, 210, 0.22), rgba(255, 95, 210, 0.06)), var(--slot-bg);
+  box-shadow: inset 0 0 0 2px var(--inv-accent), 0 0 16px rgba(255, 95, 210, 0.5); }
+.slot .dur { position: absolute; left: 6px; right: 6px; bottom: 3px; height: 3px; border-radius: 2px; background: rgba(0, 0, 0, 0.8); pointer-events: none; }
+.slot .dur::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--f) * 100%); border-radius: 2px; background: var(--c); box-shadow: 0 0 4px var(--c); }
+.slot.ghost { background: rgba(70, 224, 255, 0.05); box-shadow: inset 0 0 0 1px rgba(70, 224, 255, 0.3); }
+.slot.ghost img { opacity: 0.38; filter: grayscale(0.2) drop-shadow(0 0 4px rgba(70, 224, 255, 0.6)); }
+.slot.out { width: 52px; height: 52px; border-radius: 12px; }
+.slot.out img { width: 36px; height: 36px; }
+.slot.out.ready { cursor: pointer; box-shadow: inset 0 0 0 1px rgba(110, 255, 190, 0.85), 0 0 18px rgba(80, 255, 170, 0.45); animation: ready 1.6s ease-in-out infinite; }
+@keyframes ready { 50% { box-shadow: inset 0 0 0 1px rgba(110, 255, 190, 1), 0 0 26px rgba(80, 255, 170, 0.7); } }
+.out-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.out-hint { min-height: 13px; font-size: 10.5px; color: #8fe9c0; white-space: nowrap; }
+.carrow { color: var(--inv-glow); text-shadow: 0 0 10px var(--inv-glow-soft); }
+.armor-col { gap: 4px; }
+.armor-pts { color: #bfe6ff; text-shadow: 0 0 8px rgba(70, 224, 255, 0.4); font-weight: 600; }
+/* kniha receptů: co můžeš vyrobit, svítí zeleně; co ne, je ztlumené s červeným okrajem */
+.rgrid .slot:not(.no) { box-shadow: inset 0 0 0 1px rgba(93, 255, 176, 0.38), inset 0 -10px 14px -8px rgba(93, 255, 176, 0.22), inset 0 3px 8px rgba(0, 0, 0, 0.45); }
+.rgrid .slot.no { background: rgba(14, 10, 18, 0.6); box-shadow: inset 0 0 0 1px rgba(255, 110, 130, 0.22), inset 0 3px 8px rgba(0, 0, 0, 0.5); }
+.rgrid .slot.no img { opacity: 0.42; filter: grayscale(0.6); }
+.k-row .slot.miss, #recipeDetail .slot.miss { background: rgba(110, 26, 40, 0.5); box-shadow: inset 0 0 0 1px rgba(255, 110, 120, 0.28); }
+.k-row .slot.have { background: rgba(30, 120, 80, 0.4); box-shadow: inset 0 0 0 1px rgba(110, 255, 190, 0.35); }
+.rgrid .slot.sel { outline: none; box-shadow: inset 0 0 0 2px var(--inv-glow), 0 0 12px var(--inv-glow-soft); }
+.rgrid { scrollbar-width: thin; scrollbar-color: rgba(70, 224, 255, 0.45) transparent; }
+.k-steps, .power-stats, #recipeDetail { border-radius: 10px; background: rgba(0, 0, 0, 0.28); box-shadow: inset 0 0 0 1px rgba(140, 200, 255, 0.12); }
+.parrow { border-radius: 7px; background: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 0 1px rgba(140, 200, 255, 0.16); }
+.parrow i { border-radius: 5px; background: linear-gradient(90deg, #46e0ff, #e8fbff); box-shadow: 0 0 8px rgba(70, 224, 255, 0.7); }
+.parrow.fuelbar i { background: linear-gradient(90deg, #ff6a2a, #ffd27a); box-shadow: 0 0 8px rgba(255, 140, 60, 0.7); }
+.grid.sorted .slot { animation: sorted 0.45s ease-out; }
+@keyframes sorted { 0% { transform: scale(0.88); box-shadow: inset 0 0 0 1px var(--inv-glow), 0 0 14px var(--inv-glow-soft); } }
+
+/* ---------- předmět v kurzoru ---------- */
+#cursorItem .slot { background: none; box-shadow: none; transform: scale(1.14); filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.5)); }
+#cursorItem .slot.spent img { opacity: 0.3; }
+#cursorItem .slot.spent b { display: none; }
+
+/* ---------- tooltip ---------- */
+#tooltip { max-width: 290px; padding: 9px 12px 10px; font: 500 13px var(--ui-font); color: var(--inv-text); text-shadow: none; border-radius: 12px; outline: none;
+  background: linear-gradient(160deg, rgba(28, 42, 64, 0.97), rgba(8, 12, 22, 0.97)); border: 1px solid rgba(130, 210, 255, 0.3);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4); }
+#tooltip.rar1 { border-color: rgba(255, 224, 102, 0.6); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 16px rgba(255, 224, 102, 0.18); }
+#tooltip.rar2 { border-color: rgba(95, 240, 255, 0.7); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 18px rgba(95, 240, 255, 0.25); }
+#tooltip.rar3 { border-color: rgba(212, 139, 255, 0.75); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 20px rgba(212, 139, 255, 0.32); }
+#tooltip .name { font: 700 15px var(--ui-font); }
+#tooltip .rar0 { color: var(--rar0); } #tooltip .rar1 { color: var(--rar1); } #tooltip .rar2 { color: var(--rar2); } #tooltip .rar3 { color: var(--rar3); }
+#tooltip .kind { margin: 1px 0 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--inv-dim); }
+#tooltip .desc { margin-bottom: 6px; line-height: 1.35; color: #cfe0f0; }
+#tooltip .stats { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 6px; }
+#tooltip .stats small { flex-basis: 100%; font-size: 11px; color: var(--inv-dim); }
+#tooltip .st { padding: 2px 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.07); font-size: 12px; font-weight: 600; }
+#tooltip .st.atk { color: #ff9f8f; } #tooltip .st.spd { color: #9ad7ff; } #tooltip .st.def { color: #a9c6ff; } #tooltip .st.food { color: #ffc47a; } #tooltip .st.heal { color: #ff92aa; } #tooltip .st.fly { color: #b9f5ff; }
+#tooltip .dur { position: relative; margin: 2px 0 6px; padding-bottom: 7px; font-size: 12px; color: #cfe0f0; }
+#tooltip .dur i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px; background: rgba(0, 0, 0, 0.6); }
+#tooltip .dur i::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--f) * 100%); border-radius: 2px; background: var(--c); }
+#tooltip .dur.low { color: #ff7a6a; }
+#tooltip .sub { margin-top: 3px; font-size: 11.5px; line-height: 1.35; color: var(--inv-dim); }
+#tooltip .need { margin-top: 4px; font-size: 12px; color: var(--inv-text); }
+#tooltip .warn { margin-top: 4px; font-size: 12px; color: #ff8a7a; }
+#tooltip .adv { margin-top: 6px; font: 11px ui-monospace, Consolas, monospace; color: #6f8399; }
+
+/* ---------- hotbar ---------- */
+#hotbar { gap: 4px; padding: 5px; border: 1px solid rgba(130, 210, 255, 0.22); border-radius: 14px;
+  background: linear-gradient(180deg, rgba(26, 40, 62, 0.6), rgba(8, 12, 22, 0.72)); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+#hotbar .slot { background: rgba(6, 10, 18, 0.5); }
+#hotbar .slot.active { outline: none; z-index: 1; transform: translateY(-3px) scale(1.06); background: rgba(40, 90, 124, 0.5); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+#hotbar .slot u { position: absolute; left: 4px; top: 2px; font: 700 9px var(--ui-font); color: rgba(200, 230, 255, 0.42); text-decoration: none; pointer-events: none; }
+#hotbar .slot.active u { color: var(--inv-glow); }
+.hot-ring { position: absolute; left: 5px; top: 5px; width: 40px; height: 40px; border-radius: 10px; pointer-events: none; z-index: 2;
+  transform: translateX(calc(var(--sel, 0) * 44px)) translateY(-3px) scale(1.06); transition: transform 0.16s cubic-bezier(0.3, 1.5, 0.5, 1);
+  box-shadow: 0 0 0 2px var(--inv-glow), 0 0 16px rgba(70, 224, 255, 0.7), inset 0 0 12px rgba(70, 224, 255, 0.3); }
+.slot.pop img { animation: pop 0.25s ease-out; }
+@keyframes pop { 35% { transform: scale(0.84, 1.36) translateY(-3px); } 70% { transform: scale(1.12, 0.92); } }
+#hotbar .slot.worn { animation: worn 1s ease-in-out infinite; }
+@keyframes worn { 50% { box-shadow: inset 0 0 0 2px rgba(255, 70, 70, 0.95), 0 0 14px rgba(255, 60, 60, 0.6); } }
+#hotName { position: fixed; left: 50%; bottom: 100px; z-index: 3; padding: 4px 14px; border-radius: 999px; font: 700 15px var(--ui-font); letter-spacing: 0.03em;
+  color: var(--rar0); background: rgba(8, 12, 22, 0.55); text-shadow: 0 1px 3px #000; white-space: nowrap; pointer-events: none;
+  opacity: 0; transform: translateX(-50%) translateY(6px); transition: opacity 0.35s, transform 0.35s; }
+#hotName.show { opacity: 1; transform: translateX(-50%); }
+#hotName.rar1 { color: var(--rar1); } #hotName.rar2 { color: var(--rar2); } #hotName.rar3 { color: var(--rar3); }
+body.touch #hotName { bottom: 92px; }
+body.inv-open #hotName, #inventory[style*="grid"] ~ #hotName { opacity: 0; }
+
+/* ---------- sebrané předměty (vpravo dole) ---------- */
+#feed div { border: 1px solid rgba(130, 210, 255, 0.22); border-radius: 10px; background: linear-gradient(180deg, rgba(26, 40, 62, 0.78), rgba(8, 12, 22, 0.82));
+  font: 600 14px var(--ui-font); text-shadow: 0 1px 2px #000; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); }
+#feed div.chat, #feed div.sys { font-weight: 500; }
