@@ -192,3 +192,8 @@ clients' machines; trap kill without chest gives loot to the host or loses it; i
     2 GB swap, `node --max-old-space-size=384`, systemd `MemoryMax=600M`. Load test `npm run test:load`: 8 bots → ~75 MB RSS,
     0.6 ms per world step, 1.6 % CPU (numbers in docs/HOSTING.md). Runtime deps: `ws` only (three, peerjs, vite, playwright are dev).
   - Not done / not verifiable here: real VPS run, Cloudflare tunnel, GitHub Pages deploy (needs merge to main).
+- 19.10.2026, CI green on GitHub (run 39218335016): build, npm test, single player 36/36, server + 2 browsers 22/22,
+  PeerJS 18/18, and `dist-v2` published. Note: commits 13d78b7…80f6284 miss `shared/data/` (a `.gitignore` rule hid it,
+  fixed in 4b359fa), so check out a later commit. Lean VPS flow checked locally: `npm ci --omit=dev` installs only `ws`
+  (200 KB), server serves a clone of `dist-v2`, ~73 MB RSS. Still open: run `deploy/setup-vps.sh` on the real VPS,
+  move inventory/crafting functions to `shared/` (not needed by the server today), items in docs/KNOWN-ISSUES.md.
