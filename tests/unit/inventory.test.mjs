@@ -63,6 +63,19 @@ test('sort merges stacks and orders tools, weapons, armor, food, blocks, materia
   assert.equal(itemKind('hoe'), 'tool');
 });
 
+test('extra stack data (tool wear) survives moving, spreading and sorting', () => {
+  const worn = { id: 'iron_pick', n: 1, w: 40 };
+  const a = [null, null];
+  assert.equal(applySpread(worn, [[a, 1]], 0), null);
+  assert.deepEqual(a[1], worn);
+  const arr = [{ id: 'dirt', n: 3 }, { id: 'iron_pick', n: 1, w: 7 }, { id: 'iron_pick', n: 1 }, { id: 'dirt', n: 4 }];
+  sortSlots(arr);
+  assert.deepEqual(arr, [{ id: 'iron_pick', n: 1, w: 7 }, { id: 'iron_pick', n: 1 }, { id: 'dirt', n: 7 }, null]);
+  const b = [null];
+  insertRange(b, { id: 'iron_pick', n: 1, w: 5 }, 0, 1);
+  assert.deepEqual(b[0], { id: 'iron_pick', n: 1, w: 5 });
+});
+
 test('middle-click pick: select in hotbar, or swap in from the backpack', () => {
   const slots = Array(36).fill(null);
   slots[3] = S('planks', 5); slots[0] = S('log', 1); slots[20] = S('stone', 9);

@@ -42,8 +42,8 @@ export function slotDown(e, el, button, shift) {
   setPreview(null);
   drag.on = false;
   if (e.button === 1) return middleDown(c, i);
-  const now = performance.now();
-  if (button === 0 && last && last.c === c && last.i === i && now - last.t < 380 && last.id) { // dvojklik
+  const now = e.timeStamp || performance.now(); // čas kliknutí (ne zpracování), ať dvojklik funguje i při trhané hře
+  if (button === 0 && last && last.c === c && last.i === i && now - last.t < 450 && last.id) { // dvojklik
     const id = last.id;
     last = null;
     return shift ? moveAll(c, i, id) : gather(c, i, id);
@@ -91,7 +91,7 @@ export function moveAll(c, i, id) {
     if (!s || s.id !== id) continue;
     arr[j] = null;
     const n0 = s.n, left = quickMove(c, j, s);
-    if (left) arr[j] = { id, n: left };
+    if (left) arr[j] = { ...s, n: left };
     moved += n0 - left;
   }
   if (moved) uiSound.gather(); else uiSound.deny();
@@ -218,10 +218,9 @@ export function dropFrom(c, i, all) {
 export function moveOne(c, i) {
   const arr = container(c), s = arr[i];
   if (!s) return false;
-  const id = s.id;
   if (!--s.n) arr[i] = null;
-  const left = quickMove(c, i, { id, n: 1 });
-  if (left) { if (arr[i]) arr[i].n++; else arr[i] = { id, n: 1 }; uiSound.deny(); return false; }
+  const left = quickMove(c, i, { ...s, n: 1 });
+  if (left) { if (arr[i]) arr[i].n++; else arr[i] = { ...s, n: 1 }; uiSound.deny(); return false; }
   uiSound.click();
   refreshUI();
   return true;

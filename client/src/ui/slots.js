@@ -49,7 +49,7 @@ export function paintHotbar(slots, sel) {
   }
   for (let i = 0; i < 9; i++) {
     const el = bar.children[i], s = slots[i];
-    const key = s ? `${s.id}:${s.n}:${s.dur ?? ''}` : '';
+    const key = s ? `${s.id}:${s.n}:${s.w ?? ''}` : '';
     if (prev[i] !== key) {
       const old = prev[i] ? prev[i].split(':') : null;
       el.innerHTML = slotInner(s) + `<u>${i + 1}</u>`;

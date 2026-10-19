@@ -224,7 +224,7 @@ export function slotClick(c, i, button, shift) {
   if ((c === 'fire' && i === 1) || c === 'kitchen' || (c === 'furnace' && i === 2) || (c === 'power' && i >= 1)) { // výstup táboráku, pece a sporáku se jen vybírá
     if (c === 'kitchen') i = 0;
     if (!s) return;
-    if (shift) { arr[i] = null; const left = insertInto(s, 0, 36); if (left) arr[i] = { id: s.id, n: left }; }
+    if (shift) { arr[i] = null; const left = insertInto(s, 0, 36); if (left) arr[i] = { ...s, n: left }; }
     else if (!inv.cursor) { inv.cursor = s; arr[i] = null; }
     else if (inv.cursor.id === s.id) { const k = Math.min(ITEMS[s.id].stack - inv.cursor.n, s.n); inv.cursor.n += k; if (!(s.n -= k)) arr[i] = null; }
     uiSound.click();
@@ -238,16 +238,16 @@ export function slotClick(c, i, button, shift) {
     arr[i] = null;
     const n0 = s.n, left = quickMove(c, i, s);
     if (left === n0) uiSound.deny(); else uiSound.click();
-    if (left) arr[i] = { id: s.id, n: left };
+    if (left) arr[i] = { ...s, n: left };
   } else if (button === 2) {
     if (inv.cursor) {
-      if (!s) arr[i] = { id: inv.cursor.id, n: 1 };
+      if (!s) arr[i] = { ...inv.cursor, n: 1 };
       else if (s.id === inv.cursor.id && s.n < ITEMS[s.id].stack) s.n++;
       else return;
       if (--inv.cursor.n <= 0) inv.cursor = null;
     } else if (s) {
       const half = Math.ceil(s.n / 2);
-      inv.cursor = { id: s.id, n: half };
+      inv.cursor = { ...s, n: half };
       if (!(s.n -= half)) arr[i] = null;
     }
   } else if (!inv.cursor) {

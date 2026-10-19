@@ -139,6 +139,11 @@ try {
   check('tooltip: epic items have a purple name', tip.cls === 'rar3' && tip.name === 'rgb(212, 139, 255)', JSON.stringify(tip));
   await page.hover(slot(11));
   check('tooltip: food shows its points', /\+35 jídlo/.test(await page.textContent('#tooltip')));
+  // durability from the tools rules (ITEMS[id].dur = new, slot.w = used up): bar on the slot + red line in the tooltip
+  await ev(() => { const g = window.game; g.ITEMS.iron_pick.dur ||= 250; g.inv.slots[9] = { id: 'iron_pick', n: 1, w: g.ITEMS.iron_pick.dur - 20 }; g.invTricks.refresh(); });
+  await page.mouse.move(5, 5); await page.hover(slot(9));
+  const du = await ev(() => ({ bar: !!document.querySelector('#invGrid .slot[data-i="9"] .dur'), low: !!document.querySelector('#tooltip .dur.low'), text: document.querySelector('#tooltip .dur')?.textContent }));
+  check('durability: bar on the slot, low durability is red in the tooltip', du.bar && du.low && /Odolnost 20 \/ /.test(du.text), JSON.stringify(du));
   await page.keyboard.down('F3'); await page.keyboard.press('KeyH'); await page.keyboard.up('F3');
   await page.mouse.move(10, 10); await page.hover(slot(11));
   check('F3 + H shows the item id', /rise:meat/.test(await page.textContent('#tooltip')) && (await ev(() => document.getElementById('guide').style.display)) !== 'grid');

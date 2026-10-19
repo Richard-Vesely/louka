@@ -26,11 +26,12 @@ const USED_IN = new Map();
 for (const r of RECIPES) for (const id of new Set(r.pat.flat().filter(Boolean))) USED_IN.set(id, (USED_IN.get(id) || 0) + 1);
 for (const k of KITCHEN) for (const id of Object.keys(k.in)) USED_IN.set(id, (USED_IN.get(id) || 0) + 1);
 
-/** Odolnost nástroje (jen když ji předmět má a je opotřebovaný): { left, max } nebo null. */
+/** Odolnost nástroje (jen když ji předmět má a je opotřebovaný): { left, max } nebo null.
+ * Opotřebení je v políčku jako w = kolik odolnosti už je spotřebované (ITEMS[id].dur = odolnost nového kusu). */
 export function durOf(s) {
   const max = s && ITEMS[s.id]?.dur;
-  if (!max || s.dur == null || s.dur >= max) return null;
-  return { left: Math.max(0, s.dur), max };
+  if (!max || !s.w) return null;
+  return { left: Math.max(0, max - s.w), max };
 }
 /** Barva proužku odolnosti: zelená → žlutá → oranžová → červená (jako v Minecraftu: odstín = zbytek / 3). */
 export const durColor = (f) => `hsl(${Math.round(Math.max(0, Math.min(1, f)) * 120)}, 95%, 52%)`;

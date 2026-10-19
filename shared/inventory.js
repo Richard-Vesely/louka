@@ -1,6 +1,9 @@
 // Políčka s předměty (batoh, truhla, pec…): pravidla bez obrazovky.
 // Všechno tady pracuje jen s poli políček ({ id, n } nebo null), takže to jde testovat v Node.js
-// a stejná pravidla platí ve hře pro jednoho, u hostitele i na serveru.
+// a stejná pravidla platí ve hře pro jednoho, u hostitele i na serveru. Políčko může mít i další údaje
+// (např. opotřebení nástroje); ty se při přesouvání zachovají a takové hromádky se neslučují.
+export const plain = (s) => !!s && Object.keys(s).length === 2; // jen { id, n }
+const copy = (s, n) => ({ ...s, n });
 import { ITEMS, RECIPE_CATS } from './data/index.js';
 
 export const maxOf = (id) => ITEMS[id]?.stack || 64;
@@ -10,7 +13,7 @@ export function insertStack(arr, stack) {
   const max = ITEMS[stack.id].stack;
   let n = stack.n;
   for (const s of arr) if (n > 0 && s && s.id === stack.id && s.n < max) { const k = Math.min(max - s.n, n); s.n += k; n -= k; }
-  for (let i = 0; i < arr.length && n > 0; i++) if (!arr[i]) { const k = Math.min(max, n); arr[i] = { id: stack.id, n: k }; n -= k; }
+  for (let i = 0; i < arr.length && n > 0; i++) if (!arr[i]) { const k = Math.min(max, n); arr[i] = copy(stack, k); n -= k; }
   return n;
 }
 
@@ -66,9 +69,9 @@ export function applySpread(cur, cells, button) {
   cells.forEach(([arr, i], k) => {
     const a = plan.add[k];
     if (!a) return;
-    if (arr[i]) arr[i].n += a; else arr[i] = { id: cur.id, n: a };
+    if (arr[i]) arr[i].n += a; else arr[i] = copy(cur, a);
   });
-  return plan.left > 0 ? { id: cur.id, n: plan.left } : null;
+  return plan.left > 0 ? copy(cur, plan.left) : null;
 }
 
 /**
@@ -82,7 +85,7 @@ export function insertRange(arr, stack, from, to, reverse = false) {
   if (reverse) idx.reverse();
   let n = stack.n;
   for (const i of idx) { const s = arr[i]; if (n > 0 && s && s.id === stack.id && s.n < max) { const k = Math.min(max - s.n, n); s.n += k; n -= k; } }
-  for (const i of idx) if (n > 0 && !arr[i]) { const k = Math.min(max, n); arr[i] = { id: stack.id, n: k }; n -= k; }
+  for (const i of idx) if (n > 0 && !arr[i]) { const k = Math.min(max, n); arr[i] = copy(stack, k); n -= k; }
   return n;
 }
 
@@ -117,9 +120,12 @@ const cmp = (a, b) => { const x = sortKey(a), y = sortKey(b); for (let i = 0; i 
  */
 export function sortSlots(arr, from = 0, to = arr.length) {
   const before = JSON.stringify(arr.slice(from, to));
-  const totals = new Map();
-  for (let i = from; i < to; i++) if (arr[i]) totals.set(arr[i].id, (totals.get(arr[i].id) || 0) + arr[i].n);
-  const stacks = [];
+  const totals = new Map(), stacks = [];
+  for (let i = from; i < to; i++) {
+    const s = arr[i];
+    if (!s) continue;
+    if (plain(s)) totals.set(s.id, (totals.get(s.id) || 0) + s.n); else stacks.push(s); // opotřebený nástroj zůstane, jak je
+  }
   for (const [id, total] of totals) { let n = total; const max = maxOf(id); while (n > 0) { const k = Math.min(max, n); stacks.push({ id, n: k }); n -= k; } }
   stacks.sort(cmp);
   for (let i = from; i < to; i++) arr[i] = stacks[i - from] || null;
