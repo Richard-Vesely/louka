@@ -26,6 +26,7 @@ export const PBR = {
   glass: { rough: 0.05, metal: 0, bump: 0, edge: 0, cav: 0 },
   obsidian: { rough: 0.15, metal: 0, bump: 1.0, edge: 0.12, cav: 2 },
   organic: { rough: 0.6, metal: 0, bump: 1.0, edge: 0.14, cav: 2 },
+  neon: { rough: 0.25, metal: 0, bump: 0.8, edge: 0, cav: 2 },
 };
 // Blok (klíč materiálu v blocks.js) -> rodina; volitelně vlastní drsnost.
 export const BLOCK_PBR = {
@@ -36,6 +37,7 @@ export const BLOCK_PBR = {
   bricks: 'brick', roof_tiles: 'ceramic', dirt: 'soil', markdirt: 'soil', farmland: 'soil', sand: 'sand', snow_block: 'snow', concrete: 'concrete',
   iron_block: 'metal', steel_block: ['metal', { rough: 0.28 }], copper_block: ['metal', { rough: 0.32 }], cut_copper: ['metal', { rough: 0.38 }], gold_block: ['metal', { rough: 0.22 }],
   glass: 'glass', obsidian: 'obsidian', mushroom_block: 'organic', mushroom_stem: 'organic',
+  tech_panel: ['metal', { rough: 0.4 }], white_panel: ['polished', { rough: 0.3 }], neon_cyan: 'neon', neon_amber: 'neon', neon_magenta: 'neon',
 };
 /** Vlastnosti materiálu bloku (rodina + výjimky). */
 export function blockPBR(key) {

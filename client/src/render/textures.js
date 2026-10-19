@@ -252,3 +252,33 @@ export const goldBlockTex = canvasTexture(256, metalPlates([246, 200, 70], 128, 
 export const steelBlockTex = canvasTexture(256, metalPlates([150, 160, 172], 128, { rivets: true, rough: 0.26, brushed: 1.2 }));
 export const quartzTex = canvasTexture(256, (x, y) => { const v = 0.92 + stoneField[y * 256 + x] * 0.06 + (hash2(x >> 2, y >> 2) > 0.93 ? 0.05 : 0); return [242 * v, 238 * v, 234 * v, 0.5 + F(smoothField, x, y) * 0.2]; });
 export const quartzPillarTex = canvasTexture(256, (x, y) => { const c = Math.cos(((x % 42) / 42) * Math.PI * 2), f = 0.88 + 0.1 * c; return [244 * f, 240 * f, 236 * f, 0.3 + 0.5 * (c * 0.5 + 0.5)]; });
+
+// ============================================================ futuristické stavební bloky (shared/data/tech.js)
+// Technický panel: grafitové kovové desky se spárami, sraženými hranami, šrouby a větracími štěrbinami
+export const techPanelTex = canvasTexture(256, (x, y) => {
+  const lx = x % 128, ly = y % 128, d = Math.min(lx, 127 - lx, ly, 127 - ly), i = y * 256 + x;
+  if (d < 2) return [24, 27, 33, 0.02, 0.7, 1];
+  if ([[10, 10], [117, 10], [10, 117], [117, 117]].some(([sx, sy]) => Math.hypot(lx - sx, ly - sy) < 3.5)) return [150, 156, 166, 0.9, 0.3, 1];
+  const vent = (Math.floor(x / 128) + Math.floor(y / 128)) % 2 === 1 && lx > 30 && lx < 98 && ly > 50 && ly < 78 && (ly - 50) % 7 < 3;
+  if (vent) return [14, 16, 20, 0.08, 0.8, 1];
+  const streak = (F(fineField, x * 0.25, y * 4) - 0.5) * 0.1, edge = d < 7 ? (lx < ly ? 0.12 : -0.08) : 0;
+  const v = 1 + streak + (stoneField[i] - 0.5) * 0.06 + edge;
+  return [62 * v, 69 * v, 81 * v, 0.35 + sm(2, 7, d) * 0.45, 0.4 + streak, 1];
+});
+// Bílý panel: čistý keramický povrch se zapuštěnou spárou a tenkou ozdobnou drážkou
+export const whitePanelTex = canvasTexture(256, (x, y) => {
+  const lx = x % 128, d = Math.min(lx, 127 - lx, y, 255 - y), groove = Math.abs(y - 200) < 1.5 && lx > 12 && lx < 116;
+  if (d < 2) return [146, 152, 160, 0.02, 0.6];
+  const v = (0.95 + stoneField[y * 256 + x] * 0.04) * (groove ? 0.82 : 1);
+  return [226 * v, 231 * v, 238 * v, groove ? 0.3 : 0.4 + sm(2, 6, d) * 0.4, 0.3];
+});
+// Neon: tmavý kovový rámeček a matné sklo, které svítí (barvu dodá materiál); maska = co svítí
+const neonD = (x, y) => Math.min(x, 127 - x, y, 127 - y);
+export const neonTex = canvasTexture(128, (x, y) => {
+  const d = neonD(x, y);
+  if (d < 10) return [30, 33, 40, 0.5 + (d > 7 ? -0.3 : 0), 0.4, 1];
+  if (d < 13) return [64, 68, 78, 0.25, 0.5, 1];
+  const k = 0.84 + 0.16 * sm(13, 44, d);
+  return [236 * k, 240 * k, 246 * k, 0.3, 0.22, 0];
+});
+export const neonMaskTex = canvasTexture(128, (x, y) => { const d = neonD(x, y), m = d < 13 ? 0 : 0.72 + 0.28 * sm(13, 44, d); return [255 * m, 255 * m, 255 * m]; });
