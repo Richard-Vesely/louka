@@ -1,70 +1,94 @@
 // Podzemí: 3D model chunků 16×16.
 import './blocks.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { clamp, hash2 } from '../../../shared/util.js';
 import { V, VMIN, VOX, editAt, naturalAt, topY, voxEdits } from '../../../shared/world/voxels.js';
 import { dirtyVoxChunks } from '../world/dig.js';
 import { TERRAIN_GLSL } from './glsl.js';
-import { renderer, scene } from './renderer.js';
-import { stoneField } from './textures.js';
+import { QUALITY } from '../game/prefs.js';
+import { U, renderer, scene } from './renderer.js';
+import { arrayTex } from './texgen.js';
+import { buildVoxTextures } from './vox-tex.js';
 
 // ============================================================ podzemí – vykreslení
-// Atlas textur podzemních bloků: hlína, kámen, uhlí, železo, krystal, podloží.
-const voxAtlasTex = (() => {
-  const T = 64, N = 18, c = document.createElement('canvas');
-  c.width = T * N; c.height = T;
-  const g = c.getContext('2d'), img = g.createImageData(T * N, T);
-  const put = (tile, x, y, col) => img.data.set([clamp(col[0], 0, 255), clamp(col[1], 0, 255), clamp(col[2], 0, 255), 255], (y * T * N + tile * T + x) * 4);
-  const f = (x, y, s) => stoneField[((y * 4 + s * 37) & 255) * 256 + ((x * 4 + s * 91) & 255)];
-  const mul = (c3, k) => [c3[0] * k, c3[1] * k, c3[2] * k];
-  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
-    const v = f(x, y, 0), grain = hash2(x * 3 + 1, y * 7) * 0.14, spot = f(x, y, 7) > 0.7 && f(x, y, 11) > 0.45;
-    const stone = mul([128, 126, 122], 0.55 + v * 0.45 + grain);
-    put(0, x, y, mul([120, 86, 58], 0.72 + v * 0.42 + grain - (f(x, y, 3) > 0.72 ? 0.18 : 0)));
-    put(1, x, y, stone);
-    put(2, x, y, spot ? mul([34, 32, 32], 0.8 + grain * 2) : stone);
-    put(3, x, y, spot ? mul([206, 150, 104], 0.8 + grain * 2) : stone);
-    put(4, x, y, spot ? mul([140, 245, 255], 0.85 + grain) : mul([70, 72, 82], 0.55 + v * 0.45 + grain));
-    put(5, x, y, mul([60, 60, 64], 0.4 + v * 0.9 + grain));
-    put(6, x, y, mul([54, 78, 150], 0.72 + v * 0.42 + grain - (f(x, y, 3) > 0.72 ? 0.18 : 0)));
-    put(7, x, y, spot ? mul([255, 110, 245], 0.85 + grain) : mul([62, 52, 80], 0.55 + v * 0.45 + grain));
-    const h = hash2(x * 5 + 3, y * 11 + 7);
-    put(8, x, y, h > 0.92 ? [44, 36, 36] : h < 0.07 ? [232, 226, 218] : mul([176, 128, 112], 0.75 + v * 0.3)); // žula
-    const vein = Math.abs(Math.sin((x * 0.09 + y * 0.05 + f(x, y, 5) * 3) * Math.PI));
-    put(9, x, y, mul([236, 234, 230], (vein < 0.08 ? 0.66 : 1) * (0.9 + v * 0.1))); // mramor
-    put(10, x, y, (x + (y >> 4) * 13) % 16 === 0 ? [26, 26, 30] : mul([72, 72, 78], 0.55 + v * 0.4 + grain)); // čedič
-    put(11, x, y, mul([218, 190, 132], 0.82 + v * 0.16 + grain * 0.6)); // písek
-    put(12, x, y, mul([214, 182, 124], 0.8 + Math.sin(y * 0.6 + v * 2) * 0.06 + v * 0.12)); // pískovec
-    put(13, x, y, mul([238, 244, 250], 0.9 + v * 0.1)); // sníh
-    put(14, x, y, mul([40, 24, 60], 0.4 + v * 0.6 + (hash2(x * 3, y * 5) > 0.97 ? 1.2 : 0))); // obsidián
-    put(15, x, y, spot ? (f(x, y, 13) > 0.6 ? mul([80, 170, 120], 0.9 + grain) : mul([216, 120, 66], 0.8 + grain * 2)) : stone); // měď (s měděnkou)
-    put(16, x, y, spot ? mul([250, 206, 70], 0.85 + grain * 2) : stone); // zlato
-    put(17, x, y, spot ? mul([246, 242, 255], 0.9 + grain) : stone); // křemen
-  }
-  g.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  return t;
-})();
-const VOX_TILES = 18;
+// Textury bloků podzemí (client/src/render/vox-tex.js): pole textur, každý druh bloku má vlastní vrstvu
+// (barva, reliéf, drsnost/kov/svícení), takže se při oddálení nemíchají sousední dlaždice jako v atlasu.
+const VT = buildVoxTextures(QUALITY === 'low' ? 64 : 128);
+export const voxTex = {
+  alb: arrayTex(VT.alb, VT.T, VT.T, VT.D, true), orm: arrayTex(VT.orm, VT.T, VT.T, VT.D), nrm: arrayTex(VT.nrm, VT.T, VT.T, VT.D),
+};
+for (const t of Object.values(voxTex)) t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
-// Části bloků, které vyčnívají nad hladký terén, se nekreslí (kraje díry tak přesně navazují na povrch).
-function clipToTerrain(mat) {
+// Jeden materiál pro celé podzemí. Části bloků, které vyčnívají nad hladký terén, se nekreslí (kraje díry tak
+// přesně navazují na povrch). Hrany bloků jsou trochu tmavší (je vidět, kde blok končí), krystaly a markorit svítí
+// jen svými zrny a jiskří, kovová zrna rud se lesknou. Reliéf (normálová mapa) jen se střední a vysokou grafikou.
+export const voxUniforms = { uVAlb: { value: voxTex.alb }, uVOrm: { value: voxTex.orm }, uVNrm: { value: voxTex.nrm }, uVGlow: { value: 1.25 }, uVNrmK: { value: QUALITY === 'high' ? 1 : 0.8 }, uVEdge: { value: 0.24 } };
+function voxMaterial() {
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1 });
+  if (QUALITY !== 'low') mat.defines = { VOX_NRM: '' };
+  mat.customProgramCacheKey = () => 'vox' + QUALITY;
   mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, voxUniforms, { uTime: U.time });
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      .replace('#include <common>', `#include <common>
+attribute float aTile;
+varying float vTile;
+varying vec2 vVUv;
+varying vec3 vWPos;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+vTile = aTile;
+vVUv = uv;
+vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nvarying vec3 vWPos;\n${TERRAIN_GLSL}`)
-      .replace('void main() {', 'void main() {\n  if (vWPos.y > terrainH(vWPos.xz) + 0.02) discard;');
+      .replace('#include <common>', `#include <common>
+uniform sampler2DArray uVAlb, uVOrm, uVNrm;
+uniform float uTime, uVGlow, uVNrmK, uVEdge;
+varying float vTile;
+varying vec2 vVUv;
+varying vec3 vWPos;
+${TERRAIN_GLSL}`)
+      .replace('void main() {', `void main() {
+  if (vWPos.y > terrainH(vWPos.xz) + 0.02) discard;`)
+      .replace('#include <map_fragment>', `vec3 vAuv = vec3(vVUv, vTile);
+vec4 vAlb = texture(uVAlb, vAuv);
+vec4 vOrm = texture(uVOrm, vAuv);
+diffuseColor *= vAlb;
+vec2 vEd = abs(fract(vVUv) - 0.5);
+diffuseColor.rgb *= 1.0 - uVEdge * smoothstep(0.43, 0.5, max(vEd.x, vEd.y));`)
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vOrm.g;')
+      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vOrm.b;')
+      .replace('#include <normal_fragment_maps>', `#ifdef VOX_NRM
+{
+  vec3 q0 = dFdx(-vViewPosition), q1 = dFdy(-vViewPosition);
+  vec2 st0 = dFdx(vVUv), st1 = dFdy(vVUv);
+  vec3 q1p = cross(q1, normal), q0p = cross(normal, q0);
+  vec3 T = q1p * st0.x + q0p * st1.x, B = q1p * st0.y + q0p * st1.y;
+  float det = max(dot(T, T), dot(B, B)), sc = det == 0.0 ? 0.0 : inversesqrt(det);
+  vec3 mapN = texture(uVNrm, vAuv).xyz * 2.0 - 1.0;
+  mapN.xy *= uVNrmK * (1.0 - 0.75 * smoothstep(8.0, 26.0, length(vViewPosition))); // daleko jemnější (nemihotá se)
+  normal = normalize(mat3(T * sc, B * sc, normal) * mapN);
+}
+#endif`)
+      .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+reflectedLight.indirectDiffuse *= vOrm.r;
+reflectedLight.indirectSpecular *= vOrm.r;
+reflectedLight.directDiffuse *= mix(1.0, vOrm.r, 0.6);`)
+      .replace('#include <emissivemap_fragment>', `{
+  // jiskření: náhodná zrnka krystalů a kovu se blýsknou podle času a směru pohledu
+  float spk = 0.0;
+  if (vOrm.a > 0.02 || vOrm.b > 0.5) {
+    vec2 cell = floor(vVUv * 24.0) + floor(vWPos.xz) * 3.1 + floor(vWPos.y) * 5.3 + vTile * 7.0;
+    float h = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+    vec3 vd = normalize(vWPos - cameraPosition);
+    spk = step(0.72, h) * pow(max(sin(uTime * (1.2 + h * 2.0) + h * 60.0 + dot(vd, vec3(17.0, 23.0, 11.0))), 0.0), 18.0);
+  }
+  float pulse = 1.0 + 0.12 * sin(uTime * 1.4 + vWPos.x * 0.7 + vWPos.z * 0.9);
+  totalEmissiveRadiance += vAlb.rgb * vOrm.a * uVGlow * pulse + spk * mix(vec3(1.0), vAlb.rgb, 0.4) * (vOrm.a > 0.02 ? 1.4 : 0.45);
+}
+#include <emissivemap_fragment>`);
   };
   return mat;
 }
-const voxMats = [
-  clipToTerrain(new THREE.MeshStandardMaterial({ map: voxAtlasTex, vertexColors: true, roughness: 0.95 })),
-  clipToTerrain(new THREE.MeshStandardMaterial({ map: voxAtlasTex, vertexColors: true, roughness: 0.35, emissive: 0xffffff, emissiveMap: voxAtlasTex, emissiveIntensity: 1.1 })),
-];
+const voxMat = voxMaterial();
 
 const VFACES = [
   { dir: [-1, 0, 0], corners: [[0, 1, 0, 0, 1], [0, 0, 0, 0, 0], [0, 1, 1, 1, 1], [0, 0, 1, 1, 0]] },
@@ -104,8 +128,8 @@ function buildVoxGeometry(cx, cz) {
     return yi + VMIN <= tops[i] || dug[i] === 1;
   };
 
-  const pos = [], nor = [], uv = [], col = [], idxA = [], idxB = [];
-  const q = [0, 0, 0], ao = [0, 0, 0, 0], IN = 0.004;
+  const pos = [], nor = [], uv = [], col = [], tile = [], idx = [];
+  const q = [0, 0, 0], ao = [0, 0, 0, 0];
   for (let yi = 0; yi < H; yi++) for (let z = 1; z <= 16; z++) for (let x = 1; x <= 16; x++) {
     const v = data[(yi * P + z) * P + x];
     if (!v) continue;
@@ -116,9 +140,11 @@ function buildVoxGeometry(cx, cz) {
       const u = (f.axis + 1) % 3, w = (f.axis + 2) % 3, n = pos.length / 3;
       for (let i = 0; i < 4; i++) {
         const c = f.corners[i];
-        pos.push(x - 1 + c[0], VMIN + yi + c[1] * (f.axis !== 1 && VMIN + yi === tops[z * P + x] ? 2 : 1), z - 1 + c[2]);
+        const tall = f.axis !== 1 && VMIN + yi === tops[z * P + x] ? 2 : 1; // horní blok sahá výš (pod hladký terén)
+        pos.push(x - 1 + c[0], VMIN + yi + c[1] * tall, z - 1 + c[2]);
         nor.push(...f.dir);
-        uv.push((def.tile + IN + c[3] * (1 - 2 * IN)) / VOX_TILES, IN + c[4] * (1 - 2 * IN));
+        uv.push(c[3], c[4] * tall);
+        tile.push(def.tile);
         const su = c[u] === 1 ? 1 : -1, sw = c[w] === 1 ? 1 : -1;
         q[0] = nx; q[1] = ny; q[2] = nz;
         q[u] += su; const s1 = at(q[0], q[1], q[2]) ? 1 : 0;
@@ -128,9 +154,8 @@ function buildVoxGeometry(cx, cz) {
         const l = AO_LIGHT[ao[i]];
         col.push(l, l, l);
       }
-      const out = def.glow ? idxB : idxA;
-      if (ao[1] + ao[2] > ao[0] + ao[3]) out.push(n, n + 1, n + 3, n, n + 3, n + 2);
-      else out.push(n, n + 1, n + 2, n + 2, n + 1, n + 3);
+      if (ao[1] + ao[2] > ao[0] + ao[3]) idx.push(n, n + 1, n + 3, n, n + 3, n + 2);
+      else idx.push(n, n + 1, n + 2, n + 2, n + 1, n + 3);
     }
   }
   if (!pos.length) return null;
@@ -139,9 +164,8 @@ function buildVoxGeometry(cx, cz) {
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  geo.setIndex([...idxA, ...idxB]);
-  geo.addGroup(0, idxA.length, 0);
-  geo.addGroup(idxA.length, idxB.length, 1);
+  geo.setAttribute('aTile', new THREE.Float32BufferAttribute(tile, 1));
+  geo.setIndex(idx);
   geo.computeBoundingSphere();
   return geo;
 }
@@ -158,7 +182,7 @@ function buildVoxChunk(k) {
   const geo = buildVoxGeometry(cx, cz);
   let mesh = null;
   if (geo) {
-    mesh = new THREE.Mesh(geo, voxMats);
+    mesh = new THREE.Mesh(geo, voxMat);
     mesh.position.set(cx * 16, 0, cz * 16);
     scene.add(mesh);
   }

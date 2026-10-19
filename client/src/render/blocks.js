@@ -18,6 +18,7 @@ import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { dummy, lumpy } from './forest.js';
 import { camera, scene } from './renderer.js';
+import { readyBlockMat, setupBlockMat } from './materials.js';
 import { glowTex } from './sky.js';
 import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, dirtTex, farmlandTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, markdirtTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, rockTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex } from './textures.js';
 
@@ -51,7 +52,12 @@ const blockMats = {
   });
   for (const [id, b] of Object.entries(BLOCKS)) if (b.tint) blockMats[id] = M(concreteTex, 0.85, { color: b.tint }); // barevný beton
 }
-export const blockMat = (type) => blockMats[BLOCKS[type]?.mat || type];
+// Fyzikální vlastnosti podle rodiny bloku (render/materials.js): drsnost, kov, tmavší hrany, odlesky skla.
+for (const [k, v] of Object.entries(blockMats)) for (const m of [v].flat()) setupBlockMat(m, BLOCKS[k]?.tint ? 'concrete' : k);
+// Mapy reliéfu se dělají až pro bloky, které se opravdu kreslí (šetří start hry).
+const readyMat = (v) => { for (const m of [v].flat()) readyBlockMat(m); return v; };
+for (const k of ['planks', 'cobble', 'bricks']) readyMat(blockMats[k]); // používají je i modely (stůl, pec, studna)
+export const blockMat = (type) => { const v = blockMats[BLOCKS[type]?.mat || type]; return v && readyMat(v); };
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 // Kvádr části bloku: UV podle polohy v buňce, takže textura na schodech a půlblocích navazuje jako na celých kostkách
 function cellBoxGeo([x0, y0, z0, x1, y1, z1]) {
@@ -356,7 +362,7 @@ export function rebuildBlocks() {
     if (!m || m.instanceMatrix.count < list.length) {
       if (m) { scene.remove(m); m.dispose(); }
       const [shape, mk] = gk.split('|');
-      m = new THREE.InstancedMesh(shape === 'cube' ? boxGeo : shapeGeo(shape), blockMats[mk], Math.max(64, Math.ceil(list.length * 1.5)));
+      m = new THREE.InstancedMesh(shape === 'cube' ? boxGeo : shapeGeo(shape), readyMat(blockMats[mk]), Math.max(64, Math.ceil(list.length * 1.5)));
       m.frustumCulled = false;
       scene.add(m);
       instPool.set(gk, m);
