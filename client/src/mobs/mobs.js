@@ -143,6 +143,8 @@ function updateDying(dt) {
     if (D.t > 1.1) {
       const p = D.V.group.position;
       debris.emit(p.x, p.y + 0.4, p.z, [0.75, 0.75, 0.78], 22, 1.6, 1.4); // obláček
+      const d = Math.hypot(p.x - player.pos.x, p.z - player.pos.z);
+      if (d < 20) Sound.burst({ dur: 0.3, f0: 1100, f1: 180, q: 0.7, vol: 0.14 * (1 - d / 20), type: 'lowpass' }); // tiché „puf“
       scene.remove(D.V.group, D.V.shadow);
       dying.splice(i, 1);
     }

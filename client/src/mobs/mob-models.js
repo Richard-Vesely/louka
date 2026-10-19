@@ -3,7 +3,9 @@
 // hlava na kloubu (sleduje hráče, pase se), uši, ocas, křídla. Nepřátelé mají svítící oči.
 // Bez vedlejších účinků při načtení (textury se vyrobí až při prvním tvorovi).
 import * as THREE from 'three';
-import { animateCharacter, armorMat, blobShadow, buildCharacter, crackTex, mergeStatic, rbox, setCharacterArmor } from '../render/character.js';
+import { RIM, addRim, animateCharacter, armorMat, blobShadow, buildCharacter, crackTex, mergeStatic, rbox, setCharacterArmor } from '../render/character.js';
+
+export { RIM };
 
 // ============================================================ textury srsti: barva + normálová mapa (výška → sklon)
 const texCache = {};
@@ -39,19 +41,6 @@ function furTextures(kind) {
   }));
   for (const t of [map, normalMap]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; }
   return (texCache[kind] = { map, normalMap });
-}
-
-// ============================================================ měsíční obrys: v noci slabá modrá záře na okrajích (tvory je vidět i ve tmě)
-export const RIM = { value: new THREE.Color(0, 0, 0) };
-function addRim(m) {
-  m.onBeforeCompile = (sh) => {
-    sh.uniforms.uRim = RIM;
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uRim;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uRim * pow(1.0 - saturate(dot(normal, normalize(vViewPosition))), 3.0);');
-  };
-  m.customProgramCacheKey = () => 'rim';
-  return m;
 }
 
 // ============================================================ stavebnice
@@ -219,7 +208,6 @@ export function buildMobModel(type) {
     R.hand.add(sw);
     for (const e of R.eyes) e.scale.set(1.3, 1.2, 1);
     g.add(R.group);
-    R.group.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial && !o.material.userData.glow) addRim(o.material); });
     extra.rig = R;
     body = R.hips;
     K.flash.push(...R.M.flashable);

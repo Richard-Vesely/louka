@@ -175,6 +175,8 @@ export function toggleView() {
   Sound.tone?.(viewMode ? 990 : 660, 0.06, 0.05, 'sine', 0, viewMode ? 1320 : 440);
 }
 let me = null, myArmorKey = null, myHeld;
+/** Vlastní postava (jen když už byla vidět ze třetí osoby). */
+export const localBody = () => me;
 const eye = new THREE.Vector3(), applied = new THREE.Vector3(), dir = new THREE.Vector3();
 let camDist = 0;
 // Kamera ze třetí osoby: posune se až těsně před první pevný blok, aby nebyla ve zdi.

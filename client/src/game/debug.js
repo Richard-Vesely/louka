@@ -20,8 +20,8 @@ import { canDine, dining, startDining, takeBite } from '../dining/dining.js';
 import { buildFoodInto } from '../dining/food-models.js';
 import { startCooking } from '../machines/kitchen.js';
 import { toggleSwitch } from '../machines/power.js';
-import { hitMob } from '../mobs/mobs.js';
-import { toggleView, viewMode } from '../net/avatars.js';
+import { hitMob, viewOf } from '../mobs/mobs.js';
+import { localBody, myPose, toggleView, updateAvatars, viewMode } from '../net/avatars.js';
 import { closePC, openApp, openPC, pc, pcPower } from '../pc/computer.js';
 import { closeDoc, openDoc } from '../pc/doc-view.js';
 import { useDocs } from '../pc/papers-world.js';
@@ -56,7 +56,7 @@ export const game = window.game = {
   get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
   get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
   NET, others, worldState, saveGame, renderer, pc, openPC, closePC, pcPower, openApp, papers, pcDisks, paperSpots, openDoc, closeDoc, useDocs, newPaper, printJob, ensureDoc, vehicles, spawnVehicle, enterVehicle, exitVehicle, CAR, PLANE, planeHits, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => setDay(t), get target() { return target; }, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite,
-  toggleView, get viewMode() { return viewMode; }, openCostume, // pohled ze třetí osoby (V), výběr obleku (O)
+  toggleView, get viewMode() { return viewMode; }, openCostume, myPose, updateAvatars, localBody, mobView: viewOf, // pohled ze třetí osoby (V), výběr obleku (O), postavičky
 };
 window.gameStarted = true;
 frame();

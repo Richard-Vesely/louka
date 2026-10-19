@@ -41,6 +41,16 @@ try {
   check('menu: …and single player + Další možnosti still work', soloOk && await off.isVisible('#pgMore #mHost') && off.errors.length === 0, off.errors.join(' | '));
   await off.context().close();
   await page.fill('#mName', 'Tester');
+  // Můj oblek: výběr obleku s náhledem, uloží se pro jméno hráče
+  await page.click('#mCostume');
+  await page.waitForSelector('#costume .cos-suit');
+  const cos = await ev(() => ({ suits: [...document.querySelectorAll('#costume .cos-suit')].map((b) => b.textContent), who: document.querySelector('#costume .cos-head span').textContent, dots: document.querySelectorAll('#costume .cos-dot').length }));
+  await page.click('#costume .cos-suit[data-s="pilot"]');
+  await page.click('#costume [data-k="c"] .cos-dot[data-i="9"]');
+  check('menu: Můj oblek shows 7 suits with Czech names for this player', cos.suits.length === 7 && cos.suits.includes('Průzkumník') && cos.suits.includes('Nebeský') && cos.who === 'Tester' && cos.dots > 20 && (await page.textContent('#costume .cos-desc')).startsWith('Kombinéza'), JSON.stringify(cos));
+  await page.click('#costume [data-act="ok"]');
+  const saved = await ev(() => ({ ...JSON.parse(localStorage.getItem('rise-obleky') || '{}').Tester, closed: !document.getElementById('costume') }));
+  check('menu: the chosen costume is saved per player name', saved?.s === 'pilot' && saved.c === 9 && saved.t > 0 && saved.closed, JSON.stringify(saved));
   await page.click('#mSolo');
   await waitGame(page);
   check('single player starts (window.gameStarted)', true);
@@ -218,6 +228,57 @@ try {
     return { hunger: g.player.hunger, bread: T.count('bread') };
   });
   check('eating bread fills hunger', r.hunger > 60 && r.bread === 1, JSON.stringify(r));
+
+  // ------------------------------------------------------------ characters: costume, views, other players, mob life
+  r = await ev(() => {
+    const g = window.game; T.tpg(4, 30); T.step(2);
+    const lk = g.myPose().lk, fp = g.viewMode;
+    T.press('KeyV'); T.step(3);
+    const back = g.viewMode, body = g.localBody(), shown = !!body?.group.visible, armorBefore = body?.armorParts?.length || 0;
+    g.armor[1] = { id: 'iron_chestplate', n: 1 }; T.step(2);
+    const plated = (g.localBody()?.armorParts?.length || 0) > armorBefore;
+    g.armor[1] = null;
+    T.press('KeyV'); T.press('KeyV'); T.step(2);
+    return { lk, fp, back, shown, plated, toast: T.text('toast'), after: g.viewMode, hidden: !g.localBody()?.group.visible };
+  });
+  check('costume: my position carries the saved costume', r.lk?.startsWith('pilot.9.'), JSON.stringify(r));
+  check('V: third-person view shows my suit with armor, back to first person', r.fp === 0 && r.back === 1 && r.shown && r.plated && r.after === 0 && r.hidden, JSON.stringify(r));
+  r = await ev(() => {
+    T.press('KeyO');
+    const open = window.RiseCostume.isOpen;
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape' }));
+    return { open, closed: !window.RiseCostume.isOpen, inv: window.game.ui && document.getElementById('inventory').style.display !== 'grid' };
+  });
+  check('O opens Můj oblek in the game, Esc closes it', r.open && r.closed && r.inv, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game, p = g.player.pos;
+    g.others.set('t1', { pid: 't1', name: 'Bára', pose: { x: p.x + 2, y: p.y, z: p.z - 3, yaw: 0, pitch: 0, held: 'iron_pick', mv: 4, sw: 1, eat: 0, ar: ['iron_helmet', null, null, null], sit: 0, fly: 0, alive: true, hp: 60, lk: 'scientist.4.2.1.6' } });
+    for (let i = 0; i < 10; i++) g.updateAvatars(0.05);
+    const A = g.others.get('t1').avatar;
+    const res = { suit: A?.costume.s, tag: A?.tag?.userData.tag.name, hp: A?.tag?.userData.tag.hp, held: A?.held, armor: A?.armorParts?.length, legs: A?.legL.hip.rotation.x !== 0 };
+    g.others.get('t1').pose.lk = 'sky.1.1.1.1'; g.updateAvatars(0.05);
+    res.changed = g.others.get('t1').avatar?.costume.s;
+    g.others.delete('t1'); g.updateAvatars(0.05);
+    res.removed = !g.scene.children.includes(A?.group);
+    return res;
+  });
+  check('other players: costume, name tag with health, tool, armor, walking; costume change and leaving', r.suit === 'scientist' && r.tag === 'Bára' && r.hp === 60 && r.held === 'iron_pick' && r.armor > 0 && r.legs && r.changed === 'sky' && r.removed, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; T.tpg(40, 60); T.step(2);
+    const p = g.player.pos;
+    g.spawnMob('cow', p.x + 3, p.z - 3);
+    const m = g.mobs[g.mobs.length - 1]; m.idleT = 99; m.moving = false; m.ry = 0;
+    T.step(60);
+    const V = g.mobView(m);
+    const res = { head: !!V.head, eyes: V.eyes.length, shadow: !!V.shadow?.parent, turned: Math.abs(V.head.rotation.y) > 0.2 };
+    m.hp = 0.1; g.hitMob(m, 5); T.step(12);
+    res.tipping = V.group.rotation.z > 0.3 && g.scene.children.includes(V.group);
+    T.step(40);
+    res.gone = !g.scene.children.includes(V.group);
+    return res;
+  });
+  check('mobs: head, eyes and soft shadow; the cow turns its head to the player', r.head && r.eyes >= 1 && r.shadow && r.turned, JSON.stringify(r));
+  check('mobs: a killed mob tips over, then disappears', r.tipping && r.gone, JSON.stringify(r));
 
   // ------------------------------------------------------------ save and load
   const before = await ev(() => {

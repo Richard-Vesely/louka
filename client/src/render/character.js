@@ -139,6 +139,20 @@ export function mergeStatic(root, filter = () => true) {
   }
 }
 
+// ============================================================ měsíční obrys: v noci slabá modrá záře na okrajích
+// (postavy a tvory jsou ve tmě vidět podle obrysu; sílu nastavuje mobs.js podle toho, jak je tma)
+export const RIM = { value: new THREE.Color(0, 0, 0) };
+export function addRim(m) {
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uRim = RIM;
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRim;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uRim * pow(1.0 - saturate(dot(normal, normalize(vViewPosition))), 3.0);');
+  };
+  m.customProgramCacheKey = () => 'rim';
+  return m;
+}
+
 // ============================================================ materiály obleku
 // Vzhled jednotlivých druhů obleku: pláty (barva, kovovost), lem, a jestli je látka světlá (plášť vědce).
 const STYLE = {
@@ -148,7 +162,7 @@ const STYLE = {
   guard: { plate: 0xb8c0cc, metal: 0.95, rough: 0.3, trim: 0x2a2f38 },
   scientist: { plate: 0xeef2f5, metal: 0.1, rough: 0.55, trim: 0x8a929e },
   shadow: { plate: 0x1b1724, metal: 0.5, rough: 0.45, trim: 0x3a2f4c, fabric: 0x221d2c },
-  sky: { plate: 0xf4f1ea, metal: 0.3, rough: 0.25, trim: 0xe0b040 },
+  sky: { plate: 0xf4f1ea, metal: 0.3, rough: 0.25, trim: 0xe0b040, fabric: 0xf0ede6 },
 };
 function suitMats(c) {
   const st = STYLE[c.s];
@@ -173,6 +187,7 @@ function suitMats(c) {
   M.glow.userData.glow = true;
   M.emblem = std({ map: emblemTex(c.e), transparent: true, alphaTest: 0.4, color: 0xffffff, emissive: light, emissiveMap: emblemTex(c.e), emissiveIntensity: 1.1, roughness: 0.4, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 });
   M.flashable = [M.fabric, M.fabricDark, M.paint, M.plate, M.rubber, M.coat, M.cape];
+  for (const m of [...M.flashable, M.trim]) addRim(m);
   return M;
 }
 
@@ -208,6 +223,7 @@ export function buildCharacter(costume, opts = {}) {
     const hip = pivot(hips, sx * 0.115, 0, 0);
     part(hip, 0.19, 0.42, 0.21, M.fabric, 0, -0.19, 0, 0.05);
     part(hip, 0.2, 0.04, 0.22, M.fabricDark, 0, -0.06, 0, 0.015);
+    part(hip, 0.014, 0.28, 0.05, M.glow, sx * 0.097, -0.21, 0, 0.005); // svítící linka na boku stehna
     const knee = pivot(hip, 0, -0.4, 0);
     part(knee, 0.16, 0.1, 0.06, M.paint, 0, 0, -0.105, 0.02); // chránič kolena
     part(knee, 0.175, 0.3, 0.195, M.fabric, 0, -0.14, 0, 0.05);
@@ -248,6 +264,7 @@ export function buildCharacter(costume, opts = {}) {
     const sh = pivot(torso, sx * 0.335, 0.58, 0);
     R.extras['pad' + sx] = part(sh, 0.2, 0.13, 0.25, M.paint, sx * 0.01, 0.01, 0, 0.05); // nárameník
     part(sh, 0.15, 0.3, 0.17, M.fabric, 0, -0.14, 0, 0.05);
+    part(sh, 0.014, 0.2, 0.045, M.glow, sx * 0.077, -0.15, 0, 0.005); // linka na paži
     const elbow = pivot(sh, 0, -0.28, 0);
     part(elbow, 0.14, 0.2, 0.16, M.fabric, 0, -0.08, 0, 0.05);
     part(elbow, 0.165, 0.075, 0.185, M.plate, 0, -0.17, 0, 0.025); // manžeta
@@ -406,7 +423,7 @@ export function armorMat(tier) {
     sky: std({ color: 0xf4f1ea, metalness: 0.35, roughness: 0.22, emissive: 0xffb066, emissiveIntensity: 0.12 }),
   }[tier] || std({ color: 0x9aa0a8, metalness: 0.6, roughness: 0.4 });
   m.userData.tier = tier;
-  return (armorMats[tier] = m);
+  return (armorMats[tier] = addRim(m));
 }
 const goldTrim = new THREE.MeshStandardMaterial({ color: 0xe0b040, metalness: 1, roughness: 0.28 });
 /**
@@ -508,12 +525,13 @@ export function animateCharacter(R, s, dt) {
   R.head.rotation.set(clamp(s.pitch * 0.85, -1.1, 1.1) * (1 - A.sit * 0.3) + A.sneak * 0.45, clamp(wrap(s.yaw - A.bodyYaw) + A.look, -1.35, 1.35), 0);
   // nohy a ruce
   const sw = Math.sin(A.phase), cw = Math.cos(A.phase);
-  const legA = 0.62 + A.run * 0.38;
+  const legA = Math.min((0.62 + A.run * 0.3) * amt, 0.95); // krok (při běhu delší, ale nejvýš ~55°)
   const L = R.legL, Rg = R.legR;
-  L.hip.rotation.x = sw * legA * amt;
-  Rg.hip.rotation.x = -sw * legA * amt;
-  L.knee.rotation.x = -Math.max(0, -cw) * (0.5 + A.run * 0.7) * amt;
-  Rg.knee.rotation.x = -Math.max(0, cw) * (0.5 + A.run * 0.7) * amt;
+  L.hip.rotation.x = sw * legA;
+  Rg.hip.rotation.x = -sw * legA;
+  const kneeA = (0.5 + A.run * 0.6) * Math.min(amt, 1.1);
+  L.knee.rotation.x = -Math.max(0, -cw) * kneeA;
+  Rg.knee.rotation.x = -Math.max(0, cw) * kneeA;
   // plížení: pokrčené nohy, předklon; let: nohy dozadu; sezení: stehna dopředu
   for (const l of [L, Rg]) {
     l.hip.rotation.x += A.sneak * 0.45 - A.fly * 0.25 + A.sit * 1.5;
@@ -523,7 +541,7 @@ export function animateCharacter(R, s, dt) {
   R.chest.scale.set(1 + breathe * 0.008, 1 + breathe * 0.012, 1 + breathe * 0.01);
   R.hips.position.y = 0.8 - A.sneak * 0.2 + Math.abs(cw) * 0.035 * amt - A.squash * 0.09 - A.sit * 0.02;
   R.torso.rotation.set(-A.run * 0.14 * Math.min(amt, 1) - A.sneak * 0.5 - A.fly * 0.25 + A.squash * -0.12, 0, Math.sin(A.phase) * 0.03 * amt);
-  const armA = (0.55 + A.run * 0.45) * amt;
+  const armA = Math.min((0.55 + A.run * 0.4) * amt, 1.05);
   const idle = (1 - Math.min(amt, 1)) * (1 - A.sit);
   for (const [a, sx, ph] of [[R.armL, -1, -1], [R.armR, 1, 1]]) {
     a.sh.rotation.set(ph * sw * armA + A.sneak * 0.25 + A.sit * 0.35 - A.fly * 0.5, 0, sx * (0.06 + idle * Math.sin(A.t * 1.1 + sx) * 0.025 + A.fly * 0.35));
