@@ -14,7 +14,7 @@ import { dummy } from '../render/forest.js';
 import { U as UNI, camera, scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { iconImg, slotHTML, ui } from '../ui/inventory-ui.js';
-import { TECH, addHolo, addStatus, addStrip, builder, drawHolo, glowMat, setStatus, techMats, updateHolo } from './machine-models.js';
+import { TECH, addHolo, addStatus, addStrip, builder, drawHolo, glowMat, mergeStatic, setStatus, techMats, updateHolo } from './machine-models.js';
 
 // ============================================================ elektrická síť
 // Pravidla sítě (výroba, spotřeba, baterie, vypínač, tiskárna) jsou v shared/sim/power.js; tady jsou modely a okno zařízení.
@@ -235,6 +235,7 @@ export function buildElecModel(type, g) {
     addHolo(g, type, 1.05);
   } else if (type === 'computer') { buildComputerModel(g); addHolo(g, type, 1.1); }
   else if (type === 'printer') { buildPrinterModel(g); addHolo(g, type, 0.95); }
+  mergeStatic(g);
 }
 // Solární články: tmavě modré se stříbrnou mřížkou; hrany článků svítí tyrkysově, když na panel svítí slunce
 let solarT = null;

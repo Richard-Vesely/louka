@@ -4,6 +4,7 @@
 // Jen funkce a líně vytvořené materiály (nic se nespouští při načtení); volá je machines/power.js, pc/computer.js a pc/printer.js.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clamp, hash2 } from '../../../shared/util.js';
 import { ICONS } from '../render/icons.js';
 import { MATQ, pbrMaps } from '../render/materials.js';
@@ -76,6 +77,26 @@ export function builder(g) {
       return me;
     },
   };
+}
+/**
+ * Spojí nehybné díly stroje se stejným materiálem do jednoho modelu (méně kreslení za snímek).
+ * Pohyblivé díly jsou v podskupinách (ventilátor, hřídel, páčka, panel) nebo mají userData.keep.
+ */
+export function mergeStatic(g) {
+  const byMat = new Map();
+  for (const o of [...g.children]) {
+    if (!o.isMesh || o.userData.keep || Array.isArray(o.material) || o.material.isShaderMaterial) continue;
+    if (!byMat.has(o.material)) byMat.set(o.material, []);
+    byMat.get(o.material).push(o);
+  }
+  for (const [mat, list] of byMat) {
+    if (list.length < 2) continue;
+    const geos = list.map((o) => { o.updateMatrix(); const ge = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); ge.applyMatrix4(o.matrix); for (const k of Object.keys(ge.attributes)) if (!['position', 'normal', 'uv'].includes(k)) ge.deleteAttribute(k); return ge; });
+    const merged = mergeGeometries(geos);
+    if (!merged) continue;
+    for (const o of list) { g.remove(o); o.geometry.dispose(); }
+    g.add(new THREE.Mesh(merged, mat));
+  }
 }
 /** Stavová kontrolka (malá kulička). Barvu a jas nastaví setStatus. */
 export function addStatus(g, x, y, z) {

@@ -52,5 +52,6 @@ export function buildPrinterModel(g) {
   addStatus(g, 0.28, 0.25, 0.232);
   const sheet = box(0.36, 0.005, 0.24, paper, 0, 0.075, 0.3);
   sheet.visible = false;
+  sheet.userData.keep = true;
   g.userData.sheet = sheet;
 }

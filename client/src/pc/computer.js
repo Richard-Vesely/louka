@@ -45,6 +45,7 @@ export function buildComputerModel(g) {
   const scan = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.37), new THREE.MeshBasicMaterial({ map: scanTex(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, opacity: 0.5 }));
   scan.position.set(0.12, 0.44, -0.119);
   scan.visible = false;
+  scan.userData.keep = true;
   g.add(scan);
   box(0.46, 0.022, 0.15, T.dark, 0.06, 0.011, 0.2, 0.008); // klávesnice s podsvícením
   addStrip(g, 0.43, 0.006, 0.12, 0.06, 0.024, 0.2);

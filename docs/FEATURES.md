@@ -164,6 +164,9 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 ## 8. Vehicles
 - **Car** (*Auto*): place it, fill fuel (canister), put in a charged car battery, F to get in. Drive with WASD,
   Space handbrake, L lights, B horn, V camera. Trunk with 18 slots. Hits animals and monsters.
+- **Look**: the car has rounded bodywork with metallic clearcoat paint (*střední*, *vysoká*), glass that reflects the
+  sky, chrome, and a **cyan underglow** that fades in while it drives or has its lights on. The biplane carries the
+  club emblem (navy disc, glowing cyan ring, white *Ř*) instead of military roundels.
 - **Biplane** (*Dvouplošník*): needs flat ground to place. Throttle Space/Shift, pitch W/S, roll A/D; stall if too slow;
   crash landing hurts.
 
