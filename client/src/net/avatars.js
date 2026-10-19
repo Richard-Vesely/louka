@@ -106,15 +106,12 @@ function iconColor(id) {
   } catch {}
   return (iconCol[id] = [r, g, b]);
 }
-// Kroky a prach od nohou, trysky při letu, drobky při jídle (pro ostatní hráče i vlastní postavu ze třetí osoby).
-function effects(R, s, pos, dt, near) {
+// Prach od nohou, trysky při letu, drobky při jídle (pro ostatní hráče i vlastní postavu ze třetí osoby).
+function effects(R, s, pos, dt) {
   const A = R.anim, step = Math.floor(A.phase / Math.PI);
-  if (step !== R.lastStep) {
+  if (step !== R.lastStep) { // kroky samotné zní z audio/soundscape.js
     R.lastStep = step;
-    if (s.ground !== false && !s.fly && !s.sit && s.speed > 1) {
-      if (s.speed > 6) debris.emit(pos.x, pos.y + 0.05, pos.z, [0.55, 0.5, 0.42], 3, 1.2, 0.8); // prach při běhu
-      if (near > 0) Sound.burst({ dur: 0.08, f0: 1700, f1: 500, q: 0.8, vol: 0.05 * near });
-    }
+    if (!s.fly && !s.sit && s.speed > 6) debris.emit(pos.x, pos.y + 0.05, pos.z, [0.55, 0.5, 0.42], 3, 1.2, 0.8); // prach při běhu
   }
   if (s.fly && (R.costume.s === 'pilot' || R.costume.s === 'sky') && Math.random() < dt * 30) {
     const back = new THREE.Vector3(0, 0, 0.24).applyAxisAngle(THREE.Object3D.DEFAULT_UP, R.group.rotation.y);
@@ -162,7 +159,7 @@ export function updateAvatars(dt) {
     A.tag.material.opacity = clamp((48 - d) / 16, 0, 1);
     const s = { speed: Math.min(q.mv || 0, 12), yaw: q.yaw, pitch: q.pitch || 0, run: (q.mv || 0) > 6, sneak: !!q.sn, fly: !!q.fly || !!q.flyT, sit: !!q.sit,
       swing: !!q.sw, eat: !!q.eat, held: q.held, y: q.y, hurt };
-    if (A.group.visible) { animateCharacter(A, s, dt); effects(A, s, pos, dt, clamp(1 - d / 14, 0, 1)); }
+    if (A.group.visible) { animateCharacter(A, s, dt); effects(A, s, pos, dt); }
   }
 }
 
@@ -172,7 +169,7 @@ const VIEW_NAMES = ['Pohled z první osoby', 'Pohled zezadu', 'Pohled zepředu']
 export function toggleView() {
   viewMode = (viewMode + 1) % 3;
   toast(VIEW_NAMES[viewMode] + ' (V)');
-  Sound.tone?.(viewMode ? 990 : 660, 0.06, 0.05, 'sine', 0, viewMode ? 1320 : 440);
+  Sound.ui?.(viewMode ? 'open' : 'close');
 }
 let me = null, myArmorKey = null, myHeld;
 /** Vlastní postava (jen když už byla vidět ze třetí osoby). */
@@ -206,7 +203,7 @@ scene.onBeforeRender = function (...a) { prevBefore?.apply(this, a); thirdPerson
 export function updateLocalBody(dt, moving) {
   const ids = armor.map((a) => a?.id || null), key = ids.join('|');
   if (myArmorKey !== null && key !== myArmorKey && ids.filter(Boolean).length > myArmorKey.split('|').filter(Boolean).length) { // oblékl si kus brnění
-    Sound.tone(520, 0.09, 0.08, 'square', 0, 300); Sound.burst({ dur: 0.12, f0: 3200, f1: 1200, q: 2, vol: 0.12, delay: 0.03 });
+    Sound.mat?.('metal', 'place', 0.9); Sound.burst({ dur: 0.12, f0: 3200, f1: 1200, q: 2, vol: 0.08, delay: 0.04 }); // cvak plátu
   }
   myArmorKey = key;
   const show = viewMode > 0 && player.alive && !player.vehicle;
@@ -222,7 +219,7 @@ export function updateLocalBody(dt, moving) {
     swing: swingT >= 0 || (input.lmb && isLocked()), eat: !!player.eating || !!dining, held, y: player.pos.y, hurt: me.anim.hurtSeen !== undefined && me.anim.hurtSeen !== player.lastHurt };
   me.anim.hurtSeen = player.lastHurt;
   animateCharacter(me, s, dt);
-  effects(me, s, me.group.position, dt, 0);
+  effects(me, s, me.group.position, dt);
 }
 
 export function myPose() {

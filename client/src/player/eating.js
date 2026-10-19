@@ -80,7 +80,7 @@ export function updateEating(dt) {
   pr.style.background = `conic-gradient(rgba(255,210,120,0.95) ${(e.t / e.dur) * 360}deg, rgba(255,255,255,0.15) 0deg)`;
   if ((e.bite -= dt) <= 0) {
     e.bite = 0.32;
-    Sound.burst({ dur: 0.08, f0: 1800 + Math.random() * 600, f1: 700, q: 2, vol: 0.22 });
+    Sound.bite(e.id);
     const fwd = new THREE.Vector3(0, -0.25, -0.5).applyQuaternion(camera.quaternion).add(camera.position);
     debris.emit(fwd.x, fwd.y, fwd.z, [0.85, 0.65, 0.35], 6, 1.2, 0.5);
   }

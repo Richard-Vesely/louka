@@ -137,7 +137,7 @@ function open(opts) {
   canvas.addEventListener('pointerup', () => { drag = null; });
   addEventListener('resize', size);
   // ---------- volby
-  const set = (patch) => { cur = cleanCostume({ ...cur, ...patch }, name); render(); rebuild(); blip(1800, 0.04, 0.05); };
+  const set = (patch) => { cur = cleanCostume({ ...cur, ...patch }, name); render(); rebuild(); if (!window.gameStarted) blip(1800, 0.04, 0.05); };
   box.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) { if (e.target === box) finish(false); return; }

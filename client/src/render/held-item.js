@@ -14,7 +14,6 @@ import { glowTex } from './sky.js';
 import { SWING_TIME, buildFPArm, disposeCharacter, swingKindOf } from './character.js';
 import { loadCostume } from '../menu/costume.js';
 import { NET } from '../../../shared/net/net.js';
-import { Sound } from '../audio/sound.js';
 
 // ============================================================ předmět v ruce
 export const holder = new THREE.Group();
@@ -95,7 +94,7 @@ export function updateHeldModel() {
   const s = heldStack();
   const id = player.eating ? player.eating.id : s ? s.id : null;
   if (id === heldId) return;
-  if (heldId !== undefined && !player.eating) { equipT = 1; Sound.burst?.({ dur: 0.08, f0: 700, f1: 2000, q: 1.2, vol: 0.035 }); } // výměna: ruka klesne a vrátí se
+  if (heldId !== undefined && !player.eating) equipT = 1; // výměna: ruka klesne a vrátí se (zvuk výběru hraje soundscape)
   heldId = id;
   itemSlot.clear();
   if (id) itemSlot.add(heldCache[id] ||= buildHeld(id));
