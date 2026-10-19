@@ -4,7 +4,7 @@ import { BLOCKS, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, SHAPES, smeltResult } fro
 import { NET } from '../../../shared/net/net.js';
 import { others } from '../../../shared/net/room.js';
 import { setDay } from '../../../shared/sim/day.js';
-import { groundItems } from '../../../shared/sim/ground-items.js';
+import { groundItems, spawnGroundItem } from '../../../shared/sim/ground-items.js';
 import { updateCrops } from '../../../shared/sim/machines.js';
 import { mobs, spawnMob } from '../../../shared/sim/mobs.js';
 import { netStats, nets, rebuildNets } from '../../../shared/sim/power.js';
@@ -38,6 +38,7 @@ import { cutGrass } from '../render/grass.js';
 import { ICONS } from '../render/icons.js';
 import { camera, renderer, scene } from '../render/renderer.js';
 import { voxChunks } from '../render/vox-mesh.js';
+import { invTricks } from '../ui/inv-tricks.js';
 import { armor, armorPoints, closeInventory, fillCooking, fillRecipe, fullSet, openInventory, slotClick, takeResult, ui } from '../ui/inventory-ui.js';
 import { CAR, enterVehicle, exitVehicle, spawnVehicle } from '../vehicles/car.js';
 import { PLANE, planeHits } from '../vehicles/plane.js';
@@ -51,9 +52,9 @@ import { saveGame } from './save.js';
 // Pro ladění v konzoli prohlížeče.
 export const game = window.game = {
   testMode: false, tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, spawnMob, blocks, rebuildBlocks, forestTrees, forestRocks,
-  slotClick, takeResult, fillRecipe, fillCooking, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
+  slotClick, takeResult, fillRecipe, fillCooking, invTricks, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
   get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
-  get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
+  get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, spawnGroundItem, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
   NET, others, worldState, saveGame, renderer, pc, openPC, closePC, pcPower, openApp, papers, pcDisks, paperSpots, openDoc, closeDoc, useDocs, newPaper, printJob, ensureDoc, vehicles, spawnVehicle, enterVehicle, exitVehicle, CAR, PLANE, planeHits, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => setDay(t), get target() { return target; }, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite,
 };
 window.gameStarted = true;
