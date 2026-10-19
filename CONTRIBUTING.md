@@ -26,8 +26,8 @@ Za chvíli máš editor a všechno nainstalované.
 
 **Na vlastním počítači** (potřebuješ [Node.js](https://nodejs.org) 20 nebo novější a [Git](https://git-scm.com)):
 ```bash
-git clone https://github.com/Richard-Vesely/louka
-cd louka
+git clone https://github.com/Richard-Vesely/rise
+cd rise
 npm install
 ```
 

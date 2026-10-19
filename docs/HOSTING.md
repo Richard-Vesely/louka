@@ -34,8 +34,8 @@ Max. 6 players. The host can allow creative mode and kick players in the Esc men
 Needs Node.js 20+ ([nodejs.org](https://nodejs.org) or `winget install OpenJS.NodeJS.LTS`) and Git.
 
 ```bash
-git clone https://github.com/Richard-Vesely/louka
-cd louka
+git clone https://github.com/Richard-Vesely/rise
+cd rise
 npm install
 npm run build
 npm start                       # http://localhost:8787
@@ -104,11 +104,11 @@ Point a hostname at the VPS IP, e.g. an `A` record `hry.example.cz → 203.0.113
 ### 2. One command
 SSH in as root and run (v2 is not merged into `main` yet, so use the `v2` branch):
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/Richard-Vesely/louka/v2/deploy/setup-vps.sh
-BRANCH=v2 bash setup-vps.sh hry.example.cz 'heslo-pro-kroužek'
+curl -fsSLO https://raw.githubusercontent.com/Richard-Vesely/rise/main/deploy/setup-vps.sh
+bash setup-vps.sh hry.example.cz 'heslo-pro-kroužek'
 ```
 It adds 2 GB swap, installs Node.js 22 and Caddy, opens the firewall for SSH/80/443, creates the system user `louka`,
-clones the code to `/opt/louka` and the built game (branch `dist-v2`) to `/opt/louka/dist`, installs `ws`, writes
+clones the code to `/opt/louka` and the built game (branch `dist-main`) to `/opt/louka/dist`, installs `ws`, writes
 `/etc/louka.env` (mode 600) and starts the `louka` systemd service. Caddy gets a Let's Encrypt certificate and forwards
 HTTPS **and WebSockets** to `127.0.0.1:8787`. The branch `dist-v2` must exist: it appears after the first green CI run on `v2`.
 
@@ -218,7 +218,7 @@ curl -s http://127.0.0.1:8787/worlds        # [{"id":"svet","name":"Hlavní svě
 
 The Pages build reads the repository variable **`SERVER_URL`** (GitHub → Settings → Secrets and variables → Actions →
 Variables), e.g. `hry.example.cz`. The main menu then shows the worlds of that server as buttons (`/worlds` allows other origins, so this works from Pages).
-Any link can also choose a server: `https://richard-vesely.github.io/louka/?server=hry.example.cz`.
+Any link can also choose a server: `https://richard-vesely.github.io/rise/?server=hry.example.cz`.
 Pages is HTTPS, so the server must have HTTPS too (Caddy does that on the VPS).
 In Settings → Pages, the source must be **GitHub Actions**.
 

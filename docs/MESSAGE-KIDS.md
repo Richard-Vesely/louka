@@ -19,7 +19,7 @@ přidávat věci vy (s pomocí AI). A máme **stálý server**, kde svět zůsta
 - **Hrát sám** ukládá svět jen ve tvém prohlížeči.
 
 **Jak do hry přidat něco svého**
-1. Kód je tady: https://github.com/Richard-Vesely/louka (účet na GitHubu je od 13 let; mladší pracujte ve dvojici nebo přes Richarda).
+1. Kód je tady: https://github.com/Richard-Vesely/rise (účet na GitHubu je od 13 let; mladší pracujte ve dvojici nebo přes Richarda).
 2. Nejjednodušší je **Codespaces**: na stránce klikni *Code → Codespaces → Create codespace*. Po chvíli napiš do terminálu
    `npm run dev` a hra se otevře. (Na vlastním počítači: nainstaluj Node.js a Git, pak `git clone …`, `npm install`, `npm run dev`.)
 3. Řekni svému AI pomocníkovi třeba:

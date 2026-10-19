@@ -5,7 +5,7 @@ explain what you change, keep changes small, and ask before big ones.
 
 ## The game in one minute
 
-*Říše* (repository *Louka*) is Marek's survival/building game in the browser (Three.js): endless terrain with
+*Říše* (repository *rise*, formerly *louka*) is Marek's survival/building game in the browser (Three.js): endless terrain with
 biomes, a voxel underground, trees, animals and night monsters, crafting (~260 recipes), cooking, farming,
 furnaces, electricity, cars, a biplane, a computer with games and a printer, and the Mark dimension behind a portal.
 The full feature list is [docs/FEATURES.md](docs/FEATURES.md); read it before adding something.

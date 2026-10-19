@@ -1,4 +1,4 @@
-# Říše (Louka)
+# Říše
 
 Survival hra v prohlížeči, kterou vymyslel a postavil Marek a kterou teď rozvíjíme spolu na AI kroužku.
 Přežij, sbírej, stav a objevuj: lesy a biomy, podzemí s rudami, zvířata a noční stínožrouti, vaření, pole,

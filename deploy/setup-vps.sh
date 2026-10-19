@@ -7,7 +7,7 @@
 set -euo pipefail
 DOMAIN="${1:?Použití: setup-vps.sh <doména> <heslo>}"
 PASSWORD="${2:?Použití: setup-vps.sh <doména> <heslo>}"
-REPO="${REPO:-https://github.com/Richard-Vesely/louka.git}"
+REPO="${REPO:-https://github.com/Richard-Vesely/rise.git}"
 BRANCH="${BRANCH:-main}"
 
 echo "== Swap 2 GB (malý VPS: ať instalace ani server nezpadnou na nedostatek paměti)"

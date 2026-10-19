@@ -1,6 +1,6 @@
 # Říše: what the game can do (feature list)
 
-The full list of features in *Říše* (repo *Louka*), as of Marek's version `2778d1b` (17.10.2026), plus the v2 server.
+The full list of features in *Říše* (repo *rise*, formerly *louka*), as of Marek's version `2778d1b` (17.10.2026), plus the v2 server.
 Each section ends with *Kód:* = where it lives in the code (rules in `shared/`, the browser in `client/src/`).
 It is for AI helpers and kids: read it to know what already exists before adding something, and use it as the
 checklist that nothing got lost when the code moves around. Czech names are what players see in the game.
