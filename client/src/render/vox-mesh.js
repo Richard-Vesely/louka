@@ -13,6 +13,7 @@ import { normalMapFrom, stoneField } from './textures.js';
 // Atlas textur podzemních bloků: hlína, kámen, uhlí, železo, krystal, podloží.
 // Druhý atlas = co svítí: jen tečky krystalu a markoritu (zbytek černý), aby kámen kolem nich nezářil.
 let voxGlowTex = null;
+const VOX_TILES = 18;
 const voxAtlasTex = (() => {
   const T = 64, N = 18, c = document.createElement('canvas');
   c.width = T * N; c.height = T;
@@ -58,17 +59,26 @@ const voxAtlasTex = (() => {
   t.anisotropy = renderer.capabilities.getMaxAnisotropy();
   return t;
 })();
-const VOX_TILES = 18;
 
 // Části bloků, které vyčnívají nad hladký terén, se nekreslí (kraje díry tak přesně navazují na povrch).
+// Navíc (všechny kvality, zadarmo): ztmavené hrany každého bloku, aby byl v jeskyni vidět každý kvádr, a světlo krystalů
+// a markoritu, které jemně ozáří kámen kolem sebe (atribut aGlow, spočítaný při stavbě chunku).
 function clipToTerrain(mat) {
   mat.onBeforeCompile = (sh) => {
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos, vGlow;\nattribute vec3 aGlow;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvGlow = aGlow;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nvarying vec3 vWPos;\n${TERRAIN_GLSL}`)
-      .replace('void main() {', 'void main() {\n  if (vWPos.y > terrainH(vWPos.xz) + 0.02) discard;');
+      .replace('#include <common>', `#include <common>\nvarying vec3 vWPos, vGlow;\n${TERRAIN_GLSL}`)
+      .replace('void main() {', 'void main() {\n  if (vWPos.y > terrainH(vWPos.xz) + 0.02) discard;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        {
+          float fu = fract(vMapUv.x * ${VOX_TILES.toFixed(1)}), fv = vMapUv.y;
+          float e = min(min(fu, 1.0 - fu), min(fv, 1.0 - fv));
+          diffuseColor.rgb *= mix(0.6, 1.0, smoothstep(0.0, 0.075, e)); // hrana bloku
+        }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance += vGlow * diffuseColor.rgb * ${(FX.post ? 1.8 : 1.0).toFixed(2)};`);
   };
   return mat;
 }
@@ -117,7 +127,17 @@ function buildVoxGeometry(cx, cz) {
     return yi + VMIN <= tops[i] || dug[i] === 1;
   };
 
-  const pos = [], nor = [], uv = [], col = [], idxA = [], idxB = [];
+  const pos = [], nor = [], uv = [], col = [], glw = [], idxA = [], idxB = [];
+  // světlo svítících rud (krystal azurově, markorit fialově) do vzdálenosti ~1,5 bloku
+  const glowAt = (x, yi, z) => {
+    let r = 0, g = 0, b = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const v = at(x + dx, yi + dy, z + dz);
+      if (v === V.CRYSTAL) { const k = 1 / (1 + dx * dx + dy * dy + dz * dz); r += 0.04 * k; g += 0.2 * k; b += 0.26 * k; }
+      else if (v === V.MARKORITE) { const k = 1 / (1 + dx * dx + dy * dy + dz * dz); r += 0.22 * k; g += 0.05 * k; b += 0.26 * k; }
+    }
+    return [Math.min(r, 0.6), Math.min(g, 0.6), Math.min(b, 0.6)];
+  };
   const q = [0, 0, 0], ao = [0, 0, 0, 0], IN = 0.004;
   for (let yi = 0; yi < H; yi++) for (let z = 1; z <= 16; z++) for (let x = 1; x <= 16; x++) {
     const v = data[(yi * P + z) * P + x];
@@ -141,6 +161,8 @@ function buildVoxGeometry(cx, cz) {
         const l = AO_LIGHT[ao[i]];
         col.push(l, l, l);
       }
+      const gl = def.glow ? [0, 0, 0] : glowAt(nx, ny, nz);
+      for (let i = 0; i < 4; i++) glw.push(gl[0], gl[1], gl[2]);
       const out = def.glow ? idxB : idxA;
       if (ao[1] + ao[2] > ao[0] + ao[3]) out.push(n, n + 1, n + 3, n, n + 3, n + 2);
       else out.push(n, n + 1, n + 2, n + 2, n + 1, n + 3);
@@ -152,6 +174,7 @@ function buildVoxGeometry(cx, cz) {
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glw, 3));
   geo.setIndex([...idxA, ...idxB]);
   geo.addGroup(0, idxA.length, 0);
   geo.addGroup(idxA.length, idxB.length, 1);

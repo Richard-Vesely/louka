@@ -387,7 +387,9 @@ export function rebuildBlocks() {
 }
 
 // Světla pochodní a táboráků: pevný počet světel se přiděluje těm nejbližším.
-const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(0xff9440, 0, 16, 1.7); scene.add(l); return l; });
+// Oheň svítí teplou bílou (asi 3000 K, LK.torch), ne červeně – zelená tráva pod ním zůstane zelená; elektřina chladně bílou.
+const FIRE_COL = new THREE.Color(...LK.torch), ELEC_COL = new THREE.Color(0.86, 0.95, 1.0), GLOWSHROOM_COL = new THREE.Color(0.35, 0.9, 1.0), SPAWNER_COL = new THREE.Color(0.8, 0.35, 1.0);
+const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(FIRE_COL, 0, 16, 1.7); scene.add(l); return l; });
 export function updateLights(time) {
   // elektrická světla svítí jen napájená
   const list = [...specials.entries()].filter(([k, s]) => BLOCKS[s.type].light && (!BLOCKS[s.type].elec || isPowered(k))).map(([, s]) => s);
@@ -397,12 +399,15 @@ export function updateLights(time) {
   // Pochodeň v ruce svítí kolem hráče (v jeskyních k nezaplacení).
   const heldTorch = heldStack()?.id === 'torch';
   lightPool.forEach((l, i) => {
-    const flick = 0.85 + 0.1 * Math.sin(time * 13 + i) + 0.05 * Math.sin(time * 31 + i * 3);
-    if (heldTorch && i === 0) { l.position.set(camera.position.x + 0.3, camera.position.y + 0.2, camera.position.z); l.intensity = 4.5 * flick; return; }
+    // plamen mihotá 2–3× za sekundu o ±15 %
+    const flick = 0.92 + 0.09 * Math.sin(time * 14.5 + i * 1.7) + 0.045 * Math.sin(time * 33 + i * 3) + 0.025 * Math.sin(time * 71 + i);
+    if (heldTorch && i === 0) { l.position.set(camera.position.x + 0.3, camera.position.y + 0.2, camera.position.z); l.intensity = 4.5 * flick; l.color.copy(FIRE_COL); return; }
     const s = list[heldTorch ? i - 1 : i];
     if (!s) { l.intensity = 0; return; }
+    const elec = BLOCKS[s.type].elec;
     l.position.set(s.x + 0.5, s.ry + (s.type === 'campfire' ? 0.6 : s.type === 'electric_lamp' ? 1.2 : s.type === 'bulb_lamp' ? 0.45 : 0.85), s.z + 0.5);
-    l.intensity = BLOCKS[s.type].light * (BLOCKS[s.type].elec ? 1 : flick); // žárovka nebliká
+    l.color.copy(elec ? ELEC_COL : s.type === 'glowshroom' ? GLOWSHROOM_COL : s.type === 'spawner' ? SPAWNER_COL : FIRE_COL);
+    l.intensity = BLOCKS[s.type].light * (elec ? 1 : flick); // žárovka nebliká
   });
   // stejná světla dostane i terén a tráva (mají vlastní shader, viz POINT_GLSL v light-glsl.js)
   for (let i = 0; i < U.pl.value.length; i++) {

@@ -6,7 +6,7 @@ import { DIG_N } from '../../../shared/world/voxels.js';
 import { digTex } from '../world/dig.js';
 import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
 import { AMBIENT_GLSL, POINT_GLSL, SHADOW_PARS_GLSL } from './light-glsl.js';
-import { scene, shaderUniforms } from './renderer.js';
+import { U, scene, shaderUniforms } from './renderer.js';
 import { detailTex } from './textures.js';
 
 // ============================================================ zem
@@ -26,7 +26,7 @@ function makeGroundGeometry(N = 320, R = 3000) {
 const groundMat = new THREE.ShaderMaterial({
   fog: true,
   side: THREE.DoubleSide,
-  uniforms: shaderUniforms({ uDetail: { value: detailTex }, uDig: { value: digTex } }),
+  uniforms: shaderUniforms({ uDetail: { value: detailTex }, uDig: { value: digTex }, uPond: U.ponds }),
   vertexShader: /* glsl */`
     #include <fog_pars_vertex>
     varying vec3 vWorld, vN;
@@ -52,8 +52,9 @@ const groundMat = new THREE.ShaderMaterial({
     #include <fog_pars_fragment>
     uniform sampler2D uDetail, uDig;
     uniform vec3 uSunDir, uSunColor, uAmbient, uCam;
-    uniform float uTime, uHeadOn;
+    uniform float uTime, uHeadOn, uWet, uTwilight;
     uniform vec3 uHeadPos, uHeadDir;
+    uniform vec4 uPond[6]; // blízké rybníky: x, z, poloměr, výška hladiny
     varying vec3 vWorld, vN;
     vec3 headlight(vec3 p) { vec3 L = p - uHeadPos; float d = length(L); return vec3(1.0, 0.94, 0.78) * smoothstep(0.8, 0.95, dot(L / max(d, 0.001), uHeadDir)) * (1.0 - smoothstep(8.0, 38.0, d)) * uHeadOn * 2.2; }
     varying vec4 vWa, vWb;
@@ -78,9 +79,43 @@ const groundMat = new THREE.ShaderMaterial({
       vec3 col = mix(near, far, smoothstep(8.0, 45.0, length(p - uCam.xz)));
       col = foliage(col);
       vec3 n = normalize(vN);
+      // břeh rybníka: pás tmavé mokré hlíny nad hladinou (okraj zvlněný šumem)
+      float shore = 0.0;
+      for (int i = 0; i < 6; i++) {
+        if (uPond[i].z <= 0.0) continue;
+        float dp = length(p - uPond[i].xy);
+        if (dp > uPond[i].z + 4.0) continue;
+        float above = vWorld.y - uPond[i].w;
+        float wob = (fine - 0.5) * 0.25 + (coarse - 0.5) * 0.3;
+        shore = max(shore, smoothstep(0.55 + wob, 0.05, above) * step(-0.4, above));
+      }
+      // mokrá zem po dešti: tmavší, v rovných místech louže, které odrážejí oblohu
+      float wet = max(uWet, shore * 0.85);
+      float bareW = 1.0 - (vWa.z + vWb.x) * 0.7; // písek a sníh tolik netmavnou
+      col *= 1.0 - 0.38 * wet * bareW;
+      float pud = 0.0;
+      if (uWet > 0.01) pud = uWet * smoothstep(0.68, 0.76, vnoise(p * 0.13) * 0.75 + vnoise(p * 1.7) * 0.3) * smoothstep(0.93, 0.975, n.y) * bareW; // (stejná maska v trávě)
+      vec3 nn = n;
+      if (pud > 0.01) {
+        // kroužky od kapek na hladině louže
+        vec2 cell = floor(p * 1.7), f = fract(p * 1.7) - 0.5;
+        float ph = fract(uTime * 0.9 + hash(cell) * 7.0);
+        float ring = sin((length(f + (vec2(hash(cell + 3.1), hash(cell + 7.7)) - 0.5) * 0.4) - ph * 0.5) * 40.0) * (1.0 - ph) * smoothstep(0.5, 0.2, length(f));
+        nn = normalize(vec3(n.x + f.x * ring * 0.12, n.y, n.z + f.y * ring * 0.12));
+      }
       float diff = max(dot(n, uSunDir), 0.0);
-      if (diff > 0.0) diff *= sunShadow(vWorld, n, ign(gl_FragCoord.xy));
+      float shadow = diff > 0.0 ? sunShadow(vWorld, n, ign(gl_FragCoord.xy)) : 1.0;
+      diff *= shadow;
       vec3 lit = col * (hemiLight(n, uAmbient) * 0.9 + uSunColor * diff + pointLights(vWorld, n, 0.0));
+      if (pud > 0.01 || wet > 0.3) {
+        vec3 V = normalize(cameraPosition - vWorld);
+        float F = 0.03 + 0.97 * pow(1.0 - max(dot(nn, V), 0.0), 5.0);
+        vec3 skyC = uAmbient * vec3(0.95, 1.02, 1.12) * 0.75 + vec3(0.9, 0.45, 0.3) * uTwilight * 0.2;
+        vec3 R = reflect(-V, nn);
+        float spec = pow(max(dot(R, uSunDir), 0.0), 180.0) * shadow;
+        lit = mix(lit, mix(lit * 0.35, skyC, 0.25 + 0.75 * F), pud) + (uSunColor * spec * 2.0) * max(pud, wet * 0.25);
+        lit += skyC * F * wet * 0.08;
+      }
       // Láva v kráteru sopky svítí sama (pulzuje)
       if (vLava > 0.001) lit = mix(lit, vec3(1.0, 0.3, 0.04) * (1.4 + 0.5 * sin(uTime * 1.3 + p.x * 0.4) * sin(uTime * 0.9 + p.y * 0.3)) * (0.7 + fine * 0.6), vLava);
       if (uHeadOn > 0.0) lit += col * headlight(vWorld);

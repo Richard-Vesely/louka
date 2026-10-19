@@ -9,7 +9,7 @@ import { addItem, heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { debris, sparks } from '../render/particles.js';
 import { camera, scene } from '../render/renderer.js';
-import { makeWaterMaterial } from '../render/water.js';
+import { decorPond, makeWaterMaterial } from '../render/water.js';
 import { toast } from '../ui/hud.js';
 
 const waterMat = makeWaterMaterial(), markWaterMat = makeWaterMaterial(true); // vlnky, odrazy a pěna: render/water.js
@@ -25,6 +25,7 @@ export function refreshPonds(px, pz) {
       const m = new THREE.Mesh(new THREE.CircleGeometry(p.r, 48).rotateX(-Math.PI / 2), waterMat);
       m.position.set(p.x, pondLevel(p), p.z);
       if (isMark(p.x)) m.material = markWaterMat;
+      decorPond(m, p, pondLevel(p), isMark(p.x)); // rákosí a kameny u břehu, mokrý břeh v terénu
       scene.add(m);
       pondMeshes.set(p.key, m);
     }

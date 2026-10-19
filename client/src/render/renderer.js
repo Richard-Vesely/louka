@@ -34,6 +34,13 @@ export const U = {
   time: { value: 0 },
   cam: { value: new THREE.Vector3() },
   night: { value: 0 },
+  twilight: { value: 0 }, // červánky (slunce těsně pod obzorem)
+  // počasí (render/weather.js): wet = jak mokrý je povrch (tmavší, lesklý, louže), rain = síla deště
+  wet: { value: 0 }, rain: { value: 0 },
+  // nejbližší rybníky pro terén (mokrý břeh): x, z, poloměr, výška hladiny (render/water.js)
+  ponds: { value: Array.from({ length: 6 }, () => new THREE.Vector4()) },
+  // jeden společný vítr pro trávu, koruny stromů, déšť i částice: (směr x, směr z, poryv 0–1, síla)
+  wind: { value: new THREE.Vector4(0.94, 0.33, 0.5, 1) },
   // světlomety auta, které řídíš (terén a tráva mají vlastní osvětlení, tak se kužel počítá v jejich shaderu)
   headPos: { value: new THREE.Vector3() }, headDir: { value: new THREE.Vector3(0, 0, -1) }, headOn: { value: 0 },
   // stíny slunce pro vlastní shadery (terén, tráva): mapa, matice, (zapnuto, 1/rozlišení, posun podél normály, měkkost)
@@ -46,7 +53,7 @@ export const U = {
 };
 export const shaderUniforms = (extra = {}) => ({
   ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
-  uSunDir: U.sunDir, uSunColor: U.sunColor, uAmbient: U.ambient, uTime: U.time, uCam: U.cam, uNight: U.night, uHeadPos: U.headPos, uHeadDir: U.headDir, uHeadOn: U.headOn,
+  uSunDir: U.sunDir, uSunColor: U.sunColor, uAmbient: U.ambient, uTime: U.time, uCam: U.cam, uNight: U.night, uWet: U.wet, uWind: U.wind, uTwilight: U.twilight, uHeadPos: U.headPos, uHeadDir: U.headDir, uHeadOn: U.headOn,
   uShadowMap: U.shadowMap, uShadowMatrix: U.shadowMatrix, uShadowP: U.shadowP, uShadowStrength: U.shadowStrength, uSkyAmb: U.skyAmb, uGroundAmb: U.groundAmb, uSSS: U.sss, uFoliage: U.foliage, uPL: U.pl, uPLC: U.plColor,
   ...extra,
 });

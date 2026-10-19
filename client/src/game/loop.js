@@ -22,7 +22,7 @@ import { updateEating } from '../player/eating.js';
 import { updateInteraction } from '../player/interaction.js';
 import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
 import { updateShards, updateSurvival } from '../player/survival.js';
-import { rebuildBlocks, specials, updateLights } from '../render/blocks.js';
+import { rebuildBlocks, updateLights } from '../render/blocks.js';
 import { applyUnderground, underground, updateDay } from '../render/daylight.js';
 import { applyDimension } from '../render/dimension.js';
 import { rebuildForest } from '../render/forest.js';
@@ -31,10 +31,12 @@ import { ground } from '../render/ground.js';
 import { updateHeldModel, updateSwing } from '../render/held-item.js';
 import { debris, sparks } from '../render/particles.js';
 import { initClouds, updateClouds } from '../render/clouds.js';
-import { renderFrame } from '../render/post.js';
+import { post, renderFrame } from '../render/post.js';
 import { U, camera, renderer, scene } from '../render/renderer.js';
 import { initShadows, updateShadows } from '../render/shadows.js';
 import { updateWater } from '../render/water.js';
+import { initWeather, updateWeather } from '../render/weather.js';
+import { initAmbientFx, updateAmbientFx } from '../render/ambient-fx.js';
 import { sky, stars, updateEnvironment } from '../render/sky.js';
 import { updateVoxChunks } from '../render/vox-mesh.js';
 import { $ } from '../ui/dom.js';
@@ -65,6 +67,8 @@ updateDay(0);
 updateEnvironment();
 initShadows();
 initClouds();
+initWeather();
+initAmbientFx();
 renderHotbar();
 updateTips();
 if (!save) $('intro').style.display = 'grid';
@@ -85,11 +89,12 @@ export function tick(realDt) {
   updateSwing(dt, moving);
 
   const W = MP ? realDt : dt;
+  updateWeather(realDt, gameClock, underground); // počasí podle dne a času (stejné u všech hráčů)
   const { night, day } = updateDay(W);
   rebuildForest(player.pos.x, player.pos.z);
   updateVoxChunks(player.pos.x, player.pos.z);
-  applyDimension();
-  applyUnderground();
+  applyDimension(realDt);
+  applyUnderground(realDt);
   updateRuins(realDt);
   if ((playing || MP) && !NET.client) updateSpawners(realDt);
   if (playing) {
@@ -122,11 +127,10 @@ export function tick(realDt) {
   updatePortals(realDt);
   regrowGrass(realDt);
   updateLights(gameClock);
-  if (Math.random() < realDt * 6) for (const s of specials.values()) if (s.type === 'campfire') sparks.emit(s.x + 0.5, s.ry + 0.4, s.z + 0.5, [1, 0.5, 0.15], 1, 0.6, 1.5);
+  updateAmbientFx(realDt, underground); // jiskry a kouř nad ohněm, prach v jeskyni, světélka v Markově dimenzi
   sparks.update(realDt);
   debris.update(realDt);
-  const gust = 0.5 + 0.5 * Math.sin(gameClock * 0.35) * Math.sin(gameClock * 0.13 + 1);
-  Sound.update(gust, night, realDt);
+  Sound.update(U.wind.value.z * Math.min(1.6, U.wind.value.w), night, realDt);
 
   U.cam.value.copy(camera.position);
   sky.position.copy(camera.position);
@@ -147,6 +151,7 @@ export function tick(realDt) {
   touchUI.update(realDt);
   NET.update(realDt);
   if (performance.now() - lastFrameAt < 300) { // na pozadí se nevykresluje
+    post.menu = invOpen || pcOpen || docOpen || guideOpen; // svět za oknem stačí v polovičním rozlišení
     updateShadows(realDt, underground);
     updateWater();
     renderFrame(realDt);

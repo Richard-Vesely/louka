@@ -1,16 +1,17 @@
 // Fixed, reproducible screenshots of the game for comparing looks (graphics before/after).
 // It builds nothing: give it a built dist folder (npm run build) and an output folder.
 //
-//   node tests/playtest/shots.mjs <dist> <out-dir> [--look a|b|c] [--quality low|medium|high] [--soft] [--perf] [--only name,name]
+//   node tests/playtest/shots.mjs <dist> <out-dir> [--quality low|medium|high] [--soft] [--perf] [--only name,name] [--views all]
 //
-//   --look     adds ?look=<x> to the URL (the graphics look, see client/src/game/prefs.js)
+//   --look     (old builds only) adds ?look=<x> to the URL
 //   --quality  the "Grafika" setting (default high)
 //   --soft     software WebGL like CI (slow); by default the real GPU is used
 //   --perf     also measures the time per frame (CPU + GPU, synchronous) in each view → <out-dir>/perf.json
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, forest, inventory, tech-machines, vehicles.
+// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, forest, inventory, tech-machines, vehicles;
+// with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,9 +21,9 @@ import { ARGS, serveDir } from './lib.mjs';
 const argv = process.argv.slice(2);
 const opt = (name, def) => { const i = argv.indexOf('--' + name); return i < 0 ? def : argv[i + 1]; };
 const flag = (name) => argv.includes('--' + name);
-const VALUED = ['--look', '--quality', '--only', '--tweak', '--after'];
+const VALUED = ['--look', '--quality', '--only', '--tweak', '--after', '--views'];
 const [dist, outDir] = argv.filter((a, i) => !a.startsWith('--') && !VALUED.includes(argv[i - 1]));
-if (!dist || !outDir) { console.log('usage: node tests/playtest/shots.mjs <dist> <out-dir> [--look a|b|c] [--quality high] [--soft] [--perf] [--only a,b]'); process.exit(2); }
+if (!dist || !outDir) { console.log('usage: node tests/playtest/shots.mjs <dist> <out-dir> [--quality high] [--soft] [--perf] [--only a,b] [--views all]'); process.exit(2); }
 const look = opt('look', '');
 const quality = opt('quality', 'high');
 const only = opt('only', '')?.split(',').filter(Boolean);
@@ -40,12 +41,13 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 const ev = (fn, arg) => page.evaluate(fn, arg);
 
 await page.goto(server.url, { waitUntil: 'domcontentloaded' });
-await ev((q) => { localStorage.clear(); localStorage.setItem('rise-nastaveni', JSON.stringify({ quality: q, controls: 'mouse' })); localStorage.setItem('rise-jmeno', 'Fotograf'); }, quality);
+await ev((q) => { localStorage.clear(); localStorage.setItem('rise-nastaveni', JSON.stringify({ ...(q === 'auto' ? {} : { quality: q }), controls: 'mouse' })); localStorage.setItem('rise-jmeno', 'Fotograf'); }, quality);
 await page.goto(server.url + (look ? `?look=${look}` : ''), { waitUntil: 'domcontentloaded' });
 await page.click('#mSolo');
 await page.waitForFunction(() => window.gameStarted === true, null, { timeout: 120000 });
 const gpu = await ev(() => { const gl = window.game.renderer.getContext(); const e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); });
-console.log(`GPU: ${gpu}  look=${look || '(default)'}  quality=${quality}`);
+const realQ = await ev(() => window.game.QUALITY);
+console.log(`GPU: ${gpu}  look=${look || '(default)'}  quality=${quality} (${realQ})`);
 
 await ev(() => {
   const g = window.game;
@@ -56,6 +58,7 @@ await ev(() => {
     // kamera = oči hráče; hráč „letí“ (flyT), takže zůstane viset ve vzduchu
     place({ x, z, y, up = 0, yaw, pitch = 0, time }) {
       if (time !== undefined) g.setTime(time);
+      g.setWeather?.({ rain: 0, storm: 0, fog: 0 }); if (g.weather) { g.weather.rain = g.weather.storm = g.weather.fog = g.weather.wet = 0; }
       g.player.flyT = 1e6;
       g.player.hp = g.player.maxHp ?? 100;
       const yy = y ?? g.groundHeight(x, z) + up;
@@ -145,13 +148,49 @@ const VIEWS = {
   },
 };
 
+const MORE = {
+  // zlatá hodina a červánky: pohled ke slunci nad krajinou
+  'golden-hour': () => {
+    const S = SHOT, g = S.g, t = 0.742;
+    S.place({ x: 46, z: 58, up: 6, yaw: 0, time: t });
+    const phi = (120 + t * 360) * Math.PI / 180;
+    g.player.yaw = Math.atan2(-Math.sin(phi), -Math.cos(phi)) + 0.35; g.player.pitch = 0.04;
+  },
+  // půlnoc na louce: měsíc, hvězdy, ovce 15 m daleko musí být vidět
+  night: () => {
+    const S = SHOT, g = S.g;
+    S.place({ x: 46, z: 58, up: 1.7, yaw: 0, time: 0.0 });
+    S.lookAt(0, 3, 0); g.player.pitch = 0.02;
+    const yaw = g.player.yaw, x = 46 - Math.sin(yaw) * 15, z = 58 - Math.cos(yaw) * 15;
+    g.spawnMob('sheep', x, z); g.spawnMob('crawler', x + 4, z + 2);
+  },
+  // bouřka nad krajinou: déšť, mokrá zem, louže
+  rain: () => {
+    const S = SHOT, g = S.g;
+    S.place({ x: 46, z: 58, up: 2.5, yaw: 0, time: 0.42 }); S.lookAt(0, 3, 0);
+    g.setWeather({ rain: 1, storm: 1 }); g.weather.rain = 1; g.weather.storm = 1; g.weather.wet = 1;
+  },
+  // ranní mlha v údolí
+  'dawn-fog': () => {
+    const S = SHOT, g = S.g;
+    S.place({ x: -120, z: 205, up: 4, yaw: 0, time: 0.27 }); S.lookAt(-60, g.groundHeight(-60, 150) + 2, 150);
+    g.setWeather({ fog: 1 }); g.weather.fog = 1;
+  },
+  // Markova dimenze v noci: fialová mlha, polární záře, krystaly
+  mark: () => {
+    const S = SHOT, g = S.g;
+    S.place({ x: 40000 + 30, z: 25, up: 3, yaw: 0, time: 0.9 }); S.lookAt(40000, 4, 0);
+  },
+};
+if (opt('views', '') === 'all') Object.assign(VIEWS, MORE);
+
 const perf = {};
 for (const [name, setup] of Object.entries(VIEWS)) {
   if (only?.length && !only.includes(name)) continue;
   try {
     await ev(`(${setup.toString()})()`);
     // ať se dostaví les, podzemí, odlesky oblohy (po ~3 s) a světla
-    await page.waitForTimeout(name === 'cave' ? 4500 : 3800);
+    await page.waitForTimeout(name === 'cave' || name === 'mark' ? 4500 : 3800);
     if (name === 'inventory') await ev(() => { window.SHOT.g.player.flyT = 1e6; });
     if (opt('after')) { const r = await ev(opt('after')); if (r !== undefined) console.log('after:', JSON.stringify(r)); await page.waitForTimeout(300); }
     await page.screenshot({ path: path.join(outDir, `${name}.png`) });
@@ -163,7 +202,7 @@ for (const [name, setup] of Object.entries(VIEWS)) {
         requestAnimationFrame(f);
       }));
     }
-    if (name === 'inventory') await ev(() => window.game.closeInventory());
+    if (name === 'inventory') await ev(() => { window.game.closeInventory(); window.SHOT.clearInv(); });
     console.log(`shot  ${name}${perf[name] ? `  ${perf[name]} ms/frame` : ''}`);
   } catch (e) {
     console.log(`FAIL  ${name}: ${String(e.message || e).split('\n')[0]}`);
