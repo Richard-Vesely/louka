@@ -45,9 +45,11 @@ try {
 
   // small maps (kv): chest contents from client to host and back
   await A.evaluate(() => { window.game.blocks.set('8,3,30', 'chest'); window.game.chests.set('8,3,30', Array(27).fill(null)); });
-  await until(B, () => window.game.blocks.get('8,3,30') === 'chest');
+  await until(B, () => window.game.blocks.get('8,3,30') === 'chest' && window.game.chests.has('8,3,30')); // počkej, až dorazí i obsah od hostitele
   await B.evaluate(() => { const c = Array(27).fill(null); c[0] = { id: 'apple', n: 5 }; window.game.chests.set('8,3,30', c); });
-  check('chest contents from client reach host', await until(A, () => window.game.chests.get('8,3,30')?.[0]?.id === 'apple'));
+  const chestOk = await until(A, () => window.game.chests.get('8,3,30')?.[0]?.id === 'apple');
+  const dbg = chestOk ? '' : JSON.stringify({ host: await A.evaluate(() => window.game.chests.get('8,3,30')?.[0] ?? 'none'), client: await B.evaluate(() => ({ c: window.game.chests.get('8,3,30')?.[0], last: window.game.NET.kvLast.chests?.get('8,3,30')?.slice(0, 40), blk: window.game.blocks.get('8,3,30') })) });
+  check('chest contents from client reach host', chestOk, dbg);
 
   // mobs and day: host simulates, client follows
   await A.evaluate(() => { const g = window.game; g.spawnMob('cow', g.player.pos.x + 4, g.player.pos.z); });

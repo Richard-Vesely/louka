@@ -1,0 +1,56 @@
+// Unit tests of the rules layer (shared/): it must import in Node (no DOM, no Three.js) and keep Marek's world.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { ITEMS, RECIPES, BLOCKS, KITCHEN, COOKING, FUEL, CROPS, smeltResult } from '../../shared/data/index.js';
+import { terrainH, biomeAt, shrineDist } from '../../shared/world/terrain.js';
+import { naturalAt, topY, V } from '../../shared/world/voxels.js';
+import { structuresNear } from '../../shared/world/structures.js';
+
+test('data tables are complete (counts from Marek\'s version 2778d1b)', () => {
+  assert.equal(Object.keys(ITEMS).length, 360);
+  assert.equal(RECIPES.length, 262);
+  assert.equal(Object.keys(BLOCKS).length, 112);
+  assert.equal(KITCHEN.length, 36);
+  assert.equal(Object.keys(CROPS).length, 4);
+});
+
+test('every recipe has a grid pattern, a category and known ingredients', () => {
+  for (const r of RECIPES) {
+    assert.ok(ITEMS[r.out], `recipe output ${r.out} is an item`);
+    assert.ok(r.pat && r.w >= 1 && r.h >= 1 && r.cat, `recipe ${r.out} finalized`);
+    for (const row of r.pat) for (const id of row) if (id) assert.ok(ITEMS[id], `ingredient ${id} of ${r.out}`);
+  }
+  assert.equal(RECIPES[0].out, 'planks'); // pořadí v knize receptů
+  assert.equal(RECIPES.find((r) => r.out === 'car_battery'), undefined); // autobaterie se vyrábí vybitá
+  assert.ok(RECIPES.find((r) => r.out === 'car_battery_empty'));
+});
+
+test('kitchen, cooking, fuel and blocks refer to existing items', () => {
+  for (const k of KITCHEN) {
+    assert.ok(ITEMS[k.out], k.out);
+    for (const id of [...Object.keys(k.in), ...k.tools, ...Object.keys(k.returns || {})]) assert.ok(ITEMS[id], `${id} in ${k.out}`);
+  }
+  for (const [a, b] of Object.entries(COOKING)) assert.ok(ITEMS[a] && ITEMS[b], `${a} -> ${b}`);
+  for (const id of Object.keys(FUEL)) assert.ok(ITEMS[id], id);
+  for (const [id, b] of Object.entries(BLOCKS)) if (b.drop) assert.ok(ITEMS[b.drop], `drop of ${id}`);
+  assert.equal(smeltResult('iron_ore'), 'iron');
+  assert.equal(smeltResult('copper_ore'), 'copper_ingot');
+});
+
+test('terrain and biomes are the same as in Marek\'s version', () => {
+  const pts = [[0, 0, 0, 'meadow'], [14, 14, 0.085344, 'meadow'], [100, -50, 2.356246, 'meadow'], [523, 911, -1.826586, 'cherry'],
+    [-1200, 300, -3.797062, 'mushroom'], [3000, -2500, -3.548071, 'meadow'], [20500, 40, 7.087566, 'meadow']];
+  for (const [x, z, h, b] of pts) {
+    assert.ok(Math.abs(terrainH(x, z) - h) < 1e-5, `terrainH(${x}, ${z}) = ${terrainH(x, z)}`);
+    assert.equal(biomeAt(x, z), b);
+  }
+  assert.equal(shrineDist(40003, 4), 5);
+});
+
+test('underground voxels and structures are deterministic', () => {
+  assert.deepEqual([[5, -3, 7], [40, -20, -13], [-100, -30, 250]].map(([x, y, z]) => naturalAt(x, y, z, topY(x, z))), [V.DIRT, V.STONE, V.STONE]);
+  assert.equal(naturalAt(0, -48, 0, topY(0, 0)), V.BEDROCK);
+  const near = structuresNear(0, 0, 700);
+  const count = (t) => near.filter((s) => s.type === t).length;
+  assert.deepEqual([count('camp'), count('dungeon'), count('tower'), count('temple'), count('hut'), count('mushhouse')], [42, 38, 18, 8, 4, 5]);
+});

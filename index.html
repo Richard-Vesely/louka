@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Říše</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/client/src/styles/game.css">
+</head>
+<body>
+  <div id="compass"></div>
+  <div id="clock"></div>
+  <div id="effects"></div>
+  <div id="guide">
+    <div class="mc-panel guide-panel">
+      <div class="mc-title">Návod <span style="float:right;font-size:13px;color:#a9a9b2">H = zavřít</span></div>
+      <div class="guide-body">
+        <h4>☠ Farma na Markomany</h4>
+        <ol>
+          <li>Najdi <b>spawner</b> – klec s fialovým jádrem. Je v <b>Markomanské pevnosti</b> (⛫) a v <b>kobkách</b> (☠) v Markově dimenzi. Kompas ukazuje nejbližší stavbu.</li>
+          <li>Vyrob <b>hroty</b> (u stolu: <code>I&nbsp;I / III</code> ze železa = 4 hroty) a polož je na zem <b>do 2 bloků kolem spawneru</b> – tam se Markomani rodí.</li>
+          <li>Kolem hrotů postav <b>zeď 2 bloky vysokou</b>, ať Markomani neutečou. Hroty je postupně zabijí.</li>
+          <li>Do <b>5 bloků od hrotů</b> polož <b>truhlu</b> – kořist z Markomanů zabitých hroty padá rovnou do ní.</li>
+          <li>Zůstaň <b>do 24 bloků od spawneru</b> (jinak se nic nerodí), nejlépe za zdí nebo nad farmou. Spawner udrží max. 4 Markomany naráz.</li>
+          <li>Sbírej: <b>Markové jablko</b> (10 s létání), železo, železnou zbroj, markwood a surový markorit.</li>
+        </ol>
+        <p>Spawner nerozbíjej – jde to jen železným krumpáčem a nic z něj nepadá. Stejně funguje farma na stínožrouty se spawnerem z kobky v normálním světě (padá z nich esence na stínové brnění).</p>
+        <h4>🍳 Vaření</h4>
+        <p>Postav <b>sporák</b> (u stolu: <code>III / C🔥C / CCC</code> = železo, kámen, táborák) a klikni na něj pravým – otevře se <b>kuchařka</b> s postupem, surovinami a nádobím. Nádobí se nespotřebuje, ale musíš ho mít v batohu.</p>
+        <ul>
+          <li><b>Vejce</b>: slepice je snášejí – klikni na slepici pravým. <b>Mléko</b>: kráva + prázdný kbelík. <b>Voda</b>: studna + kbelík.</li>
+          <li><b>Pole</b>: motykou zoráš trávu, na ornou půdu zasadíš semínka pšenice a rajčat nebo brambory (najdeš je při trhání trávy). Za pár minut dozrají.</li>
+          <li><b>Maso</b>: každé zvíře jiné – ovce skopové, kanec kančí, jelen zvěřina, kráva hovězí, slepice kuře. Z vlků (a občas i jiných zvířat) padají <b>kosti</b> na vývar.</li>
+          <li><b>Sůl</b> z kamene a balvanů, <b>jablka</b> z dubů, <b>houby</b> v trávě v lese.</li>
+          <li><b>Volské oko</b>: vejce + sůl, pánev. <b>Špagety</b>: pšenice → mouka (mlýnek) → těsto (mouka, vejce, voda, sůl, mísa) → špagety (váleček, nůž) + rajčatová omáčka (rajčata, sůl, nůž, hrnec) → uvařit v hrnci s vodou.</li>
+        </ul>
+        <h4>🍣 Sushi a ryby</h4>
+        <p>V krajině jsou <b>rybníky</b>. Vyrob <b>rybářský prut</b> (klacky + vlákno), nahoď ho pravým tlačítkem do vody a když splávek zabere, rychle klikni znovu – chytíš <b>pstruha, lososa</b> nebo <b>vodní řasu</b>. U vody najdeš v trávě <b>rýži</b> (zasaď ji na pole).</p>
+        <p><b>Sushi:</b> rýže → sushi rýže (hrnec, voda, sůl) · řasa → nori (nůž, plotna) · <b>maki</b> = rýže + nori + losos (bambusová podložka, nůž) · <b>nigiri</b> = rýže + losos (nůž) · 3 maki + 2 nigiri = <b>sushi talíř</b>.</p>
+        <h4>🍴 Jedení s příborem</h4>
+        <p>Máš-li v batohu <b>příbor</b> (nebo leží na stole), jídlo se ti ukáže na talíři a jíš ho po soustech: <b>krájíš</b> nožem (steak, řízek, pizza…), <b>namotáváš špagety</b> (drž pravé tlačítko, pusť = do pusy), <b>nabíráš lžící</b> (polévky, guláš, kaše) nebo <b>napichuješ</b> vidličkou. Sushi jíš <b>hůlkami</b> (2 klacky pod sebou). Levé tlačítko nebo pohyb = přestat jíst.</p>
+        <h4>🍽 Stolování</h4>
+        <p>Postav <b>stůl</b> a <b>židli</b>. Pravým tlačítkem položíš na stůl jídlo a <b>příbor</b> (prázdnou rukou je vezmeš zpět). Sedni si na židli (pravé tl.), klikni na jídlo na stole a jez – <b>s příborem dá jídlo o 50 % víc</b>, bez něj o 20 %. Pohybem vstaneš.</p>
+        <h4>🛡 Speciální brnění</h4>
+        <p><b>Stínové</b> (z esence, tvar jako ostatní brnění): rychlejší běh a stínožrouti tě nechají být. <b>Nebeské</b> (jen v truhlách kobek, věží a pevností): dvojitý skok, pomalý pád a léčení. Bonus platí jen za celou sadu (4 kusy).</p>
+        <h4>🗺 Stavby</h4>
+        <p>♜ Strážní věž (schody uvnitř, truhla nahoře) · ⛺ Opuštěný tábor · ☠ Kobka pod zemí (vchod pod cihlovým obloukem, schody dolů) · ▣ Ruiny · ⛫ Markomanská pevnost.</p>
+        <h4>🐾 Tvorové</h4>
+        <p>Ovce, kanec, <b>jelen</b> (plachý) a <b>vlk</b> (v noci v lesích loví) · stínožrout (noc) · Markoman a <b>krystalový golem</b> (pomalý, ale silný; padají z něj úlomky a markorit).</p>
+        <h4>🧱 Stavební bloky</h4>
+        <p><b>Schody</b> a <b>půlbloky</b> se natočí podle toho, odkud se díváš; po schodech se dá plynule chodit. Půlblok položený do horní půlky bloku zůstane nahoře, dva půlbloky na sobě dají celý blok. Dále mříže, zábradlí, sklo, tabule skla, tašky, beton v 8 barvách.</p>
+        <h4>🌍 Biomy</h4>
+        <p>Dál od začátku se louka mění: <b>třešňový les</b>, <b>poušť</b> (písek, kaktusy, pyramidy), <b>džungle</b>, <b>tundra</b> (sníh, iglú), <b>savana</b> (akácie), <b>sopka</b> (láva v kráteru – pozor!) a <b>houbový les</b> (svítivé houby). Název biomu je vidět u hodin.</p>
+        <h4>⚙ Technologie</h4>
+        <p><b>Pec</b> (8 kamenů) taví rudy na ingoty: měď, zlato, křemen → křemík, železo → ocel, pryskyřice → kaučuk. Měď, zlato a křemen najdeš pod zemí. <b>Dílna</b> (pokročilý pracovní stůl) vyrábí složité díly – elektroniku, motory, vozidla a počítače. Recepty jsou v inventáři rozdělené do kategorií.</p>
+        <h4>⚡ Elektřina</h4>
+        <p>Zdroje: <b>uhelný generátor</b> (palivo), <b>solární panel</b> (jen ve dne a na povrchu), <b>baterie</b> (uloží přebytek). Spotřebiče: lampy, žárovky, elektromotor, elektrická pec, nabíječka, počítač, tiskárna. Spojuj je <b>kabely</b> (měděný unese 200 W, zlatý 1000 W) nebo přiložením k sobě; <b>vypínač</b> síť rozpojí. Pravé tlačítko na zařízení ukáže výrobu, spotřebu a baterie celé sítě.</p>
+        <h4>🚗 Auto</h4>
+        <p>Polož ho pravým tlačítkem, do kufru dej <b>nabitou autobaterii</b> (nabije ji nabíječka) a natankuj <b>kanystrem</b> (pravé tl. s kanystrem na auto). F nastoupit/vystoupit · W/S plyn a brzda (couvání) · A/D řízení · Mezerník ruční brzda · L světla · B klakson · V kamera.</p>
+        <h4>✈ Dvouplošník</h4>
+        <p>Potřebuje volné místo asi 10 × 8 m a ke vzletu rovinu bez stromů (asi 100 m). Mezerník / Shift = plyn +/− · S nos nahoru · W nos dolů · A/D náklon (na zemi řízení) · L světla · V kamera · F vystoupit (jen na zemi). Pod pádovou rychlostí ztratí vztlak – potlač nos a nabírej rychlost. Tvrdé přistání zraňuje.</p>
+        <h4>🖥 Počítač</h4>
+        <p>Připoj ho k elektrické síti, klikni na něj pravým a zapni tlačítkem ⏻ (bere 60 W). Na ploše: <b>Tanky 2D</b> (proti počítači nebo 2 hráči na jedné klávesnici), <b>Textový editor</b>, informace o systému a pozadí plochy. Esc = odejít od počítače.</p>
+        <h4>📄 Dokumenty a tiskárna</h4>
+        <p>V editoru dokument napiš a ulož. <b>Tisk</b> pošle dokument do <b>tiskárny</b> ve stejné síti – do tiskárny dej <b>papír</b>. S vytištěným dokumentem v ruce: pravé tl. na zem/stůl = položit, na stěnu bloku = pověsit, na <b>rámeček</b> = zarámovat, na hráče = předat, do vzduchu = přečíst. Položený dokument přečteš pravým tlačítkem, sebereš držením levého.</p>
+        <h4>👥 Multiplayer</h4>
+        <p>Hostitel je server – svět se ukládá u něj. Truhlu nebo stroj může mít otevřený jen jeden hráč naráz. T chat · Esc seznam hráčů.</p>
+        <h4>⌨ Ovládání</h4>
+        <p>E inventář · G vyhodit předmět z ruky (Shift + G = celý stack, v inventáři klik mimo okno) · C kreativní režim (2× Mezerník = létání) · H návod · pravé tlačítko na zem při skoku = stavění pod sebe.</p>
+      </div>
+    </div>
+  </div>
+  <div id="tip"><div class="title">Rada</div><div class="text" id="tipText"></div></div>
+  <div id="crosshair"></div>
+  <div id="progress"></div>
+  <div id="targetLabel"></div>
+  <div id="bars">
+    <div class="wrap">❤️<div class="bar"><i id="hpfill"></i></div></div>
+    <div class="wrap">🍗<div class="bar"><i id="foodfill"></i></div></div>
+    <div class="wrap">🛡<div class="bar"><i id="armorfill"></i></div></div>
+  </div>
+  <div id="hotbar"></div>
+  <div id="feed"></div>
+  <div id="toast"></div>
+  <div id="intro" style="display:none">
+    <div>
+      <h1>ŘÍŠE</h1>
+      <h2>Přežij · Sbírej · Stav · Objevuj</h2>
+      <p>Probouzíš se u pradávné svatyně. Kolem se rozkládá divoký svět plný lesů, zvěře a pokladů.<br>A až padne noc, přijdou stínožrouti.</p>
+    </div>
+  </div>
+  <div id="vignette"></div>
+  <div id="fade">Padl jsi…</div>
+  <div id="hint">Klikni do hry · WASD · Shift běh · Mezerník skok · Levé tl. těžba/útok · Pravé tl. položit/jíst · E inventář · G vyhodit (Shift = vše) · H návod · C kreativní · 1–9 výběr</div>
+  <div id="inventory">
+    <div class="mc-window">
+      <div class="mc-panel mc-book">
+        <div class="mc-title" id="bookTitle">Recepty</div>
+        <label class="mc-toggle"><input type="checkbox" id="onlyCraftable"> Jen co můžu vyrobit</label>
+        <div class="rgrid" id="recipes"></div>
+        <div class="mc-note" id="bookHint"></div>
+      </div>
+      <div class="mc-panel">
+        <div id="craftArea"></div>
+        <div class="mc-title">Batoh</div>
+        <div class="grid" id="invGrid"></div>
+        <div class="grid hot" id="invHot"></div>
+        <div class="mc-foot"><span>Klik = vzít · Pravé = půlka / po jednom · Shift = přesunout</span><button class="mc-btn" id="guideBtn">Návod (H)</button> <button class="mc-btn" id="settingsBtn">Nastavení</button> <button class="mc-btn" id="modeBtn">Režim: Přežití</button> <button class="mc-btn" id="newWorld">Nový svět</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="cursorItem"></div>
+  <div id="tooltip"></div>
+  <div id="error">Hru se nepodařilo načíst. Je potřeba připojení k internetu (stahuje se knihovna Three.js).</div>
+
+  <!-- ============================================================ hlavní menu a hra pro více hráčů -->
+  <div id="menu">
+    <div class="mc-panel menu-box px">
+      <h1>ŘÍŠE</h1>
+      <h2>Přežij · Sbírej · Stav · Objevuj</h2>
+      <div id="menuMsg" class="menu-msg" hidden></div>
+      <div class="menu-page" id="pgMain">
+        <label class="menu-label">Tvoje jméno<input id="mName" maxlength="16" placeholder="Hráč" autocomplete="off" spellcheck="false"></label>
+        <button class="mc-btn big" id="mSolo">Hra pro jednoho</button>
+        <button class="mc-btn big" id="mHost">Vytvořit server</button>
+        <button class="mc-btn big" id="mJoin">Připojit se</button>
+        <button class="mc-btn" id="mSettings">Nastavení</button>
+      </div>
+      <div class="menu-page" id="pgHost" hidden>
+        <div class="mc-title">Nastavení serveru</div>
+        <label class="mc-toggle"><input type="checkbox" id="mCreative"> Povolit hráčům kreativní režim</label>
+        <p class="mc-note">Server poběží v tvém prohlížeči – nech hru otevřenou, dokud ostatní hrají. Po spuštění dostaneš kód, který pošleš kamarádům (max. 6 hráčů). Svět serveru se ukládá zvlášť, tvoje hra pro jednoho zůstane beze změny.</p>
+        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button><button class="mc-btn" id="mHostGo">Spustit</button></div>
+      </div>
+      <div class="menu-page" id="pgJoin" hidden>
+        <div class="mc-title">Připojit se k serveru</div>
+        <label class="menu-label">Kód serveru<input id="mCode" maxlength="14" placeholder="LOUKA-7K2F" autocomplete="off" spellcheck="false"></label>
+        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button><button class="mc-btn" id="mJoinGo">Připojit</button></div>
+      </div>
+      <div class="menu-page" id="pgBusy" hidden>
+        <div class="menu-busy" id="busyText">Připojuji…</div>
+        <div class="menu-row"><button class="mc-btn" id="mCancel">Zrušit</button></div>
+      </div>
+    </div>
+  </div>
+<script>
+  setTimeout(() => { if (!window.gameModuleLoaded) document.getElementById('error').style.display = 'grid'; }, 10000);
+</script>
+  <script type="module" src="/client/src/main.js"></script>
+</body>
+</html>

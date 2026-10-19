@@ -156,3 +156,11 @@ clients' machines; trap kill without chest gives loot to the host or loses it; i
   day/night, campfire, furnace, power, crops, stove, structures, portal, creative, car, eating, save/reload, screenshot) and
   `node tests/playtest/peer.mjs legacy` (browser host + browser client over the public PeerJS broker, 18 checks).
   Next: phase 1 (split into modules).
+- 19.10.2026, phase 1 done: `legacy/index.html` split into 70 ES modules (tool-assisted, code moved verbatim):
+  `index.html` (markup) + `client/src/styles/game.css`, `client/src/menu/*` (menu + settings), `client/src/**` (game, in the
+  original order: each module first imports the previous one, see `client/src/main.js`), pure data and world math in `shared/`
+  (`shared/data/*` items/blocks/tech with one recipe-finalize pass in `shared/data/index.js`, `shared/world/*` terrain,
+  voxels, structures, nature, `shared/util.js`). Variables changed from other modules got setters (`setDay`, `markPowerDirty`…).
+  Three.js and PeerJS now come from npm (bundled by Vite), no CDN for code. Data tables checked identical to legacy.
+  Tests: `npm run build`, `npm test` (5 unit), `node tests/playtest/playtest.mjs` (36/36), `node tests/playtest/peer.mjs` (18/18),
+  also against `npm run dev`. Screenshot matches legacy. Next: phase 2 (world state + simulations into `shared/`).

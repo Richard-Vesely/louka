@@ -1,0 +1,161 @@
+// Herní smyčka (tick).
+import '../ui/touch.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import * as THREE from 'three';
+import { Sound } from '../audio/sound.js';
+import { dining, updateDining } from '../dining/dining.js';
+import { MP, NET } from './boot.js';
+import { game } from './debug.js';
+import { GFX } from './prefs.js';
+import { save } from './save-load.js';
+import { updateFurnaceGlow, updateFurnaces } from '../machines/furnace.js';
+import { updateCrops, updateStoves } from '../machines/kitchen.js';
+import { updatePower, updatePowerVisuals } from '../machines/power.js';
+import { updateMobs, updateSpawns } from '../mobs/mobs.js';
+import { updatePuppets } from '../net/multiplayer.js';
+import { pcOpen, updatePC } from '../pc/computer.js';
+import { docOpen } from '../pc/doc-view.js';
+import { updateDocs } from '../pc/papers-world.js';
+import { updateEating } from '../player/eating.js';
+import { updateInteraction } from '../player/interaction.js';
+import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
+import { updateShards, updateSurvival } from '../player/survival.js';
+import { rebuildBlocks, specials, updateLights } from '../render/blocks.js';
+import { applyUnderground, dayTime, updateDay } from '../render/daylight.js';
+import { applyDimension } from '../render/dimension.js';
+import { rebuildForest } from '../render/forest.js';
+import { grassLayers, regrowGrass } from '../render/grass.js';
+import { ground } from '../render/ground.js';
+import { updateHeldModel, updateSwing } from '../render/held-item.js';
+import { debris, sparks } from '../render/particles.js';
+import { U, camera, renderer, scene } from '../render/renderer.js';
+import { sky, stars, updateEnvironment } from '../render/sky.js';
+import { updateVoxChunks } from '../render/vox-mesh.js';
+import { $ } from '../ui/dom.js';
+import { updateHUD, updateTips } from '../ui/hud.js';
+import { invOpen, renderHotbar, updateFires } from '../ui/inventory-ui.js';
+import { touchUI } from '../ui/touch.js';
+import { driveVehicle, placeCarCamera, updateVehicles, vehicles } from '../vehicles/car.js';
+import { updateFishing } from '../world/fishing.js';
+import { updateGroundItems } from '../world/ground-items.js';
+import { checkPortal, updatePortals } from '../world/shrine.js';
+import { updateRuins, updateSpawners } from '../world/structures.js';
+import { EYE } from '../../../shared/world/constants.js';
+
+// ============================================================ herní smyčka
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+export const clock = new THREE.Clock();
+export let envDay = 0, gameTime = 0, gameClock = 0, envTimer = 0, frames = 0, fpsTimer = 0, settle = 0;
+rebuildForest(player.pos.x, player.pos.z, true);
+rebuildBlocks();
+updateDay(0);
+updateEnvironment();
+renderHotbar();
+updateTips();
+if (!save) $('intro').style.display = 'grid';
+
+export function tick(realDt) {
+  const playing = (isLocked() || game.testMode) && !invOpen && !guideOpen && !pcOpen && !docOpen;
+  const dt = playing ? realDt : 0;
+  gameClock += realDt;
+  gameTime += dt;
+  U.time.value = gameClock;
+
+  let moving = 0;
+  if (playing && player.alive) moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt);
+  else if (player.vehicle && vehicles.has(player.vehicle)) { placeCarCamera(vehicles.get(player.vehicle)); Sound.engine(false, 0); }
+  else { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
+  updateVehicles(realDt);
+  updateHeldModel();
+  updateSwing(dt, moving);
+
+  const W = MP ? realDt : dt;
+  const { night, day } = updateDay(W);
+  rebuildForest(player.pos.x, player.pos.z);
+  updateVoxChunks(player.pos.x, player.pos.z);
+  applyDimension();
+  applyUnderground();
+  updateRuins(realDt);
+  if ((playing || MP) && !NET.client) updateSpawners(realDt);
+  if (playing) {
+    if (player.alive && !dining && !player.vehicle) updateInteraction(dt); // z auta se netěží
+    updateDining(dt);
+    updateSurvival(dt);
+    if (!MP) { updateMobs(dt, day); updateSpawns(dt, night); }
+    updateShards(dt);
+    if (!MP) updateGroundItems(dt);
+    updateFishing(dt);
+    updateEating(dt);
+    checkPortal(dt);
+  }
+  if (MP) { // tvory simuluje jen hostitel, klient je ukazuje podle něj
+    if (NET.client) updatePuppets(realDt); else { updateMobs(realDt, day); updateSpawns(realDt, night); }
+    updateGroundItems(realDt);
+  }
+  if (!NET.client) updateFires(realDt);
+  if (!NET.client) updateFurnaces(realDt); // pec taví u hostitele, klient jen ukazuje
+  updateFurnaceGlow(gameClock);
+  updatePower(realDt, day); // elektrické sítě (energie 4× za sekundu)
+  updatePowerVisuals(realDt, gameClock);
+  updatePC(realDt); // počítač: start, napájení, aplikace
+  updateDocs(realDt); // papíry a rámečky ve světě
+  updateStoves(realDt);
+  if (!NET.client) updateCrops(W);
+  updatePortals(realDt);
+  regrowGrass(realDt);
+  updateLights(gameClock);
+  if (Math.random() < realDt * 6) for (const s of specials.values()) if (s.type === 'campfire') sparks.emit(s.x + 0.5, s.ry + 0.4, s.z + 0.5, [1, 0.5, 0.15], 1, 0.6, 1.5);
+  sparks.update(realDt);
+  debris.update(realDt);
+  const gust = 0.5 + 0.5 * Math.sin(gameClock * 0.35) * Math.sin(gameClock * 0.13 + 1);
+  Sound.update(gust, night, realDt);
+
+  U.cam.value.copy(camera.position);
+  sky.position.copy(camera.position);
+  ground.position.set(Math.round(camera.position.x / 4) * 4, 0, Math.round(camera.position.z / 4) * 4);
+  stars.position.copy(camera.position);
+  // odlesky oblohy (drahé, ~10 ms) jen když se znatelně posunul čas dne, nejpozději po 12 s
+  if ((envTimer += realDt) > 3 && (Math.abs(dayTime - envDay) > 0.012 || envTimer > 12)) { envTimer = 0; envDay = dayTime; updateEnvironment(); }
+  cullFar(realDt);
+
+  frames++;
+  if ((fpsTimer += realDt) >= 2) {
+    if (++settle > 1 && frames / fpsTimer < 40) for (const g of grassLayers) if (g.geometry.instanceCount > 25000) g.geometry.instanceCount = Math.floor(g.geometry.instanceCount * 0.8);
+    frames = 0;
+    fpsTimer = 0;
+  }
+  updateHUD(realDt);
+  touchUI.update(realDt);
+  NET.update(realDt);
+  if (performance.now() - lastFrameAt < 300) renderer.render(scene, camera); // na pozadí se nevykresluje
+}
+// Objekty za mlhou (stroje, zříceniny, krystaly, vozidla, papíry…) se nekreslí. Skupiny se světlem viditelným zdálky
+// (sprity, materiály bez mlhy) a skupiny v počátku souřadnic (obsah rozmístěný po světě) zůstávají. Skrývá jen to, co sama skryla.
+let cullT = 0;
+function cullFar(dt) {
+  if ((cullT -= dt) > 0) return;
+  cullT = 0.5;
+  const R2 = (2.4 / GFX.fog) ** 2, cx = camera.position.x, cz = camera.position.z;
+  for (const o of scene.children) {
+    if (!o.isGroup) continue;
+    const U = o.userData;
+    if (U.noCull === undefined) {
+      let keep = o.position.lengthSq() < 1;
+      o.traverse((c) => { if (c.isSprite || c.isLight || (c.material && c.material.fog === false)) keep = true; });
+      U.noCull = keep;
+    }
+    if (U.noCull) continue;
+    const far = (o.position.x - cx) ** 2 + (o.position.z - cz) ** 2 > R2;
+    if (far && o.visible) { o.visible = false; U.culled = true; }
+    else if (!far && U.culled) { o.visible = true; U.culled = false; }
+  }
+}
+export let lastFrameAt = 0;
+export function frame() {
+  lastFrameAt = performance.now();
+  requestAnimationFrame(frame);
+  tick(Math.min(clock.getDelta(), 0.05));
+}

@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server/index.js",
-    "test": "node --test tests/unit/",
+    "test": "node --test \"tests/unit/*.test.mjs\"",
     "playtest": "node tests/playtest/playtest.mjs",
     "test:peer": "node tests/playtest/peer.mjs",
     "test:server": "node tests/playtest/server-mp.mjs"
