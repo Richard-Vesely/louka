@@ -80,8 +80,8 @@ function open(opts) {
   } catch { q('.cos-stage').classList.add('nogl'); }
   let R = null, raf = 0, rot = -0.5, drag = null, last = performance.now(), demoT = 0;
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
-  cam.position.set(0, 1.25, 4.6);
-  cam.lookAt(0, 0.98, 0);
+  cam.position.set(0, 1.4, 5.2);
+  cam.lookAt(0, 1.12, 0);
   if (renderer) {
     renderer.toneMapping = THREE.AgXToneMapping;
     renderer.toneMappingExposure = 1.1;
