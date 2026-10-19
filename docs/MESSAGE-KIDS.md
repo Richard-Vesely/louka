@@ -6,27 +6,31 @@ The message Richard sends to the club (Czech). The club password is sent separat
 
 Ahoj všichni!
 
-Markova hra **Říše** má vlastní server, kde svět zůstane, i když všichni odejdou. Hrát můžete už teď:
+**Pošlete mi prosím svoje uživatelské jméno na GitHubu** (jen jméno, ne heslo), přidám vás do projektu Říše.
+Kdo účet ještě nemá, založí si ho na https://github.com/signup. GitHub je od 13 let; mladší budou na kroužku
+pracovat ve dvojici nebo přes můj účet.
 
-1. Otevři **https://richard-vesely.github.io/rise/**
-2. Napiš svoje jméno a klikni na svět: **Hlavní svět** (přežití) nebo **Kreativní svět** (všechno máš hned).
-3. Poprvé tě hra požádá o **heslo kroužku** (pošlu zvlášť) a o **PIN**: 4 číslice, které si vymyslíš.
-   **Zapamatuj si ho.** S jménem a PINem se dostaneš ke svému batohu na jakémkoli počítači.
-4. Příště už stačí kliknout na svět.
+Mezitím můžete začít:
 
-Bez internetu nebo jen pro sebe: **Hrát sám**.
+**1. Hrát:** otevřete https://richard-vesely.github.io/rise/, napište své jméno a klikněte na **Hlavní svět** nebo
+**Kreativní svět**. Heslo kroužku vám řeknu, PIN (4 číslice) si vymyslíte a zapamatujete.
 
-**Chceš do hry přidat něco svého?** Hra je rozdělená na malé soubory, takže to s pomocí AI zvládneš.
+**2. Udělat si vlastní kopii hry (fork):** přihlaste se na GitHub, otevřete https://github.com/Richard-Vesely/rise
+a vpravo nahoře klikněte **Fork → Create fork**. Ve své kopii můžete měnit cokoli, společnou hru tím nerozbijete.
 
-1. **Pošli mi své uživatelské jméno na GitHubu** (ne heslo). Přidám tě do projektu.
-2. Přijde ti pozvánka e-mailem, klikni **Accept invitation**.
-3. Kód je na https://github.com/Richard-Vesely/rise. Návod krok za krokem je v souboru **CONTRIBUTING.md**,
-   nápady na první úkoly v záložce **Issues**.
+**3. Spustit svou verzi:** ve svém forku klikněte **Code → Codespaces → Create codespace on main** a v terminálu
+napište `npm run dev`. Nebo na svém počítači (potřebujete Node.js a Git):
+`git clone https://github.com/VASE-JMENO/rise`, `cd rise`, `npm install`, `npm run dev`
+a otevřete http://localhost:5173 → **Hrát sám**.
 
-Svému AI pomocníkovi můžeš napsat třeba:
+**4. Upravit ji s AI:** ve VS Code nebo v Codespaces otevřete chat GitHub Copilota, přepněte ho na **Agent**
+a napište třeba:
 
-> Přečti si AGENTS.md a docs/FEATURES.md. Chci do hry přidat … . Udělej co nejmenší změnu, vysvětli mi ji česky a řekni mi, jak to vyzkouším.
+> Přečti si AGENTS.md a docs/FEATURES.md. Chci do hry přidat … . Udělej co nejmenší změnu, vysvětli mi ji česky
+> a řekni mi, jak to vyzkouším.
 
-Ve středu to spolu rozjedeme. Vymyslete si, co byste do hry chtěli přidat!
+Celý návod krok za krokem, i jak poslat svou věc do společné hry, je tady:
+https://github.com/Richard-Vesely/rise/blob/main/CONTRIBUTING.md
 
+Ve středu to spolu rozjedeme!
 Richard

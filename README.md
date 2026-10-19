@@ -11,16 +11,17 @@ pec, elektřina, auto, letadlo, počítač s hrami a portál do Markovy dimenze.
 - **Úkoly:** [Issues](https://github.com/Richard-Vesely/rise/issues), štítek `dobrý první úkol`. Napiš do úkolu „beru si to“.
 - **Domluva:** chat kroužku https://chat.ardoremy.cz, kanál **říše** (jen na pozvánku)
 
-**Poprvé** (potřebuješ [Node.js](https://nodejs.org) 20+ a [Git](https://git-scm.com); nebo bez instalace:
-na GitHubu **Code → Codespaces → Create codespace**):
+**Poprvé:** na GitHubu klikni vpravo nahoře **Fork → Create fork**. Máš svou kopii `github.com/TVOJE-JMENO/rise`.
+Otevři ji v prohlížeči (ve svém forku **Code → Codespaces → Create codespace on main**) nebo na svém počítači
+(potřebuješ [Node.js](https://nodejs.org) 20+ a [Git](https://git-scm.com)):
 
 ```bash
-git clone https://github.com/Richard-Vesely/rise
+git clone https://github.com/TVOJE-JMENO/rise
 cd rise
 npm install
 ```
 
-**Pokaždé, když začínáš novou věc:**
+**Pokaždé, když začínáš novou věc:** na stránce svého forku klikni **Sync fork → Update branch**, pak:
 
 ```bash
 git switch main
@@ -30,7 +31,7 @@ git switch -c moje-vec     # nová větev, pojmenuj ji podle toho, co děláš
 npm run dev                # hra: otevři http://localhost:5173 a klikni Hrát sám
 ```
 
-**Co napsat AI pomocníkovi na začátku:**
+**Co napsat AI pomocníkovi na začátku** (třeba GitHub Copilot ve VS Code nebo Codespaces, režim **Agent**):
 
 > Přečti si AGENTS.md a docs/FEATURES.md. Chci do hry přidat … . Udělej co nejmenší změnu, vysvětli mi ji česky
 > a řekni mi, jak to vyzkouším.
@@ -51,7 +52,8 @@ git commit -m "Přidán …"
 git push -u origin moje-vec
 ```
 
-Na GitHubu klikni **Compare & pull request** a napiš, co jsi přidal(a), jak to vyzkoušet a kdo na tom pracoval.
+Ve svém forku na GitHubu klikni **Compare & pull request** (cíl `Richard-Vesely/rise`, `main`) a napiš, co jsi
+přidal(a), jak to vyzkoušet a kdo na tom pracoval.
 Počkej, až bude automatická kontrola zelená ✅ a Richard změnu schválí. Podrobný návod: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Jak hrát
