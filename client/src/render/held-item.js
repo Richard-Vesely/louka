@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { ITEMS } from '../../../shared/data/index.js';
 import { lerp, smoothstep, wrapAngle } from '../../../shared/util.js';
 import { WALK } from '../../../shared/world/constants.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { iconVoxels } from '../dining/food-models.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
@@ -34,6 +35,54 @@ function iconTexture(id) {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+// Nástroje: násada s omotávkou a kovovou objímkou, hlava z vytaženého obrysu se zkosením.
+// Krystal a markorit mají grafitovou násadu se svítícími prstenci (futuristický vzhled).
+const gripMat = new THREE.MeshStandardMaterial({ color: 0x2b211a, roughness: 0.95 });
+const graphite = new THREE.MeshStandardMaterial({ color: 0x2a2f38, roughness: 0.4, metalness: 0.6 });
+const socketMat = new THREE.MeshStandardMaterial({ color: 0x55585e, roughness: 0.45, metalness: 0.8 });
+const NEON = { 4: new THREE.MeshStandardMaterial({ color: 0x0a2a30, emissive: 0x3ff0ff, emissiveIntensity: 2.2 }), 5: new THREE.MeshStandardMaterial({ color: 0x2a0a30, emissive: 0xd050ff, emissiveIntensity: 2.2 }) };
+const ex = (shape, depth, bevel = 0.006) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 10 }).translate(0, 0, -depth / 2);
+function toolModel(d, mesh) {
+  const future = d.tier >= 4, shaft = future ? graphite : handleMat, head = TIER_MAT[d.tier];
+  mesh(new THREE.CylinderGeometry(0.019, 0.023, 0.64, 10), shaft, 0, 0.11);
+  mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.16, 10), gripMat, 0, -0.1); // omotávka
+  mesh(new THREE.CylinderGeometry(0.029, 0.027, 0.03, 10), socketMat, 0, -0.2); // koncovka
+  if (future) for (const y of [0.0, 0.22]) mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.012, 12), NEON[d.tier], 0, y);
+  if (d.tool === 'pick') {
+    const s = new THREE.Shape();
+    s.moveTo(-0.28, -0.07);
+    s.quadraticCurveTo(-0.15, 0.05, 0, 0.06);
+    s.quadraticCurveTo(0.15, 0.05, 0.28, -0.07);
+    s.quadraticCurveTo(0.14, 0.0, 0, -0.005);
+    s.quadraticCurveTo(-0.14, 0.0, -0.28, -0.07);
+    mesh(ex(s, 0.03), head, 0, 0.4);
+    mesh(new THREE.BoxGeometry(0.06, 0.1, 0.056), socketMat, 0, 0.405);
+    if (future) mesh(new THREE.BoxGeometry(0.064, 0.022, 0.06), NEON[d.tier], 0, 0.4); // svítící jádro v objímce
+  } else if (d.tool === 'axe') {
+    const s = new THREE.Shape();
+    s.moveTo(0.02, 0.05);
+    s.lineTo(0.1, 0.085);
+    s.quadraticCurveTo(0.2, 0.0, 0.1, -0.11);
+    s.lineTo(0.02, -0.055);
+    s.lineTo(0.02, 0.05);
+    mesh(ex(s, 0.018, 0.008), head, 0, 0.36);
+    mesh(new THREE.BoxGeometry(0.07, 0.1, 0.05), socketMat, -0.005, 0.36); // objímka
+    mesh(new THREE.BoxGeometry(0.05, 0.06, 0.04), head, -0.06, 0.36); // týl
+    if (future) mesh(new THREE.BoxGeometry(0.006, 0.17, 0.03), NEON[d.tier], 0.155, 0.355).rotation.z = 0.12;
+  } else {
+    const s = new THREE.Shape();
+    s.moveTo(-0.07, 0);
+    s.lineTo(0.07, 0);
+    s.lineTo(0.07, 0.12);
+    s.quadraticCurveTo(0.065, 0.2, 0, 0.235);
+    s.quadraticCurveTo(-0.065, 0.2, -0.07, 0.12);
+    s.lineTo(-0.07, 0);
+    const blade = mesh(ex(s, 0.012, 0.005), head, 0, 0.42);
+    blade.rotation.x = -0.12; // lopata je trochu prohnutá dopředu
+    mesh(new THREE.CylinderGeometry(0.03, 0.022, 0.08, 10), socketMat, 0, 0.42);
+    if (future) mesh(new THREE.BoxGeometry(0.008, 0.16, 0.02), NEON[d.tier], 0, 0.53);
+  }
+}
 const heldCache = {};
 function buildHeld(id) {
   const d = ITEMS[id], g = new THREE.Group();
@@ -44,16 +93,8 @@ function buildHeld(id) {
     mesh(new THREE.BoxGeometry(0.24, 0.035, 0.05), d.tier >= 3 ? goldMat : handleMat);
     mesh(new THREE.CylinderGeometry(0.021, 0.024, 0.17, 10), handleMat, 0, -0.1);
     mesh(new THREE.SphereGeometry(0.034, 12, 8), d.tier >= 3 ? goldMat : handleMat, 0, -0.2);
-  } else if (d.tool === 'axe' || d.tool === 'pick') {
-    mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.62, 8), handleMat, 0, 0.12);
-    if (d.tool === 'axe') {
-      mesh(new THREE.BoxGeometry(0.17, 0.13, 0.03), TIER_MAT[d.tier], 0.08, 0.36);
-    } else {
-      const head = mesh(new THREE.BoxGeometry(0.46, 0.05, 0.04), TIER_MAT[d.tier], 0, 0.4);
-      head.scale.set(1, 1, 1);
-      mesh(new THREE.ConeGeometry(0.03, 0.08, 6), TIER_MAT[d.tier], 0.25, 0.39).rotation.z = -Math.PI / 2;
-      mesh(new THREE.ConeGeometry(0.03, 0.08, 6), TIER_MAT[d.tier], -0.25, 0.39).rotation.z = Math.PI / 2;
-    }
+  } else if (d.tool === 'axe' || d.tool === 'pick' || d.tool === 'shovel') {
+    toolModel(d, mesh);
   } else if (d.block && blockMat(d.block)) {
     mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), blockMat(d.block), 0, 0.15).rotation.set(0.3, 0.6, 0);
   } else if (id === 'torch') {
@@ -75,7 +116,7 @@ function buildHeld(id) {
 export const SUIT = {
   suit: new THREE.MeshStandardMaterial({ color: 0xe4e9f0, roughness: 0.42, metalness: 0.15 }), // bílé panely
   dark: new THREE.MeshStandardMaterial({ color: 0x323844, roughness: 0.6, metalness: 0.3 }), // grafitové spoje
-  glove: new THREE.MeshStandardMaterial({ color: 0x2a2f38, roughness: 0.7, metalness: 0.1 }),
+  glove: new THREE.MeshStandardMaterial({ color: 0x3a414e, roughness: 0.65, metalness: 0.15 }),
   plate: new THREE.MeshStandardMaterial({ color: 0xb8c4d2, roughness: 0.25, metalness: 0.95 }),
   neon: new THREE.MeshStandardMaterial({ color: 0x0a2530, emissive: 0x38e4ff, emissiveIntensity: 2.2 }),
 };
@@ -93,7 +134,7 @@ function buildHand() {
   }
   box(0.12, 0.008, 0.012, SUIT.neon, 0, 0.212, -0.062); // svítící linka přes klouby
   box(0.04, 0.075, 0.05, SUIT.glove, -0.08, 0.12, -0.04).rotation.z = 0.35; // palec
-  arm.rotation.set(-0.85, 0.15, 0.45);
+  arm.rotation.set(-0.8, -0.55, 0.42);
   arm.position.set(0.04, 0.06, 0.02);
   g.add(arm);
   g.scale.setScalar(0.85);
@@ -104,7 +145,7 @@ export function updateHeldModel() {
   const s = heldStack();
   const id = player.eating ? player.eating.id : s ? s.id : null;
   if (id === heldId) return;
-  if (heldId !== undefined) equipT = 0; // výměna předmětu: ruka se schová dolů a vrátí
+  if (heldId !== undefined) { equipT = 0; if (ITEMS[id]?.tool || ITEMS[id]?.dur) toolSound('equip'); } // výměna předmětu: ruka se schová dolů a vrátí
   heldId = id;
   holder.clear();
   holder.add(heldCache[id || '#hand'] ||= id ? buildHeld(id) : buildHand());
