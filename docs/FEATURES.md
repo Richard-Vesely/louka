@@ -100,8 +100,9 @@ When you add or change a feature, update this file in the same pull request.
 - **First-person hand**: a gloved suit sleeve (your colours, glowing cuff) holds the item. It sways with your steps,
   lags a little behind fast turns, dips and comes back up when you switch items, jolts when you get hurt, and swings
   with the same tool arcs.
-- **V** switches the view: *Pohled z první osoby*, *Pohled zezadu*, *Pohled zepředu* (in a vehicle V still switches
-  the car camera). The camera stops in front of walls; aiming still works from the eyes.
+- **V** (touch: *Pohled*) switches the view: *Pohled z první osoby*, *Pohled zezadu*, *Pohled zepředu* (in a vehicle V
+  still switches the car camera). The camera stops in front of walls (with a wall right behind you the head hides so it
+  doesn't block the view); aiming still works from the eyes.
 
 *Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`; character model, armor plates and animation `client/src/render/character.js` (one skinned mesh per material, joints are bones), first-person hand `client/src/render/held-item.js`, own body and third-person view `client/src/net/avatars.js`.
 
@@ -256,6 +257,6 @@ under the feet / being mined), `ambience.js` (ambience beds and one-shots), `hum
 ## 12. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
 E inventory · G drop · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V view (first person / behind / front; car camera in a vehicle) · O suit (*Můj oblek*) · Esc menu.
-Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba…*), landscape only.
+Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba, Pohled…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.

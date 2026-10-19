@@ -194,6 +194,9 @@ function thirdPersonCamera() {
   if (viewMode === 2) camera.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(THREE.Object3D.DEFAULT_UP, Math.PI));
   camera.updateMatrixWorld(true);
   applied.copy(camera.position);
+  // kamera těsně u hlavy (zeď za zády): hlava by zakryla celý pohled, tak se schová
+  const hide = camDist < 0.95 && viewMode === 1;
+  if (me.head.scale.x < 0.5 !== hide) { me.head.scale.setScalar(hide ? 0.001 : 1); me.head.updateMatrixWorld(true); }
 }
 // Kamera se posouvá těsně před vykreslením (po míření a těžbě), takže míření zůstává z očí.
 const prevBefore = scene.onBeforeRender;
