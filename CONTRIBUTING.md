@@ -4,9 +4,17 @@ Hru stavíme spolu. Aby si nikdo nerozbil práci druhého, děláme každou změ
 
 **větev → malá změna → vyzkoušet → pull request → kontrola → sloučit**
 
-## Kdo smí na GitHub
+## Jak se dostat do projektu (jednou)
 
-GitHub dovoluje účet až od **13 let**. Když je ti míň:
+1. Založ si účet na **https://github.com/signup** (GitHub dovoluje účet od **13 let**).
+2. Pošli Richardovi své **uživatelské jméno na GitHubu** (ne heslo!).
+3. Richard tě přidá do projektu. Přijde ti e-mail s pozvánkou, nebo ji najdeš na
+   **https://github.com/Richard-Vesely/louka/invitations**. Klikni **Accept invitation**.
+
+Pak můžeš do projektu posílat své větve a pull requesty. Do `main` přímo zapisovat nejde, to je dobře:
+každá změna jde přes kontrolu.
+
+Když je ti míň než 13:
 - pracuj **ve dvojici** s někým, kdo účet má, nebo
 - pracuj přes **Richardův účet** na kroužku (Richard ti ho přihlásí).
 
@@ -83,7 +91,8 @@ GitHub ti ukáže odkaz **Compare & pull request**. Klikni na něj a napiš:
   Musí být zelená ✅. Když je červená ❌, klikni na **Details** a podívej se, co se nepovedlo.
 - **Richard** (nebo kamarád) si změnu prohlédne a možná napíše připomínky. Oprav je ve stejné větvi
   (`git commit` + `git push`), pull request se sám aktualizuje.
-- Po schválení se změna **sloučí do `main`** a za pár minut je ve hře na webu i na serveru kroužku.
+- Po schválení se změna **sloučí do `main`**. Za pár minut je ve hře na webu
+  (https://richard-vesely.github.io/louka/) a na serveru kroužku po další aktualizaci serveru.
 
 ## Pravidla
 
