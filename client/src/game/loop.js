@@ -19,6 +19,7 @@ import { updatePuppets } from '../net/multiplayer.js';
 import { pcOpen, updatePC } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
 import { updateDocs } from '../pc/papers-world.js';
+import { applyCameraFeel, timeScale } from '../player/camera-feel.js';
 import { updateEating } from '../player/eating.js';
 import { updateInteraction } from '../player/interaction.js';
 import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
@@ -30,6 +31,7 @@ import { rebuildForest } from '../render/forest.js';
 import { grassLayers, regrowGrass } from '../render/grass.js';
 import { ground } from '../render/ground.js';
 import { updateHeldModel, updateSwing } from '../render/held-item.js';
+import { updateChips, updateStars } from '../render/chips.js';
 import { debris, sparks } from '../render/particles.js';
 import { initClouds, initRidge, updateClouds, updateRidge } from '../render/clouds.js';
 import { post, renderFrame } from '../render/post.js';
@@ -77,13 +79,13 @@ if (!save) $('intro').style.display = 'grid';
 
 export function tick(realDt) {
   const playing = (isLocked() || game.testMode) && !invOpen && !guideOpen && !pcOpen && !docOpen;
-  const dt = playing ? realDt : 0;
+  const dt = playing ? realDt * timeScale(realDt) : 0; // timeScale: krátké zastavení po silném úderu (hit-stop)
   gameClock += realDt;
   gameTime += dt;
   U.time.value = gameClock;
 
   let moving = 0;
-  if (playing && player.alive) moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt);
+  if (playing && player.alive) { moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt); if (!player.vehicle && !player.sitting) applyCameraFeel(realDt, moving); }
   else if (player.vehicle && vehicles.has(player.vehicle)) { placeCarCamera(vehicles.get(player.vehicle)); Sound.engine(false, 0); }
   else { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
   updateVehicles(realDt);
@@ -132,6 +134,8 @@ export function tick(realDt) {
   updateAmbientFx(realDt, underground); // jiskry a kouř nad ohněm, prach v jeskyni, světélka v Markově dimenzi
   sparks.update(realDt);
   debris.update(realDt);
+  updateChips(realDt);
+  updateStars(realDt);
   const gust = Math.min(1, U.wind.value.z * (0.6 + 0.4 * U.wind.value.w)); // společný vítr (za deště a bouřky silnější)
   updateSoundscape(realDt, gust); // zvuky okolí, hudba, stroje, kroky ostatních
 

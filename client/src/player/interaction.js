@@ -1,29 +1,33 @@
 // Těžba, útok, pokládání a použití předmětů.
 import './targeting.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { BLOCKS, CROPS, ITEMS, TOOL_SPEED } from '../../../shared/data/index.js';
+import { BLOCKS, CROPS, ITEMS } from '../../../shared/data/index.js';
 import { NET } from '../../../shared/net/net.js';
 import { others } from '../../../shared/net/room.js';
 import { randInt } from '../../../shared/util.js';
-import { nearPond } from '../../../shared/world/nature.js';
+import { BREAK_PAUSE, INSTANT, attackCharge, attackResult, attackSpeed, breakTime, lacksTool, useCost } from '../../../shared/tools.js';
+import { nearPond, waterAt } from '../../../shared/world/nature.js';
 import { bkey, blockMeta, blocks, chairRot, chests, crops, fires, furnaces, pcDisks, power, removed, ruinsOpened, spawners, stoves, tableItems, vehicles } from '../../../shared/world/state.js';
 import { structuresNear } from '../../../shared/world/structures.js';
 import { biomeAt, forest } from '../../../shared/world/terrain.js';
 import { V, VOX, columnDug, getVox, setVox, topY } from '../../../shared/world/voxels.js';
 import { blockMaterial, targetMaterial, voxMaterial } from '../audio/materials.js';
 import { Sound } from '../audio/sound.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { MP } from '../game/boot.js';
 import { harvestCrop } from '../machines/kitchen.js';
 import { toggleSwitch } from '../machines/power.js';
 import { hitMob } from '../mobs/mobs.js';
 import { openPC } from '../pc/computer.js';
 import { dropSpotsAt, takeSpot, useDocs, withPaper } from '../pc/papers-world.js';
-import { rebuildBlocks } from '../render/blocks.js';
+import { blockMat, rebuildBlocks } from '../render/blocks.js';
+import { breakCount, emitChips, paletteOf } from '../render/chips.js';
+import { crackable, showCracks } from '../render/crack.js';
 import { rebuildForest } from '../render/forest.js';
 import { cutGrass } from '../render/grass.js';
 import { startSwing } from '../render/held-item.js';
 import { debris, sparks } from '../render/particles.js';
-import { scene } from '../render/renderer.js';
+import { camera, scene } from '../render/renderer.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { openInventory, renderHotbar } from '../ui/inventory-ui.js';
@@ -33,7 +37,9 @@ import { useRod } from '../world/fishing.js';
 import { usePortal } from '../world/shrine.js';
 import { placedAny } from '../world/world-state.js';
 import { sitOn, startEating, useTable } from './eating.js';
-import { addItem, consumeSelected, heldStack, inv } from './inventory.js';
+import { hitKick, hitStop } from './camera-feel.js';
+import { wearHeld } from './durability.js';
+import { addItem, addStack, consumeSelected, heldStack, inv } from './inventory.js';
 import { creative, input, player, playerIntersects } from './player.js';
 import { pickTarget } from './targeting.js';
 
@@ -66,15 +72,67 @@ export function cellFree(x, y, z) {
   if (y === top && !columnDug(x, z)) return true; // horní blok je schovaný pod terénem
   return getVox(x, y, z, top) === V.AIR;
 }
-const mining = { key: null, p: 0 };
-const toolOf = (s) => (s && ITEMS[s.id].tool ? ITEMS[s.id] : null);
+const mining = { key: null, p: 0, tick: 0, pause: 0, time: 1 };
 // Zvuk z místa, kde se těží nebo staví (do 5 m plná hlasitost, jen směr zleva / zprava)
 const sfxAt = (pt, fn) => (pt ? Sound.at(pt[0], pt[1], pt[2], fn, { ref: 5 }) : fn());
 const CHIP = { tree: [0.42, 0.3, 0.17], rock: [0.5, 0.5, 0.48], iron: [0.65, 0.35, 0.15], grass: [0.25, 0.5, 0.12], planks: [0.6, 0.45, 0.28], cobble: [0.5, 0.5, 0.48], bricks: [0.55, 0.52, 0.48], dirt: [0.42, 0.3, 0.2] };
+const shade = (c, k) => c.map((v) => Math.min(1, v * k));
+// Barvy úlomků cíle: z textury bloku, z barvy podzemního bloku, kůra stromu…
+function chipColors(t) {
+  if (t.kind === 'vox') { const c = VOX[t.vox].chip; return [c, shade(c, 0.75), shade(c, 1.2)]; }
+  if (t.kind === 'block') {
+    const m = blockMat(t.type), base = CHIP[t.type] || CHIP.planks;
+    const pal = paletteOf('block:' + t.type, m?.map?.image, base);
+    if (!m?.color || m.color.getHex() === 0xffffff) return pal;
+    const tint = m.color.clone().convertLinearToSRGB();
+    return pal.map((c) => [c[0] * tint.r, c[1] * tint.g, c[2] * tint.b]);
+  }
+  if (t.kind === 'tree') return t.tree.mark ? [[0.3, 0.45, 0.75], [0.2, 0.3, 0.55]] : [CHIP.tree, shade(CHIP.tree, 0.7), [0.55, 0.42, 0.28]];
+  if (t.kind === 'rock') return t.rock.iron ? [CHIP.iron, CHIP.rock, shade(CHIP.rock, 0.7)] : [CHIP.rock, shade(CHIP.rock, 0.75), shade(CHIP.rock, 1.2)];
+  if (t.kind === 'grass') return [[0.2, 0.36, 0.1], [0.27, 0.42, 0.13], [0.16, 0.29, 0.08]];
+  if (t.kind === 'vehicle') return [[0.75, 0.15, 0.12], [0.3, 0.3, 0.32], [0.7, 0.72, 0.75]];
+  return [CHIP.planks];
+}
+const hitPoint = (t) => t.point || t.at || (t.cell ? t.cell.map((v) => v + 0.5) : [player.pos.x, player.pos.y, player.pos.z]);
+// Každých 0,2 s při těžbě: drobky z místa úderu a úder podle materiálu (audio/sfx.js; u stromu občas spadne list)
+function mineTick(t, heldId) {
+  const at = hitPoint(t), n = t.normal || [0, 1, 0];
+  emitChips([at[0] + n[0] * 0.06, at[1] + n[1] * 0.06, at[2] + n[2] * 0.06], chipColors(t), 2 + ((Math.random() * 3) | 0), { speed: 1.2, up: 1.6, size: [0.035, 0.07], life: [0.25, 0.7], spread: 0.08, dir: n.map((v) => v * 0.5) });
+  sfxAt(t.at || at, () => Sound.blockHit(targetMaterial(t), ITEMS[heldId]?.tool));
+  if (t.kind === 'tree' && !t.tree.mark && Math.random() < 0.6) debris.emit(t.tree.x + (Math.random() - 0.5) * 2, t.tree.y + t.tree.trunkH, t.tree.z + (Math.random() - 0.5) * 2, [0.22, 0.45, 0.12], 2, 0.6, 0.2);
+}
+// Rozbití: hromada úlomků (64 na vysoké grafice, 16 na nízké); zvuk materiálu hraje každá větev breakTarget
+function breakFx(t, at) {
+  if (t.kind === 'grass') emitChips(at, chipColors(t), Math.ceil(breakCount() / 4), { speed: 1.4, up: 2, size: [0.025, 0.045], life: [0.3, 0.8], spread: 0.3 }); // jen pár stébel
+  else emitChips(at, chipColors(t), breakCount(), { speed: 2.4, up: 2.4, spread: t.kind === 'tree' ? 0.6 : 0.45 });
+}
+
+// Útok: nabití úderu roste od posledního máchnutí (proužek pod zaměřovačem).
+let atkSince = 9, prevLmb = false, wasCharged = true;
+export let atkCharge = 1;
+function attackMob(m, heldId) {
+  const charge = atkCharge;
+  const r = attackResult(heldId, charge, { falling: player.vel.y < -0.5, onGround: player.onGround, sprinting: player.sprinting });
+  atkSince = 0;
+  wasCharged = false;
+  startSwing(0.28, charge);
+  if (!hitMob(m, r.dmg, player.yaw, r.kb, { crit: r.crit, charge })) { toolSound('whoosh', charge * 0.5); return; } // tvor je ještě chvíli nezranitelný
+  wearHeld(useCost(heldId, 'hit'));
+  hitKick(0.35 + 0.65 * charge);
+  if (charge > 0.9) hitStop(r.crit ? 0.07 : 0.045);
+}
+// Proužek nabití úderu pod zaměřovačem
+function renderAttackMeter(aimMob) {
+  const el = $('atkMeter');
+  if (!el) return;
+  el.classList.toggle('show', atkCharge < 1 || aimMob);
+  el.classList.toggle('full', atkCharge >= 1);
+  el.firstChild.style.width = `${(atkCharge * 100).toFixed(1)}%`;
+}
 
 export function updateInteraction(dt) {
   target = withPaper(pickTarget()); // papíry a rámečky ve světě (14e)
-  const tool = toolOf(heldStack());
+  const held = heldStack(), heldId = held?.id ?? null;
   let warn = '';
   const boxCell = target?.kind === 'block' || (target?.kind === 'vox' && !target.surface) ? target.cell : null;
   outline.visible = !!boxCell;
@@ -84,41 +142,57 @@ export function updateInteraction(dt) {
     groundRing.position.set(target.point[0], target.point[1] + 0.04, target.point[2]);
     groundRing.material.color.set(target.breakable === false ? 0x999999 : target.kind === 'grass' ? 0xffffff : 0xffd27a);
   }
-  const held = heldStack();
   const cell = held && ITEMS[held.id].block ? placementCell(target) : null;
   preview.visible = !!cell && cellFree(...cell);
   if (preview.visible) preview.position.set(cell[0] + 0.5, cell[1] + 0.5, cell[2] + 0.5);
 
   swingCd -= dt;
   useCd -= dt;
+  mining.pause -= dt;
+  atkSince += dt;
+  atkCharge = attackCharge(atkSince, heldId);
+  if (atkCharge >= 1 && !wasCharged) { wasCharged = true; if (ITEMS[heldId]?.tool === 'sword' || ITEMS[heldId]?.tool === 'axe') toolSound('charged'); }
+  const fresh = input.lmb && !prevLmb;
+  prevLmb = input.lmb;
   if (input.lmb && target?.kind === 'mob') {
-    if (swingCd <= 0) { startSwing(); Sound.swing(); swingCd = 0.42; hitMob(target.mob, tool ? tool.dmg : 1); }
+    // klik = úder hned (slabší, když není nabitý), držení = úder vždy, když se nabije
+    if ((fresh && atkSince > 0.1) || atkCharge >= 1) attackMob(target.mob, heldId);
     mining.key = null;
+    mining.p = 0;
   } else if (creative && input.lmb && target && target.kind !== 'mob' && target.breakable !== false) {
-    if (swingCd <= 0) { startSwing(); swingCd = 0.2; breakTarget(target); }
+    if (swingCd <= 0) { startSwing(0.2); swingCd = 0.2; breakTarget(target); }
     mining.key = null;
     mining.p = 0;
   } else if (input.lmb && target && target.kind !== 'mob' && target.breakable !== false) {
-    if (mining.key !== target.key) { mining.key = target.key; mining.p = 0; }
-    const req = target.req;
-    if (req && !(tool && tool.tool === req.tool && tool.tier >= req.tier)) {
-      warn = `Potřebuješ ${target.reqName || (req.tier > 1 ? 'kamenný krumpáč' : 'krumpáč')}`;
+    if (mining.key !== target.key) { mining.key = target.key; mining.p = 0; mining.tick = 0; }
+    if (lacksTool(target.req, heldId)) {
+      warn = `Potřebuješ ${target.reqName || (target.req.tier > 1 ? 'kamenný krumpáč' : 'krumpáč')}`;
       mining.p = 0;
-      if (swingCd <= 0) { startSwing(); swingCd = 0.4; sfxAt(target.at, () => Sound.denied()); }
-    } else {
-      const speed = tool && tool.tool === target.tool ? TOOL_SPEED[tool.tier] : 1;
-      mining.p += (dt * speed) / target.hard;
-      if (swingCd <= 0) {
-        startSwing();
-        swingCd = 0.34;
-        const chip = target.kind === 'vox' ? VOX[target.vox].chip : CHIP[target.kind === 'rock' && target.rock.iron ? 'iron' : target.kind === 'block' ? target.type : target.kind] || CHIP.rock;
-        debris.emit(...target.at, chip, 6, 2.5, 1.5);
-        sfxAt(target.at, () => Sound.blockHit(targetMaterial(target), tool?.tool));
+      if (swingCd <= 0) { startSwing(0.3, 0.6); swingCd = 0.4; sfxAt(target.at, () => Sound.denied()); emitChips(hitPoint(target), chipColors(target), 1, { speed: 0.8, up: 1, size: [0.03, 0.05], life: [0.2, 0.4] }); }
+    } else if (mining.pause <= 0) {
+      const flying = (creative && player.flying) || player.flyT > 0;
+      const eye = camera.position;
+      mining.time = breakTime(target, heldId, { underwater: waterAt(eye.x, eye.y, eye.z) !== null, airborne: !player.onGround && !flying });
+      mining.p += dt / mining.time;
+      if (swingCd <= 0) { startSwing(0.26); swingCd = 0.26; } // ruka máchá pořád dokola
+      if ((mining.tick -= dt) <= 0) { mining.tick = 0.2; mineTick(target, heldId); }
+      if (mining.p >= 1) {
+        const t = target, instant = mining.time <= INSTANT;
+        breakTarget(t);
+        wearHeld(useCost(heldId, 'mine', { tool: t.tool, instant }));
+        mining.key = null;
+        mining.p = 0;
+        if (!instant) mining.pause = BREAK_PAUSE; // krátká pauza před dalším blokem
       }
-      if (mining.p >= 1) { breakTarget(target); mining.key = null; mining.p = 0; }
     }
   } else {
-    if (input.lmb && swingCd <= 0) { startSwing(); Sound.swing(); swingCd = 0.42; }
+    if (input.lmb && swingCd <= 0) { // máchnutí do vzduchu
+      startSwing(0.3, atkCharge);
+      toolSound('whoosh', atkCharge);
+      swingCd = Math.max(0.25, 1 / attackSpeed(heldId));
+      atkSince = 0;
+      wasCharged = false;
+    }
     mining.key = null;
     mining.p = 0;
   }
@@ -127,10 +201,14 @@ export function updateInteraction(dt) {
 
   const label = $('targetLabel');
   label.innerHTML = warn ? `<span class="warn">${warn}</span>` : target ? `${target.name}${target.hint ? `<small>${target.hint}</small>` : ''}` : '';
-  const pr = $('progress');
-  pr.style.opacity = mining.p > 0 ? 1 : 0;
-  pr.style.background = `conic-gradient(rgba(255,255,255,0.9) ${mining.p * 360}deg, rgba(255,255,255,0.15) 0deg)`;
+  showCracks(mining.key ? target : null, mining.p);
+  const pr = $('progress'), ring = mining.p > 0 && !crackable(target);
+  pr.style.opacity = ring ? 1 : 0;
+  if (ring) pr.style.background = `conic-gradient(rgba(140,240,255,0.95) ${mining.p * 360}deg, rgba(255,255,255,0.14) 0deg)`;
+  renderAttackMeter(target?.kind === 'mob');
 }
+/** Stav těžby a útoku (pro testy a ladění). */
+export const mineState = () => ({ key: mining.key, p: mining.p, time: mining.time, pause: Math.max(0, mining.pause), charge: atkCharge });
 
 // Co padá ze stromů v biomech: [předmět, min, max]
 const TREE_DROPS = {
@@ -150,6 +228,7 @@ export function breakTarget(t) {
       if (!tr.pine && !tr.mark && Math.random() < 0.45) addItem('apple', randInt(1, 3)); // jabloně
     }
     debris.emit(tr.x, tr.y + tr.trunkH, tr.z, [0.2, 0.45, 0.12], 60, 5, 2);
+    breakFx(t, t.at || [tr.x, tr.y + 1, tr.z]);
     sfxAt(t.at, () => { Sound.blockBreak(targetMaterial(t)); Sound.crack(); });
     Sound.at(tr.x, tr.y + tr.trunkH, tr.z, () => Sound.mat('leaves', 'break', 1.4), { ref: 5 }); // padající koruna
     rebuildForest(player.pos.x, player.pos.z, true);
@@ -158,9 +237,10 @@ export function breakTarget(t) {
     const v = vehicles.get(t.id);
     if (!v) return;
     if (v.driver && v.driver !== myDriverId()) { toast('V autě někdo sedí'); return; }
-    for (const s of v.slots) if (s) addItem(s.id, s.n);
+    for (const s of v.slots) if (s) addStack(s, false);
     addItem(v.type === 'plane' ? 'biplane' : v.type, 1);
     vehicles.delete(t.id);
+    breakFx(t, t.at || [v.x, v.y + 0.6, v.z]);
     sfxAt(t.at, () => { Sound.blockBreak('metal'); Sound.crack(); });
   } else if (t.kind === 'rock') {
     removed.add(t.key);
@@ -168,7 +248,7 @@ export function breakTarget(t) {
     if (r.iron) { addItem('iron_ore', randInt(2, 3)); addItem('stone', 1); }
     else addItem('stone', 2 + Math.floor(r.s * 3));
     if (Math.random() < 0.3) addItem('salt', randInt(1, 2)); // solné krystalky v kameni
-    debris.emit(r.x, r.y + 0.3, r.z, CHIP[r.iron ? 'iron' : 'rock'], 40, 4, 2);
+    breakFx(t, [r.x, r.y + 0.3, r.z]);
     sfxAt(t.at, () => { Sound.blockBreak('stone'); Sound.crack(); });
     rebuildForest(player.pos.x, player.pos.z, true);
   } else if (t.kind === 'block') {
@@ -183,14 +263,14 @@ export function breakTarget(t) {
     if (player.sitting === k) player.sitting = null;
     if (stoves.has(k)) { const st = stoves.get(k); if (st.slots[0]) addItem(st.slots[0].id, st.slots[0].n); stoves.delete(k); }
     spawners.delete(k);
-    for (const store of [fires.get(k)?.slots, chests.get(k), furnaces.get(k)?.slots, power.get(k)?.slots]) if (store) for (const s of store) if (s) addItem(s.id, s.n);
+    for (const store of [fires.get(k)?.slots, chests.get(k), furnaces.get(k)?.slots, power.get(k)?.slots]) if (store) for (const s of store) if (s) addStack(s, false);
     fires.delete(k);
     power.delete(k);
     pcDisks.delete(k); // rozebraný počítač přijde o uložené dokumenty
     dropSpotsAt(...t.cell); // papíry na bloku spadnou do batohu
     furnaces.delete(k);
     chests.delete(k);
-    debris.emit(...t.at, CHIP[t.type] || CHIP.planks, 25, 3, 1.5);
+    breakFx(t, t.at);
     sfxAt(t.at, () => Sound.blockBreak(blockMaterial(t.type)));
     rebuildBlocks();
   } else if (t.kind === 'grass') {
@@ -210,7 +290,8 @@ export function breakTarget(t) {
     if (bio === 'jungle' && Math.random() < 0.12) addItem('blue_flower', 1);
     if (bio === 'mushroom') { if (Math.random() < 0.18) addItem('glowshroom', 1); if (Math.random() < 0.3) addItem('mushroom', 1); }
     cutGrass(t.point[0], t.point[2]);
-    debris.emit(...t.point, CHIP.grass, 18, 2, 2.5);
+    debris.emit(...t.point, CHIP.grass, 12, 2, 2.5);
+    breakFx(t, t.point);
     sfxAt(t.point, () => Sound.blockBreak('grass'));
   } else if (t.kind === 'vox') {
     const [x, y, z] = t.cell, def = VOX[t.vox];
@@ -222,8 +303,8 @@ export function breakTarget(t) {
     if (t.surface) cutGrass(x + 0.5, z + 0.5, 1.2);
     dropSpotsAt(x, y, z);
     if (t.surface) dropSpotsAt(x, y + 1, z);
-    debris.emit(x + 0.5, y + 0.5, z + 0.5, def.chip, 30, 3, 1.5);
-    if (def.glow) { sparks.emit(x + 0.5, y + 0.5, z + 0.5, [0.4, 0.95, 1.0], 50, 4, 2); Sound.pickup(); }
+    breakFx(t, [x + 0.5, y + 0.5, z + 0.5]);
+    if (def.glow) { sparks.emit(x + 0.5, y + 0.5, z + 0.5, def.chip, 50, 4, 2); Sound.pickup(); }
     sfxAt([x + 0.5, y + 0.5, z + 0.5], () => Sound.blockBreak(voxMaterial(t.vox)));
   }
 }
@@ -355,6 +436,8 @@ function tillGround() {
   if (blocks.has(bkey(...cell)) && blocks.get(bkey(...cell)) !== 'dirt' && blocks.get(bkey(...cell)) !== 'markdirt') return;
   blocks.set(bkey(...cell), 'farmland');
   rebuildBlocks();
+  startSwing(0.3);
+  wearHeld(useCost('hoe', 'use'));
   debris.emit(cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5, [0.4, 0.28, 0.18], 14, 2, 1.5);
   sfxAt([cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5], () => Sound.blockPlace('dirt'));
 }
@@ -383,6 +466,7 @@ export function placeBlock(d, [x, y, z]) {
   }
   consumeSelected();
   sfxAt([x + 0.5, y + 0.5, z + 0.5], () => Sound.blockPlace(blockMaterial(d.block)));
+  startSwing(0.22, 0.5);
   return true;
 }
 // Stavění pod sebe (jako v Minecraftu): dívej se dolů, skákej a drž pravé tlačítko – pod nohama roste sloup.

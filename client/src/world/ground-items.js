@@ -87,13 +87,14 @@ export function dropHeld(all) {
   const n = all ? s.n : 1;
   if ((s.n -= n) <= 0) inv.slots[inv.sel] = null;
   renderHotbar();
-  throwItem(s.id, n);
+  throwItem(s.id, n, s.w);
 }
-export function throwItem(id, n) {
+// w = opotřebení nástroje (letí s ním na zem)
+export function throwItem(id, n, w = 0) {
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
   const pos = camera.position.clone().addScaledVector(dir, 0.5).add(new THREE.Vector3(0, -0.3, 0));
-  spawnGroundItem(id, n, pos, dir.multiplyScalar(5.5).add(new THREE.Vector3(0, 2, 0)), 1.2);
+  spawnGroundItem(id, n, pos, dir.multiplyScalar(5.5).add(new THREE.Vector3(0, 2, 0)), 1.2, undefined, w);
   uiSound.toss();
   feed(id, `−${n} ${ITEMS[id].name}`);
 }
@@ -114,7 +115,7 @@ function pickupLocal(it) {
   if (NET.client) { // o sebrání rozhodne hostitel (ať předmět nesebere víc hráčů naráz)
     if (it.req <= 0) { it.req = 2; it.mine = true; NET.req(['pk', it.gid]); }
   } else {
-    const left = addItem(it.id, it.n, true);
+    const left = addItem(it.id, it.n, true, it.w || 0);
     if (left < it.n) { uiSound.pickup(); feed(it.id, `+${it.n - left} ${ITEMS[it.id].name}`); NET.op(['gx', it.gid, left]); it.mine = !left; }
     it.n = left;
   }

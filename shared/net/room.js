@@ -123,14 +123,14 @@ function onClientMsg(P, msg) {
     }
     case 'pk': { // žádost o sebrání předmětu ze země
       const got = claimGroundItem(msg[1]);
-      if (got) sendTo(P.pid, ['give', got.id, got.n]);
+      if (got) sendTo(P.pid, got.w ? ['give', got.id, got.n, got.w] : ['give', got.id, got.n]);
       break;
     }
     case 'hit': {
       const m = mobs.find((x) => x.nid === msg[1] && !x.dead);
       if (!m) return;
       NET.killer = P.pid;
-      try { hurtMob(m, clamp(Number(msg[2]) || 1, 0, 20), Number(msg[3]) || 0); } finally { NET.killer = null; }
+      try { hurtMob(m, clamp(Number(msg[2]) || 1, 0, 20), Number(msg[3]) || 0, clamp(Number(msg[4]) || 1, 0, 2)); } finally { NET.killer = null; }
       break;
     }
     case 'mu': { // slepice (vejce) a kráva (mléko)

@@ -5,6 +5,8 @@ import { randInt } from '../../../shared/util.js';
 import { pondLevel, waterAt } from '../../../shared/world/nature.js';
 import { POND_CELL, isMark, pondOf, shrineDist, terrainH } from '../../../shared/world/terrain.js';
 import { Sound } from '../audio/sound.js';
+import { useCost } from '../../../shared/tools.js';
+import { wearHeld } from '../player/durability.js';
 import { addItem, heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { debris, sparks } from '../render/particles.js';
@@ -51,6 +53,7 @@ export function useRod() {
       addItem(id, id === 'seaweed' ? randInt(1, 3) : 1);
       sparks.emit(fishing.pos.x, fishing.pos.y + 0.2, fishing.pos.z, [0.6, 0.85, 1], 25, 2.5, 2);
       Sound.pickup();
+      wearHeld(useCost('fishing_rod', 'use')); // prut se úlovkem opotřebuje
     } else Sound.rustle();
     fishing.active = bobber.visible = fishLine.visible = false;
     return;

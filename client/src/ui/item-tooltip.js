@@ -2,6 +2,9 @@
 // Modul nic nespouští při načtení (jen funkce), takže nepotřebuje řádek v pořadí spouštění.
 import { ARMOR_SETS, ARMOR_SLOT_NAMES, COOKING, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, TOOL_SPEED } from '../../../shared/data/index.js';
 import { RARITY_NAMES, itemKind, rarityOf } from '../../../shared/inventory.js';
+import { attackSpeed, repairMatName } from '../../../shared/tools.js';
+
+const PICK_REACH = { 1: 'kámen a uhlí', 2: 'kámen, uhlí, železo, měď a křemen', 3: '…a navíc krystal a zlato', 4: '…a navíc obsidián a markorit', 5: 'všechno' };
 
 const TIER_N = { 1: 'Dřevo', 2: 'Kámen', 3: 'Železo', 4: 'Krystal', 5: 'Markorit' };
 const KIND_N = { tool: 'Nástroj', weapon: 'Zbraň', armor: 'Brnění', food: 'Jídlo', block: 'Stavební blok', basic: 'Surovina' };
@@ -59,6 +62,7 @@ export function tooltipHTML(id, stack, el, ctx, adv) {
   const stats = [];
   if (d.tool) {
     stats.push(`<span class="st atk">⚔ ${fmt(d.dmg)} útok</span>`);
+    stats.push(`<span class="st spd">⏱ ${fmt(attackSpeed(id))} úderů/s</span>`);
     if (d.tool !== 'sword') stats.push(`<span class="st spd">⛏ ${fmt(TOOL_SPEED[d.tier] || 1)}× rychleji</span>`);
   }
   if (d.armor) stats.push(`<span class="st def">🛡 +${d.armor.pts} ochrana</span>`);
@@ -67,11 +71,14 @@ export function tooltipHTML(id, stack, el, ctx, adv) {
   if (d.fly) stats.push(`<span class="st fly">🕊 ${d.fly} s létání</span>`);
   if (stats.length) lines.push(`<div class="stats">${d.tool ? '<small>Při držení v ruce:</small>' : ''}${stats.join('')}</div>`);
   if (d.armor?.set) lines.push(`<div class="sub">Celá sada ${ARMOR_SETS[d.armor.set].name}á: ${ARMOR_SETS[d.armor.set].bonus}</div>`);
+  if (d.tool === 'pick') lines.push(`<div class="sub">Vytěží: ${PICK_REACH[d.tier] || ''}</div>`);
+  if (d.tool === 'sword') lines.push('<div class="sub">Nabij úder (proužek pod zaměřovačem). Ve skoku kritický zásah ×1,5.</div>');
   const du = durOf(stack);
   if (du) {
     const f = du.left / du.max;
     lines.push(`<div class="dur ${f < 0.1 ? 'low' : ''}">Odolnost ${du.left} / ${du.max}<i style="--f:${f};--c:${durColor(f)}"></i></div>`);
-  }
+    if (!el?.dataset.out) lines.push(`<div class="sub">Oprava: 2 stejné kusy, nebo kus + ${repairMatName(id)} v mřížce výroby</div>`);
+  } else if (d.dur && !stack?.w) lines.push(`<div class="sub">Odolnost ${d.dur} použití</div>`);
   const how = [];
   if (d.food) how.push('Pravé tl. = sníst');
   else if (d.block) how.push('Pravé tl. = položit');

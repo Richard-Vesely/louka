@@ -127,6 +127,10 @@ When you add or change a feature, update this file in the same pull request.
 - **Movement**: walk, run (Shift), jump, step up blocks and stairs, sit on chairs.
 - **Armor**: helmet, chestplate, leggings, boots in iron, crystal, markorite; special sets:
   *Stínové* (shadow: faster, shadow-eaters ignore you) and *Nebeské* (sky: double jump, slow fall, healing; chests only).
+  Armor **wears out** too: every mob hit takes 1 point (1 per 20 damage) from each worn piece (iron 165/240/225/195,
+  crystal and markorite more); a broken piece falls off with a snap and *Železná helma se rozbila!*.
+- **Getting hurt**: the camera tilts away from the hit, the screen edge flashes red and the heart bar blinks.
+- **View bobbing**: the camera dips and sways a little with every step (not while flying).
 - **Mark apple** (*Markojablko*) lets you fly for 10 s.
 
 *Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`.
@@ -134,6 +138,24 @@ When you add or change a feature, update this file in the same pull request.
 ## 4. Mining, building, items
 - **Mining** with hold-to-break and tool tiers: wood → stone → iron → crystal → markorite.
   Axe, pickaxe, shovel, sword (and hoe). Some ores need a better pickaxe (*Potřebuješ…*).
+  - **Speed** (Minecraft formula): time = hardness ÷ tool speed (hand 1, wood 2, stone 4, iron 6, crystal 8, markorite 10,
+    only with the right tool for the material); 3× slower with your head under water, 2.5× slower while jumping; a sword
+    cuts grass faster. A short 0.3 s pause before the next block.
+  - **Cracks**: 10 crack stages grow over the block (stairs and slabs only on their shape; on the smooth ground surface as a
+    decal that follows the slope). Trees, rocks and cars show a cyan progress ring instead.
+  - **Chips per material**: every 0.2 s crumbs in the block's own colours fly from the hit point (with the material's hit
+    sound, see *Sound*); breaking throws 64 chips (40 on *střední*, 16 on *nízká*) that fall, bounce once and fade.
+- **Tool durability** (*Odolnost*): wood 59, stone 131, iron 250, crystal 900, markorite 2000 uses; hoe 131, fishing rod 64.
+  A mined block costs 1, the wrong job costs 2 (sword on blocks, pickaxe on wood…), instant blocks cost nothing; a mob hit
+  costs a sword 1 and other tools 2; tilling 1, a caught fish 1. A coloured bar (green → yellow → red) shows under the icon of a
+  worn tool; at 10 % the hotbar slot pulses red and *Krumpáč se brzy rozbije* warns once. At 0 the tool breaks: snap
+  sound, shards from the hand, the hand dips and comes back empty, *Železný krumpáč se rozbil!*. **No wear in creative.**
+  Wear is kept in saves, chests, the server backpack and dropped items (old saves load as new tools).
+- **Repair** (*Oprava*) in any crafting grid: two worn tools of the same kind → one with both durabilities + 5 %;
+  or a worn tool + 1–4 cells of its material (any planks, stone, iron ingot, light shard, markorite; essence for the shadow
+  set) → +25 % per cell. Armor too. The output glows cyan, *🔧 Oprava…* shows the result and an anvil sound plays.
+- **Tooltips** of tools also show the attack speed (*⏱ 1,7 úderů/s*), what a pickaxe can mine, the crit hint,
+  *Odolnost 187 / 250* (red under 10 %), how to repair.
 - **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window
   (left = all, right = one). Glassy futuristic look: slots glow on hover, rarity-tinted edges, the window is only as wide
   as the backpack; UI sounds for take, put, gather, spread, sort, open and close. Minecraft tricks:
@@ -153,6 +175,7 @@ When you add or change a feature, update this file in the same pull request.
   - **Rich tooltips** (Czech): name coloured by rarity (white, yellow, cyan, purple), kind and tier, a short description,
     chips for attack, mining speed, armor, food, health and flying, durability (when an item has it), fuel time, what it
     smelts into, in how many recipes it is used; **F3 + H** adds the item id.
+  - Clicking a tool onto the same kind of tool swaps them (tools don't stack).
   - Nothing is lost with a full backpack: closing the window, refilling the campfire or returning the grid drops the rest
     on the ground (*Batoh je plný*).
 - **Hotbar**: a glowing ring slides to the selected slot, slot numbers 1–9, an icon pops when its slot gains items, the
@@ -173,7 +196,9 @@ When you add or change a feature, update this file in the same pull request.
 - **Farm traps**: spikes (*Bodce*) hurt mobs; loot of mobs killed on spikes goes to a chest nearby.
 - **Mob spawner** blocks in dungeons and fortresses.
 
-*Kód:* mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
+*Kód:* tool rules (durability, mining speed, attack charge, repair) `shared/tools.js`, wear on this screen `client/src/player/durability.js`,
+cracks `client/src/render/crack.js`, chips and crit stars `client/src/render/chips.js`, tool and combat sounds `client/src/audio/tool-sounds.js`,
+mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
 
 ## 5. Food and cooking
 - **Campfire** (*Táborák*): roast meat and fish, smelt iron, bake sand into glass, clay into tiles.
@@ -203,7 +228,21 @@ When you add or change a feature, update this file in the same pull request.
 
 Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 
-*Kód:* behaviour, spawning, loot `shared/sim/mobs.js`; models, animation, sounds `client/src/mobs/mobs.js`.
+**Combat feel**
+- **Attack charge**: every weapon has a speed (fist 4, sword 1.7, pickaxe 1.3, shovel 1.2, axe 1 hits per second). A thin cyan
+  meter under the crosshair fills up; a hit does 20–100 % damage depending on the charge (Minecraft formula). Holding the
+  button attacks every time the meter is full; clicking early gives a weak slap.
+- **Critical hit**: a full-charge hit while falling (after a jump, not running) does 1.5× damage with gold stars and a bright *šing*.
+  A full-charge hit while running knocks the mob 1.6× further.
+- **Hit feedback**: the mob turns red, hops back with knockback, drops blood/crystal chips; the camera kicks up and a strong
+  hit freezes the game for ~50 ms (hit-stop). After a hit a mob is invulnerable for 0.5 s (clicking faster does nothing).
+- **Death**: the mob tips over sideways and vanishes in a puff of smoke (0.8 s).
+- **First-person hand**: an empty hand is a white sci-fi suit sleeve with a glowing cyan stripe and an armoured glove.
+  Swings differ per tool (sword sweeps sideways, axe and pickaxe chop down, shovel scoops, fist jabs), mining loops the
+  swing, a new item slides up from below, and the hand lags a little behind camera turns.
+
+*Kód:* behaviour, spawning, loot, invulnerability `shared/sim/mobs.js`; attack rules `shared/tools.js`; models, animation, sounds, hit effects `client/src/mobs/mobs.js`;
+attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit-stop, view bobbing `client/src/player/camera-feel.js`; hand and swings `client/src/render/held-item.js`.
 
 ## 7. Technology
 - **Furnace** (*Pec*): ores → ingots (iron, copper, gold), quartz → silicon, iron → steel, resin → rubber,

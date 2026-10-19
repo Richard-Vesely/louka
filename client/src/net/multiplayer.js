@@ -7,12 +7,12 @@ import { applyKV, applyOp } from '../../../shared/net/ops.js';
 import { others } from '../../../shared/net/room.js';
 import { setDay } from '../../../shared/sim/day.js';
 import { spawnGroundItem } from '../../../shared/sim/ground-items.js';
-import { MOBS, mobs, removeMob, spawnMob } from '../../../shared/sim/mobs.js';
+import { DEATH_TIME, MOBS, mobs, removeMob, spawnMob } from '../../../shared/sim/mobs.js';
 import { wrapAngle } from '../../../shared/util.js';
 import { KV_MAPS, blocks } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { BOOT } from '../game/boot.js';
-import { viewOf } from '../mobs/mobs.js';
+import { animateDeath, hitHop, paintFlash, viewOf } from '../mobs/mobs.js';
 import { receiveGift } from '../pc/papers-world.js';
 import { refreshSpecial } from '../player/eating.js';
 import { swapHeld } from '../player/interaction.js';
@@ -91,7 +91,7 @@ export function onHostMsg(msg) {
     }
     case 'gift': receiveGift(String(msg[1]), String(msg[2] || 'Hráč')); break;
     case 'mobs': setDay(msg[1], msg[2]); syncPuppets(msg[3]); break;
-    case 'give': { const left = addItem(msg[1], msg[2]); if (left > 0) spawnGroundItem(msg[1], left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3); else Sound.pop(); break; }
+    case 'give': { const w = Number(msg[3]) || 0, left = addItem(msg[1], msg[2], false, w); if (left > 0) spawnGroundItem(msg[1], left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3, undefined, w); else Sound.pop(); break; }
     case 'swap': {
       if (heldStack()?.id === msg[1]) swapHeld(msg[2]); else if (countItem(msg[1])) { removeItem(msg[1], 1); addItem(msg[2], 1, true); }
       Sound.pour(); toast('Podojil jsi krávu');
@@ -139,9 +139,8 @@ export function updatePuppets(dt) {
     const V = viewOf(m);
     if (m.dead) {
       m.deathT += dt;
-      V.group.scale.setScalar(Math.max(0.01, 1 - m.deathT * 2.5));
-      V.group.rotation.z += dt * 6;
-      if (m.deathT > 0.4) { removeMob(m); puppets.delete(nid); }
+      animateDeath(V, m);
+      if (m.deathT > DEATH_TIME) { removeMob(m); puppets.delete(nid); }
       continue;
     }
     const ox = m.pos.x, oz = m.pos.z;
@@ -161,10 +160,10 @@ export function updatePuppets(dt) {
       const swing = Math.sin(m.phase * 2.2) * Math.min(sp / 2, 1) * 0.7;
       V.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
     }
-    V.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
+    V.group.position.set(m.pos.x, m.pos.y + hop + hitHop(m, dt), m.pos.z);
     V.group.rotation.y += wrapAngle(m.ry - V.group.rotation.y) * Math.min(1, dt * 10);
     V.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
     m.flash = Math.max(0, m.flash - dt * 5);
-    for (const mat of V.mats) if (!mat.userData.glow) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
+    paintFlash(V, m.flash);
   }
 }
