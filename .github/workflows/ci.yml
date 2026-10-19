@@ -31,6 +31,10 @@ jobs:
         env:
           PLAYTEST_QUALITY: low
         run: node tests/playtest/playtest.mjs dist playtest-sp
+      - name: Play-test – inventory tricks (drag, double-click, keys, sort, tooltips, pickup)
+        env:
+          PLAYTEST_QUALITY: low
+        run: node tests/playtest/inventory.mjs dist playtest-inv
       - name: Multiplayer – Node server + 2 browsers
         env:
           PLAYTEST_QUALITY: low

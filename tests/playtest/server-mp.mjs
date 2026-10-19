@@ -67,6 +67,9 @@ try {
   await until(B, () => window.game.chests.has('6,2,30'));
   await B.evaluate(() => { const c = Array(27).fill(null); c[0] = { id: 'apple', n: 5 }; window.game.chests.set('6,2,30', c); });
   check('chest contents from Bára reach Ája', await until(A, () => window.game.chests.get('6,2,30')?.[0]?.id === 'apple'));
+  // inventory tricks in a chest: Ája drags 9 stones over 3 chest slots (split evenly) and sorts the chest
+  await A.evaluate(() => { const g = window.game; g.openInventory('chest', '6,2,30'); g.inv.cursor = { id: 'stone', n: 9 }; g.invTricks.spreadCursor([['chest', 3], ['chest', 4], ['chest', 5]], 0); g.invTricks.sortContainer('chest'); g.closeInventory(); });
+  check('drag-split and sort in a chest reach Bára', await until(B, () => { const c = window.game.chests.get('6,2,30'); return c?.[0]?.id === 'apple' && c[1]?.id === 'stone' && c[1].n === 9 && c.filter(Boolean).length === 2; }), await B.evaluate(() => JSON.stringify(window.game.chests.get('6,2,30')?.filter(Boolean))));
 
   check('animals simulated by the server appear', await until(A, () => window.game.mobs.length > 0, null, 20000), String(await A.evaluate(() => window.game.mobs.length)));
   const mob = await A.evaluate(() => { const ms = window.game.mobs.filter((x) => !x.dead), m = ms.find((x) => ['sheep', 'chicken', 'cow', 'deer'].includes(x.type)) || ms[0]; return m && { nid: m.nid, hp: m.hp }; });
@@ -90,6 +93,9 @@ try {
   check('a dropped worn axe keeps its wear at Bára', await until(B, () => window.game.groundItems.some((x) => x.id === 'iron_axe' && x.w === 40)));
   await B.evaluate(() => { const g = window.game, it = g.groundItems.find((x) => x.id === 'iron_axe'); T.tp(it.pos.x, it.pos.z, it.pos.y); });
   check('…and Bára picks it up with the same wear', await until(B, () => { const g = window.game, it = g.groundItems.find((x) => x.id === 'iron_axe' && x.n > 0); if (it) g.player.pos.set(it.pos.x, it.pos.y, it.pos.z); return g.inv.slots.some((s) => s?.id === 'iron_axe' && s.w === 40); }));
+  // two stacks dropped on the same spot merge into one on the server, everybody sees one stack
+  await A.evaluate(() => { const g = window.game, p = g.player.pos, y = g.groundHeight(p.x + 5, p.z); for (const n of [2, 3]) g.spawnGroundItem('dirt', n, { x: p.x + 5, y: y + 0.5, z: p.z }, { x: 0, y: 0, z: 0 }, 5); });
+  check('stacks lying together merge on the server (Bára sees one stack of 5)', await until(B, () => { const d = window.game.groundItems.filter((x) => x.id === 'dirt' && x.n > 0); return d.length === 1 && d[0].n === 5; }), await B.evaluate(() => JSON.stringify(window.game.groundItems.map((x) => [x.id, x.n]))));
 
   await B.evaluate(() => { const el = document.getElementById('chatInput'); el.value = 'Ahoj Ájo'; el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); });
   check('chat works through the server', await until(A, () => document.getElementById('feed').textContent.includes('Ahoj Ájo')));

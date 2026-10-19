@@ -101,11 +101,38 @@ When you add or change a feature, update this file in the same pull request.
 - **Repair** (*Oprava*) in any crafting grid: two worn tools of the same kind → one with both durabilities + 5 %;
   or a worn tool + 1–4 cells of its material (any planks, stone, iron ingot, light shard, markorite; essence for the shadow
   set) → +25 % per cell. Armor too. The output glows cyan, *🔧 Oprava…* shows the result and an anvil sound plays.
-- **Tooltips** of tools: material, *Při držení v ruce: 6 útok · 1,7 úderů/s*, mining speed and what a pickaxe can mine,
+- **Tooltips** of tools also show the attack speed (*⏱ 1,7 úderů/s*), what a pickaxe can mine, the crit hint,
   *Odolnost 187 / 250* (red under 10 %), how to repair.
-- **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window.
-  Clicking a tool onto the same kind of tool swaps them (tools don't stack).
-- **Drop items** (G one, Shift+G whole stack): they lie on the ground, anyone can pick them up; they vanish after 5 min.
+- **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window
+  (left = all, right = one). Glassy futuristic look: slots glow on hover, rarity-tinted edges, the window is only as wide
+  as the backpack; UI sounds for take, put, gather, spread, sort, open and close. Minecraft tricks:
+  - **Drag with an item** over several slots: left splits the stack evenly, right puts one in each; swept slots glow and
+    show the count they will get, the cursor shows what is left. Dragging over one slot is an ordinary click.
+  - **Double-click** gathers the same items onto the cursor (partial stacks first, at most one full stack);
+    **Shift + double-click** moves every stack of that item to the other side (chest ↔ backpack, hotbar ↔ backpack).
+  - **Shift + drag** shift-moves every slot you sweep; **1–9 over a slot** swaps it with that hotbar slot (from a machine
+    output it only takes); **Q over a slot** drops one, **Ctrl+Q** the stack; **wheel** over a stack moves one item to
+    the other side (down) or pulls one back (up).
+  - **Seřadit** (sort) merges and orders the backpack (hotbar stays) or a chest: tools, weapons, armor, food, blocks,
+    materials, tech.
+  - **Crafting**: hovering a recipe in the book previews it in the grid; a ready result glows (*Shift + klik = vyrob
+    vše*); Shift-click on the result crafts everything; **Space** crafts the last recipe again into the backpack
+    (Shift + Space as many as possible).
+  - **Creative**: middle-click on a slot takes a full stack, middle-drag puts a full stack into every empty slot swept.
+  - **Rich tooltips** (Czech): name coloured by rarity (white, yellow, cyan, purple), kind and tier, a short description,
+    chips for attack, mining speed, armor, food, health and flying, durability (when an item has it), fuel time, what it
+    smelts into, in how many recipes it is used; **F3 + H** adds the item id.
+  - Clicking a tool onto the same kind of tool swaps them (tools don't stack).
+  - Nothing is lost with a full backpack: closing the window, refilling the campfire or returning the grid drops the rest
+    on the ground (*Batoh je plný*).
+- **Hotbar**: a glowing ring slides to the selected slot, slot numbers 1–9, an icon pops when its slot gains items, the
+  item name fades in above the hotbar for 2 s, worn tools pulse red (≤ 10 % durability).
+- **Pick block** (middle mouse button in the world): takes what you aim at into your hand from the backpack (in creative
+  a full stack even if you don't have it); otherwise *V batohu nemáš: …*.
+- **Drop items** (Q one, Ctrl+Q whole stack; G and Shift+G still work): they lie on the ground, anyone can pick them up;
+  they vanish after 5 min. Identical items lying together merge into one stack (decided by whoever holds the world).
+  Lying items bob and spin with a soft shadow and show 1–5 models by count (1, 2–16, 17–32, 33–48, 49+). Within 2.4 m an
+  item slides toward you (magnet), flies into you shrinking and plays a short high *plip*.
 - **Building**: ~110 block types: planks of 5 woods, stones and polished stones, bricks, tiles, glass and panes,
   sandstone, snow, obsidian, mushroom blocks, roof tiles, concrete in 8 colours (from flower dyes), copper,
   gold, steel, quartz, lanterns, torches. **Stairs and slabs** (two slabs make a full block), bars, railings,
@@ -118,7 +145,7 @@ When you add or change a feature, update this file in the same pull request.
 
 *Kód:* tool rules (durability, mining speed, attack charge, repair) `shared/tools.js`, wear on this screen `client/src/player/durability.js`,
 cracks `client/src/render/crack.js`, chips and crit stars `client/src/render/chips.js`, tool and combat sounds `client/src/audio/tool-sounds.js`,
-mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
+mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
 
 ## 5. Food and cooking
 - **Campfire** (*Táborák*): roast meat and fish, smelt iron, bake sand into glass, clay into tiles.
@@ -255,7 +282,7 @@ under the feet / being mined), `ambience.js` (ambience beds and one-shots), `hum
 
 ## 12. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
-E inventory · G drop · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
+E inventory · Q / G drop (Ctrl+Q / Shift+G stack) · middle button pick block · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
 Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.

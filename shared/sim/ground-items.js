@@ -1,5 +1,6 @@
 // Předměty ležící na zemi (vyhozené klávesou G): letí, dopadnou, točí se a po 5 minutách zmizí.
 // Sebrat je může kdokoli: ve hře pro jednoho a u hostitele rovnou, připojený hráč o sebrání požádá hostitele ('pk').
+import { ITEMS } from '../data/index.js';
 import { NET, r2 } from '../net/net.js';
 import { Vec3 } from '../vec3.js';
 import { solidAny, voxFloor } from '../world/collision.js';
@@ -19,8 +20,29 @@ function itemFloor(x, y, z) {
   const vf = voxFloor(x, y, z);
   return isFinite(g) && y >= g - 0.6 ? Math.max(g, vf) : vf;
 }
+// Stejné předměty ležící u sebe se slijí do jedné hromádky (jako v Minecraftu: do 0,5 × 0,25 × 0,5 bloku).
+// Rozhoduje jen ten, kdo drží svět (hra pro jednoho, hostitel, server); ostatní dostanou změnu jako 'gx'.
+export function mergeGroundItems() {
+  for (let i = 0; i < groundItems.length; i++) {
+    const a = groundItems[i];
+    if (a.n <= 0 || a.vel.y !== 0) continue;
+    const max = ITEMS[a.id]?.stack || 64;
+    for (let j = i + 1; j < groundItems.length && a.n < max; j++) {
+      const b = groundItems[j];
+      if (b.n <= 0 || b.id !== a.id || b.vel.y !== 0) continue;
+      if (Math.abs(a.pos.x - b.pos.x) > 0.5 || Math.abs(a.pos.z - b.pos.z) > 0.5 || Math.abs(a.pos.y - b.pos.y) > 0.25) continue;
+      const k = Math.min(max - a.n, b.n);
+      a.n += k; b.n -= k;
+      a.age = Math.min(a.age, b.age); // sloučená hromádka zmizí podle mladšího kusu
+      NET.op(['gx', a.gid, a.n]);
+      NET.op(['gx', b.gid, b.n]);
+    }
+  }
+}
+let mergeT = 0;
 // pickup(it) = hráč u této obrazovky zkusí předmět sebrat (prohlížeč); server ho nepředává.
 export function updateGroundItems(dt, pickup) {
+  if (!NET.client && (mergeT -= dt) <= 0) { mergeT = 0.5; mergeGroundItems(); }
   for (let i = groundItems.length - 1; i >= 0; i--) {
     const it = groundItems[i];
     it.age += dt;
