@@ -59,6 +59,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item, day/night colours |
 | `client/src/player/` | player movement and collisions, aiming, mining/placing/using, backpack, survival, eating |
 | `client/src/mobs/mobs.js` | creature 3D models, animation, sounds (behaviour is in `shared/sim/mobs.js`) |
+| `client/src/audio/` | all sound (WebAudio synthesis): `sound.js` mix + `Sound.at(x, y, z, fn)` positional sound, recipes in `sfx.js` / `voices.js`, materials, ambience, machine hums, music; `soundscape.js` runs it each frame |
 | `client/src/ui/` | HUD, inventory window, touch controls |
 | `client/src/machines/`, `pc/`, `vehicles/`, `dining/`, `world/` | the browser side of machines, the computer + Tanks + documents, car + plane, table manners, shrine/fishing/dropped items |
 | `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars, chat + Esc menu, the net loop (`mp-start.js`) |

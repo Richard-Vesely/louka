@@ -219,6 +219,42 @@ try {
   });
   check('eating bread fills hunger', r.hunger > 60 && r.bread === 1, JSON.stringify(r));
 
+  // ------------------------------------------------------------ sound
+  r = await ev(async () => {
+    const g = window.game, S = g.Sound;
+    S.init(); T.step(2);
+    const mats = ['grass', 'dirt', 'stone', 'sand', 'snow', 'wood', 'metal', 'glass', 'crystal', 'water', 'leaves'];
+    const steps = [];
+    for (const m of mats) steps.push((await S.offline(0.8, (s) => s.footstep(m))).peak);
+    const brk = await S.offline(1.5, (s) => { s.blockBreak('stone'); s.blockPlace('wood'); s.toolBreak(); });
+    return { ctx: !!S.ctx, beds: S.ambience?.beds.size ?? -1, music: S.music?.state, quiet: Math.min(...steps), loud: Math.max(...steps, brk.peak) };
+  });
+  check('sound: engine starts with ambience and music', r.ctx && r.beds >= 0 && (r.music === 'wait' || r.music === 'play'), JSON.stringify(r));
+  check('sound: every footstep material is audible and nothing clips', r.quiet > 0.01 && r.loud < 0.95, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game, S = g.Sound; T.clearInv(); T.give('planks', 2); T.hold('planks');
+    T.tpg(6, 70); T.step(3);
+    const p = g.player.pos, cell = [Math.floor(p.x) + 2, Math.floor(p.y), Math.floor(p.z)];
+    const n0 = S.played; g.placeBlock(g.ITEMS.planks, cell); const placed = S.played - n0;
+    const under = g.materialAt(cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5);
+    g.blocks.delete(cell.join(',')); g.rebuildBlocks();
+    g.keys.add('KeyW'); const n1 = S.played; T.step(40); g.keys.delete('KeyW'); T.step(2);
+    return { placed, under, steps: S.played - n1 };
+  });
+  check('sound: placing a plank knocks like wood, walking makes footsteps', r.placed > 0 && r.under === 'wood' && r.steps > 0, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game, S = g.Sound;
+    localStorage.setItem('rise-nastaveni', JSON.stringify({ ...JSON.parse(localStorage.getItem('rise-nastaveni') || '{}'), music: 0, sfx: 0.5 }));
+    dispatchEvent(new Event('rise-prefs'));
+    const v = { ...S.vols };
+    window.RiseSettings.open({ inGame: true });
+    const sliders = [...document.querySelectorAll('#settings [data-r="vol"], #settings [data-r="sfx"], #settings [data-r="music"]')].map((e) => e.previousElementSibling.textContent.trim());
+    document.querySelector('#settings [data-close]').click();
+    const p = JSON.parse(localStorage.getItem('rise-nastaveni')); delete p.music; delete p.sfx; localStorage.setItem('rise-nastaveni', JSON.stringify(p)); dispatchEvent(new Event('rise-prefs'));
+    return { v, sliders };
+  });
+  check('sound: Nastavení has Hlasitost, Zvuky, Hudba and they apply at once', r.v.music === 0 && r.v.sfx === 0.5 && r.sliders.join('|') === 'Hlasitost 80 %|Zvuky 50 %|Hudba 0 %', JSON.stringify(r));
+
   // ------------------------------------------------------------ save and load
   const before = await ev(() => {
     const g = window.game; T.clearInv(); T.give('stone', 7); T.give('apple', 3);
