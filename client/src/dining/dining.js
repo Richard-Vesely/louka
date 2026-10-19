@@ -2,17 +2,18 @@
 import './food-models.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
+import { ITEMS } from '../../../shared/data/index.js';
+import { lerp } from '../../../shared/util.js';
+import { tableItems } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
-import { DINE_BITES, DINE_STYLE, DT, PLATE_TO_VIEW, bite, dineView, foodG, part } from './dine-view.js';
-import { buildPlateFood, dishCenter, dishMorsel } from './food-models.js';
-import { nearTableBonus, refreshSpecial, tableItems } from '../player/eating.js';
+import { nearTableBonus, refreshSpecial } from '../player/eating.js';
 import { addItem, consumeSelected, countItem } from '../player/inventory.js';
 import { input, keys, player } from '../player/player.js';
 import { holder } from '../render/held-item.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
-import { ITEMS } from '../../../shared/data/index.js';
-import { lerp } from '../../../shared/util.js';
+import { DINE_BITES, DINE_STYLE, DT, PLATE_TO_VIEW, bite, dineView, foodG, part } from './dine-view.js';
+import { buildPlateFood, dishCenter, dishMorsel } from './food-models.js';
 
 // Základní polohy příborů (v prostoru kamery)
 const REST = {

@@ -1,11 +1,10 @@
-// Stav světa: položené bloky, pokácené stromy; postup hráče.
+// Postup hráče: co už vyrobil a položil (rady na obrazovce).
 import '../render/fireflies.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { SyncMap, SyncSet } from '../game/boot.js';
+import { on } from '../../../shared/events.js';
 import { save } from '../game/save-load.js';
 
 // ============================================================ stav světa (co hráč změnil)
-export const removed = new SyncSet('removed', save?.removed || []);   // pokácené stromy, vytěžené balvany, sebrané úlomky
-export const blocks = new SyncMap('blocks', save?.blocks || []);     // "x,y,z" -> typ bloku
-export const blockMeta = new SyncMap('blockMeta', save?.blockMeta || []); // "x,y,z" -> otočení (bit 0–1) a horní půlblok (bit 2)
+// (bloky, pokácené stromy a další stav světa jsou v shared/world/state.js)
 export const crafted = save?.crafted || {};
 export const placedAny = save?.placedAny || {};
+on('crafted', (id) => { crafted[id] = true; }); // stroj (táborák, pec, sporák…) něco dodělal

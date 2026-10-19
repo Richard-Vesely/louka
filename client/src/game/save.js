@@ -1,36 +1,16 @@
 // Ukládání hry do prohlížeče.
 import '../ui/hud.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { NET } from './boot.js';
-import { SAVE_KEY } from './prefs.js';
-import { furnaces } from '../machines/furnace.js';
-import { crops, stoves } from '../machines/kitchen.js';
-import { power } from '../machines/power.js';
-import { paperSpots, pcDisks } from '../pc/printer.js';
-import { chairRot, tableItems } from '../player/eating.js';
+import { NET } from '../../../shared/net/net.js';
+import { worldState } from '../../../shared/world/save.js';
 import { inv } from '../player/inventory.js';
 import { creative, player, resetting } from '../player/player.js';
-import { dayCount, dayTime } from '../render/daylight.js';
 import { toast } from '../ui/hud.js';
-import { armor, chests, fires } from '../ui/inventory-ui.js';
-import { vehicles } from '../vehicles/car.js';
-import { groundItems } from '../world/ground-items.js';
-import { papers } from '../world/papers.js';
-import { portalActive } from '../world/shrine.js';
-import { ruinsBuilt, ruinsOpened, spawners } from '../world/structures.js';
-import { blockMeta, blocks, crafted, placedAny, removed } from '../world/world-state.js';
-import { voxEdits } from '../../../shared/world/voxels.js';
+import { armor } from '../ui/inventory-ui.js';
+import { crafted, placedAny } from '../world/world-state.js';
+import { SAVE_KEY } from './prefs.js';
 
 // ============================================================ ukládání
-// Stav světa (ukládá se a hostitel ho posílá novým hráčům)
-export function worldState() {
-  return {
-    dayTime, day: dayCount, blocks: [...blocks], blockMeta: [...blockMeta], removed: [...removed], fires: Object.fromEntries(fires),
-    vox: [...voxEdits.values()].flatMap((m) => [...m]),
-    ground: groundItems.filter((g) => g.n > 0).map((g) => ({ gid: g.gid, id: g.id, n: g.n, x: g.pos.x, y: g.pos.y, z: g.pos.z })),
-    stoves: Object.fromEntries(stoves), tableItems: Object.fromEntries(tableItems), chairRot: Object.fromEntries(chairRot), crops: Object.fromEntries(crops),
-    spawners: Object.fromEntries(spawners), furnaces: Object.fromEntries(furnaces), power: Object.fromEntries(power), vehicles: Object.fromEntries(vehicles), papers: Object.fromEntries(papers), pcDisks: Object.fromEntries(pcDisks), paperSpots: Object.fromEntries(paperSpots), chests: Object.fromEntries(chests), ruins: [...ruinsBuilt], ruinsOpened: [...ruinsOpened], portal: portalActive,
-  };
-}
+// (stav světa: worldState() v shared/world/save.js)
 let saveWarned = false;
 export function saveGame() {
   if (resetting || NET.leaving) return;

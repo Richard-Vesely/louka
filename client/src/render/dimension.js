@@ -1,10 +1,10 @@
 // Markova dimenze: barvy oblohy a mlhy.
 import '../world/structures.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { isMark } from '../../../shared/world/terrain.js';
 import { player } from '../player/player.js';
 import { U, scene } from './renderer.js';
 import { hemi, skyU, sunLight } from './sky.js';
-import { isMark } from '../../../shared/world/terrain.js';
 
 // Markova dimenze: fialová obloha, modravé světlo a mlha.
 const MARK_FOG = new THREE.Color(0x5a3f96);

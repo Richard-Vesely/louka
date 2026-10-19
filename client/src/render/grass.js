@@ -1,13 +1,13 @@
 // Tráva: posekání, dorůstání a vykreslení.
 import './ground.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { NET, r2 } from '../game/boot.js';
-import { GRASS_LAYERS } from '../game/prefs.js';
-import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
-import { scene, shaderUniforms } from './renderer.js';
-import { digTex } from '../world/dig.js';
+import { NET, r2 } from '../../../shared/net/net.js';
 import { MARK_X } from '../../../shared/world/terrain.js';
 import { DIG_N } from '../../../shared/world/voxels.js';
+import { GRASS_LAYERS } from '../game/prefs.js';
+import { digTex } from '../world/dig.js';
+import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
+import { scene, shaderUniforms } from './renderer.js';
 
 // ============================================================ tráva
 // Maska posekané trávy: 0,5 m na pixel, opakuje se po 128 m. Tráva postupně doroste.

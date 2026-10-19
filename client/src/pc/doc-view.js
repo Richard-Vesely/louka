@@ -1,8 +1,8 @@
 // Čtení dokumentu na obrazovce.
 import './papers-world.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { papers } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { input, keys, lockPointer, unlockPointer } from '../player/player.js';
-import { papers } from '../world/papers.js';
 
 export let docOpen = false;
 

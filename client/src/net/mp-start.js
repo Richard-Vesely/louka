@@ -1,22 +1,25 @@
 // Síťová smyčka a spuštění hry pro více hráčů.
 import './mp-ui.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { BOOT, MP, NET, r2 } from '../game/boot.js';
+import { NET, r2 } from '../../../shared/net/net.js';
+import { dayCount, dayTime } from '../../../shared/sim/day.js';
+import { mobs } from '../../../shared/sim/mobs.js';
+import { nearLight } from '../../../shared/world/collision.js';
+import { shrineDist } from '../../../shared/world/terrain.js';
+import { BOOT, MP } from '../game/boot.js';
 import { clock, lastFrameAt, tick } from '../game/loop.js';
-import { mobs, playerSafe } from '../mobs/mobs.js';
-import { myPose, updateAvatars } from './avatars.js';
-import { chatOpen, hidePause, leaveGame, netBox, renderNetBox, showPause, sysLine } from './mp-ui.js';
-import { broadcast, hostAccept, kvDiff, onHostMsg, others, sendTo, toHost } from './multiplayer.js';
+import { playerSafe } from '../mobs/mobs.js';
 import { pcOpen } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
 import { creative, guideOpen, isLocked, player, setCreative } from '../player/player.js';
-import { nearLight, rebuildBlocks } from '../render/blocks.js';
-import { dayCount, dayTime } from '../render/daylight.js';
+import { rebuildBlocks } from '../render/blocks.js';
 import { rebuildForest } from '../render/forest.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { fullSet, invOpen } from '../ui/inventory-ui.js';
-import { shrineDist } from '../../../shared/world/terrain.js';
+import { myPose, updateAvatars } from './avatars.js';
+import { chatOpen, hidePause, leaveGame, netBox, renderNetBox, showPause, sysLine } from './mp-ui.js';
+import { broadcast, hostAccept, kvDiff, onHostMsg, others, sendTo, toHost } from './multiplayer.js';
 
 // ---------- hlavní smyčka sítě (volá ji tick)
 function netUpdate(dt) {
@@ -34,7 +37,7 @@ function netUpdate(dt) {
   }
   if (NET.host && (NET.mobT -= dt) <= 0) {
     NET.mobT = 0.2;
-    if (others.size) broadcast(['mobs', dayTime, dayCount, mobs.map((m) => [m.nid, m.type, r2(m.pos.x), r2(m.pos.y), r2(m.pos.z), r2(m.group.rotation.y), Math.round(m.hp), r2(m.flash), m.dead ? 1 : 0, m.eggs || 0, m.milkT > 0 ? 1 : 0])]);
+    if (others.size) broadcast(['mobs', dayTime, dayCount, mobs.map((m) => [m.nid, m.type, r2(m.pos.x), r2(m.pos.y), r2(m.pos.z), r2(m.ry), Math.round(m.hp), r2(m.flash), m.dead ? 1 : 0, m.eggs || 0, m.milkT > 0 ? 1 : 0])]);
   }
   if ((NET.kvT -= dt) <= 0) {
     NET.kvT = NET.host ? 0.5 : 0.2;

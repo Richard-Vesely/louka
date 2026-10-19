@@ -1,12 +1,12 @@
 // Úlomky světla: krystal s paprskem.
 import './forest.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { U, scene } from './renderer.js';
-import { glowTex } from './sky.js';
-import { removed } from '../world/world-state.js';
 import { SHARD_CELL } from '../../../shared/world/constants.js';
 import { shardAt } from '../../../shared/world/nature.js';
+import { removed } from '../../../shared/world/state.js';
 import { terrainH } from '../../../shared/world/terrain.js';
+import { U, scene } from './renderer.js';
+import { glowTex } from './sky.js';
 
 // ============================================================ úlomky – vzhled
 export const shardObjs = new Map();

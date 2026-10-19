@@ -1,12 +1,12 @@
 // Podzemí: 3D model chunků 16×16.
 import './blocks.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { clamp, hash2 } from '../../../shared/util.js';
+import { V, VMIN, VOX, editAt, naturalAt, topY, voxEdits } from '../../../shared/world/voxels.js';
+import { dirtyVoxChunks } from '../world/dig.js';
 import { TERRAIN_GLSL } from './glsl.js';
 import { renderer, scene } from './renderer.js';
 import { stoneField } from './textures.js';
-import { dirtyVoxChunks } from '../world/dig.js';
-import { clamp, hash2 } from '../../../shared/util.js';
-import { V, VMIN, VOX, editAt, naturalAt, topY, voxEdits } from '../../../shared/world/voxels.js';
 
 // ============================================================ podzemí – vykreslení
 // Atlas textur podzemních bloků: hlína, kámen, uhlí, železo, krystal, podloží.

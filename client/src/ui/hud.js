@@ -1,20 +1,19 @@
 // HUD: kompas, hodiny, lišty, oznámení, rady.
 import '../render/daylight.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { ARMOR_SETS } from '../../../shared/data/index.js';
+import { dayCount, dayTime } from '../../../shared/sim/day.js';
+import { wrapAngle } from '../../../shared/util.js';
+import { portalActive, ruinsOpened } from '../../../shared/world/state.js';
+import { STRUCTS, structuresNear } from '../../../shared/world/structures.js';
+import { BIOME_NAMES, biomeAt, isMark, shrineOf } from '../../../shared/world/terrain.js';
 import { Sound } from '../audio/sound.js';
 import { countItem } from '../player/inventory.js';
 import { creative, player } from '../player/player.js';
-import { dayCount, dayTime } from '../render/daylight.js';
 import { ICONS } from '../render/icons.js';
 import { shardObjs } from '../render/shards.js';
+import { crafted, placedAny } from '../world/world-state.js';
 import { $ } from './dom.js';
 import { armorPoints, fullSet, invOpen, renderInventory } from './inventory-ui.js';
-import { portalActive } from '../world/shrine.js';
-import { ruinsOpened } from '../world/structures.js';
-import { crafted, placedAny } from '../world/world-state.js';
-import { ARMOR_SETS } from '../../../shared/data/index.js';
-import { wrapAngle } from '../../../shared/util.js';
-import { STRUCTS, structuresNear } from '../../../shared/world/structures.js';
-import { BIOME_NAMES, biomeAt, isMark, shrineOf } from '../../../shared/world/terrain.js';
 
 // ============================================================ HUD
 const compass = $('compass');

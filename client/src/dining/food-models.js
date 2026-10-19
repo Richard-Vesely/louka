@@ -2,9 +2,9 @@
 import './dine-view.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
-import { DINE_BITES, ceramicMat, foodColor, foodG, part } from './dine-view.js';
-import { ICONS } from '../render/icons.js';
 import { clamp, hash2, lerp, smoothstep } from '../../../shared/util.js';
+import { ICONS } from '../render/icons.js';
+import { DINE_BITES, ceramicMat, foodColor, foodG, part } from './dine-view.js';
 
 // ============================================================ realistické 3D modely jídel
 // Každé jídlo je složené z kousků (dílky pizzy, plátky masa…). Při jedení kousky postupně mizí.

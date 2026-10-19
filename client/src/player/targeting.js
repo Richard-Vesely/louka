@@ -1,20 +1,19 @@
 // Míření: co je před hráčem.
 import '../render/held-item.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { mobs } from '../mobs/mobs.js';
-import { countItem } from './inventory.js';
-import { bkey } from '../render/blocks.js';
+import { BLOCKS, shapeBoxes } from '../../../shared/data/index.js';
+import { mobs } from '../../../shared/sim/mobs.js';
+import { REACH } from '../../../shared/world/constants.js';
+import { TREE_NAMES } from '../../../shared/world/nature.js';
+import { bkey, blockMeta, blocks, vehicles } from '../../../shared/world/state.js';
+import { biomeAt, isMark, shrineDist, shrineOf } from '../../../shared/world/terrain.js';
+import { NO_DIG_R, V, VOX, getVox, groundHeight, topY } from '../../../shared/world/voxels.js';
 import { forestRocks, forestTrees } from '../render/forest.js';
 import { isCut } from '../render/grass.js';
 import { camera } from '../render/renderer.js';
-import { rayVehicle, vehDim, vehicles } from '../vehicles/car.js';
+import { rayVehicle, vehDim } from '../vehicles/car.js';
 import { shrineActive } from '../world/shrine.js';
-import { blockMeta, blocks } from '../world/world-state.js';
-import { BLOCKS, shapeBoxes } from '../../../shared/data/index.js';
-import { REACH } from '../../../shared/world/constants.js';
-import { TREE_NAMES } from '../../../shared/world/nature.js';
-import { biomeAt, isMark, shrineDist, shrineOf } from '../../../shared/world/terrain.js';
-import { NO_DIG_R, V, VOX, getVox, groundHeight, topY } from '../../../shared/world/voxels.js';
+import { countItem } from './inventory.js';
 
 // ============================================================ míření (co je před hráčem)
 export const rayO = new THREE.Vector3(), rayD = new THREE.Vector3();

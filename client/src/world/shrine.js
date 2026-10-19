@@ -1,10 +1,12 @@
 // Svatyně a portál do Markovy dimenze.
 import '../render/shards.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { NET } from '../../../shared/net/net.js';
+import { mobs, removeMob } from '../../../shared/sim/mobs.js';
+import { portalActive, setPortalActive } from '../../../shared/world/state.js';
+import { SHRINES, shrineOf } from '../../../shared/world/terrain.js';
 import { Sound } from '../audio/sound.js';
-import { MP, NET } from '../game/boot.js';
-import { save } from '../game/save-load.js';
-import { mobs, removeMob } from '../mobs/mobs.js';
+import { MP } from '../game/boot.js';
 import { countItem, removeItem } from '../player/inventory.js';
 import { keys, player } from '../player/player.js';
 import { rebuildForest } from '../render/forest.js';
@@ -15,7 +17,6 @@ import { stoneTex } from '../render/textures.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { renderHotbar } from '../ui/inventory-ui.js';
-import { SHRINES, shrineOf } from '../../../shared/world/terrain.js';
 
 // ============================================================ svatyně a portály (místo oživení, bezpečná zóna)
 // Domácí svatyně se aktivuje 3 úlomky světla a otevře portál do Markovy dimenze; tamní svatyně vede zpět.
@@ -88,8 +89,6 @@ function buildShrine(shrine) {
   shrine.open = 0;
 }
 SHRINES.forEach(buildShrine);
-export let portalActive = !!save?.portal;
-export function setPortalActive(on) { portalActive = on; }
 export const shrineActive = (s) => s.mark || portalActive;
 export function updatePortals(dt) {
   for (const s of SHRINES) {
@@ -111,7 +110,7 @@ export function usePortal(s) {
   if (countItem('shard') < 3) { toast(`Svatyně potřebuje 3 úlomky světla (máš ${countItem('shard')})`); return; }
   removeItem('shard', 3);
   renderHotbar();
-  portalActive = true;
+  setPortalActive(true);
   NET.op(['p']);
   Sound.portal();
   sparks.emit(s.x, 4, s.z, [0.6, 0.7, 1], 120, 6, 2);

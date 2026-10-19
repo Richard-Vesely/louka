@@ -1,12 +1,11 @@
 // Přežití: zranění, smrt, hlad; sbírání úlomků.
 import '../dining/dining.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { mobs, removeMob } from '../../../shared/sim/mobs.js';
+import { bkey, blocks, removed } from '../../../shared/world/state.js';
+import { shrineOf, terrainH, volcanoDist } from '../../../shared/world/terrain.js';
 import { Sound } from '../audio/sound.js';
 import { MP } from '../game/boot.js';
 import { gameClock, gameTime } from '../game/loop.js';
-import { mobs, removeMob } from '../mobs/mobs.js';
-import { addItem } from './inventory.js';
-import { creative, player } from './player.js';
-import { bkey } from '../render/blocks.js';
 import { sparks } from '../render/particles.js';
 import { scene } from '../render/renderer.js';
 import { shardObjs } from '../render/shards.js';
@@ -14,8 +13,8 @@ import { $ } from '../ui/dom.js';
 import { setVignette, toast, vignette } from '../ui/hud.js';
 import { armorPoints, fullSet } from '../ui/inventory-ui.js';
 import { exitVehicle } from '../vehicles/car.js';
-import { blocks, removed } from '../world/world-state.js';
-import { shrineOf, terrainH, volcanoDist } from '../../../shared/world/terrain.js';
+import { addItem } from './inventory.js';
+import { creative, player } from './player.js';
 
 // ============================================================ přežití
 export function damagePlayer(amount, dx, dz) {

@@ -1,25 +1,27 @@
 // Okno inventáře: výroba, kniha receptů, truhla, táborák.
 import '../player/inventory.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { ARMOR_SETS, ARMOR_SLOTS, ARMOR_SLOT_NAMES, COOKING, COOK_TIME, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, smeltResult } from '../../../shared/data/index.js';
+import { insertStack } from '../../../shared/inventory.js';
+import { NET } from '../../../shared/net/net.js';
+import { powerOf } from '../../../shared/sim/power.js';
+import { blocks, chestOf, fireOf, furnaceOf, stoveOf, vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
-import { MP, NET, isBusy } from '../game/boot.js';
+import { MP } from '../game/boot.js';
 import { SAVE_KEY } from '../game/prefs.js';
 import { save } from '../game/save-load.js';
-import { fillFurnace, furnaceOf, renderFurnace } from '../machines/furnace.js';
-import { kitchenMissing, renderKitchen, startCooking, stoveOf } from '../machines/kitchen.js';
-import { powerOf, renderPowerUI } from '../machines/power.js';
+import { fillFurnace, renderFurnace } from '../machines/furnace.js';
+import { kitchenMissing, renderKitchen, startCooking } from '../machines/kitchen.js';
+import { renderPowerUI } from '../machines/power.js';
 import { others } from '../net/multiplayer.js';
-import { addItem, countItem, findRecipe, hasFor, insertInto, insertStack, inv, recipeNeeds, removeItem } from '../player/inventory.js';
+import { addItem, countItem, findRecipe, hasFor, insertInto, inv, recipeNeeds, removeItem } from '../player/inventory.js';
 import { creative, input, lockPointer, setCreative, setResetting, unlockPointer } from '../player/player.js';
-import { specials } from '../render/blocks.js';
 import { ICONS } from '../render/icons.js';
-import { sparks } from '../render/particles.js';
+import { enterVehicle, renderCarUI } from '../vehicles/car.js';
+import { throwItem } from '../world/ground-items.js';
+import { crafted } from '../world/world-state.js';
 import { $ } from './dom.js';
 import { toast } from './hud.js';
 import { btnOf, fitInventory, shiftOf } from './touch.js';
-import { enterVehicle, renderCarUI, vehicles } from '../vehicles/car.js';
-import { throwItem } from '../world/ground-items.js';
-import { blocks, crafted } from '../world/world-state.js';
-import { ARMOR_SETS, ARMOR_SLOTS, ARMOR_SLOT_NAMES, COOKING, COOK_TIME, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, smeltResult } from '../../../shared/data/index.js';
 
 // ============================================================ HUD – inventář, výroba, táborák (styl Minecraft)
 export const invEl = $('inventory'), cursorEl = $('cursorItem');
@@ -30,10 +32,6 @@ export const armor = save?.armor || [null, null, null, null]; // helma, brnění
 export const armorPoints = () => armor.reduce((n, s) => n + (s ? ITEMS[s.id].armor.pts : 0), 0);
 // Celá sada speciálního brnění (všechny 4 kusy stejné sady) dává bonus.
 export const fullSet = () => { const s0 = armor[0] && ITEMS[armor[0].id].armor.set; return s0 && armor.every((a) => a && ITEMS[a.id].armor.set === s0) ? s0 : null; };
-export const chests = new Map(Object.entries(save?.chests || {})); // klíč bloku -> 27 políček
-const chestOf = (k) => { if (!chests.has(k)) chests.set(k, Array(27).fill(null)); return chests.get(k); };
-export const fires = new Map(Object.entries(save?.fires || {})); // klíč bloku -> { slots: [vstup, výstup], t }
-const fireOf = (k) => { if (!fires.has(k)) fires.set(k, { slots: [null, null], t: 0 }); return fires.get(k); };
 const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots, furnace: () => furnaceOf(ui.fireKey).slots, power: () => powerOf(ui.fireKey).slots || [], car: () => vehicles.get(ui.fireKey)?.slots || [], kitchen: () => stoveOf(ui.fireKey).slots })[c]();
 
 export const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
@@ -396,22 +394,8 @@ $('newWorld').addEventListener('click', () => {
   location.reload();
 });
 
-// Táboráky pečou i se zavřeným oknem.
+// Okno táboráku se během pečení obnovuje (pečení samo je v shared/sim/machines.js).
 let fireRenderT = 0;
-export function updateFires(dt) {
-  for (const [k, f] of fires) {
-    if (!blocks.has(k) || isBusy(k)) continue;
-    const [inp, out] = f.slots;
-    const res = inp && COOKING[inp.id];
-    if (!res || (out && (out.id !== res || out.n >= ITEMS[res].stack))) { f.t = 0; continue; }
-    f.t += dt;
-    if (f.t < COOK_TIME) continue;
-    f.t = 0;
-    if (!--inp.n) f.slots[0] = null;
-    if (out) out.n++; else f.slots[1] = { id: res, n: 1 };
-    crafted[res] = true;
-    const s = specials.get(k);
-    if (s) sparks.emit(s.x + 0.5, s.ry + 0.6, s.z + 0.5, [1, 0.6, 0.2], 12, 1.5, 2);
-  }
+export function refreshFireUI(dt) {
   if (invOpen && ui.mode === 'fire' && (fireRenderT -= dt) <= 0) { fireRenderT = 0.15; renderCraftArea(); }
 }

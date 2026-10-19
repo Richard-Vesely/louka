@@ -1,24 +1,21 @@
 // Sporák (kuchařka) a pole s plodinami.
 import '../ui/inventory-ui.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { CROPS, ITEMS, KITCHEN } from '../../../shared/data/index.js';
+import { on } from '../../../shared/events.js';
+import { hash2, randInt } from '../../../shared/util.js';
+import { blocks, crops, stoveOf, stoves } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
-import { NET, isBusy } from '../game/boot.js';
-import { save } from '../game/save-load.js';
 import { addItem, countItem, removeItem } from '../player/inventory.js';
-import { bkey, rebuildBlocks, specials } from '../render/blocks.js';
+import { specials } from '../render/blocks.js';
 import { lumpy } from '../render/forest.js';
 import { debris, sparks } from '../render/particles.js';
 import { scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { iconImg, invOpen, refreshUI, renderCraftArea, slotHTML, ui } from '../ui/inventory-ui.js';
-import { blocks, crafted } from '../world/world-state.js';
-import { CROPS, ITEMS, KITCHEN } from '../../../shared/data/index.js';
-import { hash2, randInt } from '../../../shared/util.js';
 
 // ============================================================ kuchyně (sporák), pole a studna
 // Sporák: vybereš recept v kuchařce, suroviny se spotřebují, nádobí musíš mít v batohu. Jídlo se vaří i se zavřeným oknem.
-export const stoves = new Map(Object.entries(save?.stoves || {})); // klíč bloku -> { slots: [výstup], recipe, t }
-export const stoveOf = (k) => { if (!stoves.has(k)) stoves.set(k, { slots: [null], recipe: null, t: 0 }); return stoves.get(k); };
 ui.kSel = 0;
 export const kitchenMissing = (r) => {
   const miss = [];
@@ -41,9 +38,10 @@ export function startCooking() {
   refreshUI();
 }
 let stoveRenderT = 0;
-export function updateStoves(dt) {
+// Sporák ve světě: hrnec, žhnoucí plotna a pára (vaření samo je v shared/sim/machines.js); obnovení okna kuchařky.
+export function stoveVisuals(dt) {
   for (const [k, st] of stoves) {
-    if (blocks.get(k) !== 'stove') { if (!blocks.has(k)) stoves.delete(k); continue; }
+    if (blocks.get(k) !== 'stove') continue;
     const so = specials.get(k)?.obj.userData.stove;
     if (so) {
       const on = st.recipe !== null && KITCHEN[st.recipe].heat;
@@ -53,20 +51,17 @@ export function updateStoves(dt) {
       if (on) so.lid.position.y = 0.165 + Math.abs(Math.sin(performance.now() / 90)) * 0.012; // poklička nadskakuje
     }
     if (st.recipe === null) continue;
-    const r = KITCHEN[st.recipe];
-    if (!NET.client && !isBusy(k)) st.t += dt;
-    const s = specials.get(k);
+    const r = KITCHEN[st.recipe], s = specials.get(k);
     if (s && r.heat && Math.random() < dt * 6) debris.emit(s.x + 0.5, s.ry + 1.05, s.z + 0.5, [0.85, 0.85, 0.85], 1, 0.4, 1.2); // pára
-    if (NET.client || st.t < r.time) continue;
-    if (st.slots[0]) st.slots[0].n += r.n; else st.slots[0] = { id: r.out, n: r.n };
-    st.recipe = null;
-    crafted[r.out] = true;
-    Sound.pickup();
-    if (s) sparks.emit(s.x + 0.5, s.ry + 1.1, s.z + 0.5, [1, 0.85, 0.5], 15, 1.5, 1.5);
-    if (invOpen && ui.mode === 'kitchen' && ui.fireKey === k) toast(`Hotovo: ${ITEMS[r.out].name}`);
   }
   if (invOpen && ui.mode === 'kitchen' && (stoveRenderT -= dt) <= 0) { stoveRenderT = 0.15; renderCraftArea(); }
 }
+on('stoveDone', (k, r) => {
+  const s = specials.get(k);
+  Sound.pickup();
+  if (s) sparks.emit(s.x + 0.5, s.ry + 1.1, s.z + 0.5, [1, 0.85, 0.5], 15, 1.5, 1.5);
+  if (invOpen && ui.mode === 'kitchen' && ui.fireKey === k) toast(`Hotovo: ${ITEMS[r.out].name}`);
+});
 export function renderKitchen(area) {
   const st = stoveOf(ui.fireKey), r = KITCHEN[ui.kSel];
   const cooking = st.recipe !== null ? KITCHEN[st.recipe] : null;
@@ -91,29 +86,8 @@ export function renderKitchen(area) {
 }
 
 // Pole: motykou zoráš zem, zasadíš semínka, plodina projde 4 fázemi růstu.
-export const crops = new Map(Object.entries(save?.crops || {})); // klíč bloku -> { stage, t, next }
-let cropT = 0;
-export function updateCrops(dt) {
-  if ((cropT += dt) < 1) return;
-  const step = cropT;
-  cropT = 0;
-  let changed = false;
-  for (const [k, c] of crops) {
-    const type = blocks.get(k);
-    if (!type || !CROPS[type]) { crops.delete(k); continue; }
-    if (c.stage >= 3) continue;
-    const [x, y, z] = k.split(',').map(Number);
-    if (blocks.get(bkey(x, y - 1, z)) !== 'farmland') continue; // roste jen na orné půdě
-    if ((c.t += step) < c.next) continue;
-    c.stage++;
-    c.t = 0;
-    c.next = 25 + Math.random() * 30;
-    const s = specials.get(k);
-    if (s) { scene.remove(s.obj); specials.delete(k); }
-    changed = true;
-  }
-  if (changed) rebuildBlocks();
-}
+// Plodina povyrostla (shared/sim/machines.js): nový model.
+on('cropGrew', (k) => { const s = specials.get(k); if (s) { scene.remove(s.obj); specials.delete(k); } });
 export function harvestCrop(type, k) {
   const c = crops.get(k), def = CROPS[type];
   crops.delete(k);

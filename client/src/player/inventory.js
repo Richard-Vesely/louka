@@ -1,10 +1,10 @@
 // Batoh hráče a hledání receptu v mřížce.
 import '../audio/sound.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { ITEMS, RECIPES } from '../../../shared/data/index.js';
 import { save } from '../game/save-load.js';
-import { creative } from './player.js';
 import { feed, toast } from '../ui/hud.js';
 import { renderHotbar, renderInventory } from '../ui/inventory-ui.js';
-import { ITEMS, RECIPES } from '../../../shared/data/index.js';
+import { creative } from './player.js';
 
 // ============================================================ inventář
 export const inv = { slots: save?.inv || Array(36).fill(null), sel: 0, cursor: null };
@@ -20,14 +20,7 @@ export function insertInto(stack, from, to) {
   }
   return stack.n;
 }
-// Vloží stack do libovolného pole políček (truhla); vrací, kolik se nevešlo.
-export function insertStack(arr, stack) {
-  const max = ITEMS[stack.id].stack;
-  let n = stack.n;
-  for (const s of arr) if (n > 0 && s && s.id === stack.id && s.n < max) { const k = Math.min(max - s.n, n); s.n += k; n -= k; }
-  for (let i = 0; i < arr.length && n > 0; i++) if (!arr[i]) { const k = Math.min(max, n); arr[i] = { id: stack.id, n: k }; n -= k; }
-  return n;
-}
+// (vložení do truhly: insertStack v shared/inventory.js)
 export function addItem(id, n, silent = false) {
   const left = insertInto({ id, n }, 0, 36);
   if (!silent && n - left > 0) feed(id, `+${n - left} ${ITEMS[id].name}`);

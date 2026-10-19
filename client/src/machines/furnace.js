@@ -1,42 +1,21 @@
 // Pec: tavení s palivem.
 import './kitchen.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { isBusy } from '../game/boot.js';
-import { save } from '../game/save-load.js';
+import { FUEL, ITEMS, SMELT_TIME, smeltResult } from '../../../shared/data/index.js';
+import { on } from '../../../shared/events.js';
+import { furnaceOf, furnaces } from '../../../shared/world/state.js';
 import { addItem, countItem, removeItem } from '../player/inventory.js';
 import { specials } from '../render/blocks.js';
 import { sparks } from '../render/particles.js';
 import { toast } from '../ui/hud.js';
 import { iconImg, invOpen, refreshUI, renderCraftArea, slotHTML, ui } from '../ui/inventory-ui.js';
-import { blocks, crafted } from '../world/world-state.js';
-import { FUEL, ITEMS, SMELT_TIME, smeltResult } from '../../../shared/data/index.js';
 
 // ============================================================ pec: tavení rud, písku a dalších surovin s palivem
 // Políčka: [surovina, palivo, výsledek]. Palivo hoří i se zavřeným oknem; když nemá co tavit, nové palivo se nezapálí.
-export const furnaces = new Map(Object.entries(save?.furnaces || {})); // klíč bloku -> { slots, t, burn, burnMax }
-export const furnaceOf = (k) => { if (!furnaces.has(k)) furnaces.set(k, { slots: [null, null, null], t: 0, burn: 0, burnMax: 0 }); return furnaces.get(k); };
+on('fireDone', (k) => { const s = specials.get(k); if (s) sparks.emit(s.x + 0.5, s.ry + 0.6, s.z + 0.5, [1, 0.6, 0.2], 12, 1.5, 2); });
+on('furnaceDone', (k) => { const s = specials.get(k); if (s) sparks.emit(s.x + 0.5, s.ry + 0.5, s.z + 0.5, [1, 0.6, 0.2], 8, 1.2, 1.5); });
 let furnaceRenderT = 0;
-export function updateFurnaces(dt) {
-  for (const [k, f] of furnaces) {
-    if (blocks.get(k) !== 'furnace') { furnaces.delete(k); continue; }
-    if (isBusy(k)) continue; // pec má otevřenou hráč
-    const [inp, fuel, out] = f.slots;
-    const res = inp && smeltResult(inp.id);
-    const can = res && (!out || (out.id === res && out.n < ITEMS[res].stack));
-    if (f.burn > 0) f.burn = Math.max(0, f.burn - dt);
-    if (can && f.burn <= 0 && fuel && FUEL[fuel.id]) { // zapálí další palivo
-      f.burn = f.burnMax = FUEL[fuel.id];
-      if (!--fuel.n) f.slots[1] = null;
-    }
-    if (can && f.burn > 0) {
-      if ((f.t += dt) < SMELT_TIME) continue;
-      f.t = 0;
-      if (!--inp.n) f.slots[0] = null;
-      if (out) out.n++; else f.slots[2] = { id: res, n: 1 };
-      crafted[res] = true;
-      const s = specials.get(k);
-      if (s) sparks.emit(s.x + 0.5, s.ry + 0.5, s.z + 0.5, [1, 0.6, 0.2], 8, 1.2, 1.5);
-    } else f.t = Math.max(0, f.t - dt * 2);
-  }
+// Okno pece se během tavení obnovuje (tavení samo je v shared/sim/machines.js).
+export function refreshFurnaceUI(dt) {
   if (invOpen && ui.mode === 'furnace' && (furnaceRenderT -= dt) <= 0) { furnaceRenderT = 0.15; renderCraftArea(); }
 }
 // Žhnoucí otvor pece (u klienta podle stavu, který posílá hostitel)

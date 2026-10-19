@@ -1,5 +1,8 @@
 // Dotykové ovládání.
 import '../game/save.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { ITEMS } from '../../../shared/data/index.js';
+import { clamp } from '../../../shared/util.js';
+import { bkey, blocks, vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { dining } from '../dining/dining.js';
 import { MP } from '../game/boot.js';
@@ -9,15 +12,11 @@ import { chatOpen, openChat, pauseOpen } from '../net/mp-ui.js';
 import { resetUseCd, target } from '../player/interaction.js';
 import { heldStack, inv } from '../player/inventory.js';
 import { creative, guideOpen, input, isLocked, keys, lockPointer, player, setResetting, toggleGuide, unlockPointer } from '../player/player.js';
-import { bkey } from '../render/blocks.js';
+import { enterVehicle, exitVehicle, honk, toggleCarCam } from '../vehicles/car.js';
+import { dropHeld } from '../world/ground-items.js';
 import { $ } from './dom.js';
 import { toast } from './hud.js';
 import { closeInventory, invEl, invOpen, openInventory, renderHotbar } from './inventory-ui.js';
-import { enterVehicle, exitVehicle, honk, toggleCarCam, vehicles } from '../vehicles/car.js';
-import { dropHeld } from '../world/ground-items.js';
-import { blocks } from '../world/world-state.js';
-import { ITEMS } from '../../../shared/data/index.js';
-import { clamp } from '../../../shared/util.js';
 
 // ============================================================ dotykové ovládání (telefony a tablety)
 // Levá půlka obrazovky = joystick (objeví se tam, kam položíš prst), pravá = otáčení kamery.

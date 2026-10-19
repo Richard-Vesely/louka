@@ -1,8 +1,8 @@
 // Pixelové ikony předmětů 16×16.
 import './textures.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { bricksTex, cobbleTex, markPlanksTex, planksTex } from './textures.js';
 import { ITEMS } from '../../../shared/data/index.js';
 import { clamp, hash2 } from '../../../shared/util.js';
+import { bricksTex, cobbleTex, markPlanksTex, planksTex } from './textures.js';
 
 // ============================================================ pixelové ikony předmětů
 // Bloky se kreslí jako malé 3D kostičky (jako v Minecraftu), ostatní předměty jako pixel art 16×16.

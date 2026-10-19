@@ -1,8 +1,8 @@
 // Ikony bloků, biomů, technologií a elektrických zařízení.
 import './icons.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { BLOCKS, ITEMS, SHAPES, rotBox } from '../../../shared/data/index.js';
 import { ICONS } from './icons.js';
 import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex } from './textures.js';
-import { BLOCKS, ITEMS, SHAPES, rotBox } from '../../../shared/data/index.js';
 
 // ============================================================ ikony stavebních bloků (izometrické 3D tvary ze zmenšených textur)
 const shrinkTex = (tex) => { const c = document.createElement('canvas'); c.width = c.height = 16; c.getContext('2d').drawImage(tex.image, 0, 0, 16, 16); return c; };

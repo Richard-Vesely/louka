@@ -1,24 +1,16 @@
 // Stavby: postavení ve světě, spawnery.
 import '../mobs/mobs.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { NET, SyncSet } from '../game/boot.js';
-import { save } from '../game/save-load.js';
-import { mobs, spawnMob } from '../mobs/mobs.js';
-import { player } from '../player/player.js';
-import { bkey, rebuildBlocks, solidAt } from '../render/blocks.js';
-import { sparks } from '../render/particles.js';
-import { chests } from '../ui/inventory-ui.js';
-import { setVox } from './dig.js';
-import { blockMeta, blocks } from './world-state.js';
-import { hash2, randInt, rng } from '../../../shared/util.js';
+import { NET } from '../../../shared/net/net.js';
+import { spawnMob } from '../../../shared/sim/mobs.js';
+import { hash2, rng } from '../../../shared/util.js';
+import { bkey, blockMeta, blocks, chests, ruinsBuilt, spawners } from '../../../shared/world/state.js';
 import { LOOT, rollLoot, structuresNear } from '../../../shared/world/structures.js';
 import { isMark } from '../../../shared/world/terrain.js';
-import { V, solidVox, surfY, topY } from '../../../shared/world/voxels.js';
+import { V, setVox, surfY, topY } from '../../../shared/world/voxels.js';
+import { player } from '../player/player.js';
+import { rebuildBlocks } from '../render/blocks.js';
 
 // ============================================================ stavby: ruiny, pevnosti, věže, tábory a podzemní kobky
-export const ruinsBuilt = new Set(save?.ruins || []);         // už postavené stavby (všechny druhy)
-export const ruinsOpened = new SyncSet('ruinsOpened', save?.ruinsOpened || []);  // prozkoumané stavby (otevřená truhla)
-export const spawners = new Map(Object.entries(save?.spawners || {})); // klíč bloku spawneru -> druh tvora
-export const solidAny = (x, y, z) => solidAt(x, y, z) || solidVox(x, y, z);
 const put = (x, y, z, type) => blocks.set(bkey(x, y, z), type);
 function putChest(x, y, z, table, rnd) { const k = bkey(x, y, z); blocks.set(k, 'chest'); chests.set(k, rollLoot(rnd, LOOT[table])); }
 function putSpawner(x, y, z, mob) { const k = bkey(x, y, z); blocks.set(k, 'spawner'); spawners.set(k, mob); }
@@ -217,23 +209,4 @@ export function updateRuins(dt) {
   for (const r of structuresNear(player.pos.x, player.pos.z, 110)) if (!ruinsBuilt.has(r.key)) buildStructure(r);
 }
 
-// Spawnery: když je hráč do 24 m, občas zrodí tvora vedle sebe (max. 4 v okolí).
-let spawnerT = 0;
-export function updateSpawners(dt) {
-  if ((spawnerT -= dt) > 0) return;
-  spawnerT = 1;
-  for (const [k, type] of spawners) {
-    if (blocks.get(k) !== 'spawner') { spawners.delete(k); continue; }
-    const [x, y, z] = k.split(',').map(Number);
-    if (NET.nearestDist(x + 0.5, y, z + 0.5) > 24 || Math.random() > 0.3) continue;
-    if (mobs.filter((m) => !m.dead && m.type === type && Math.hypot(m.pos.x - x, m.pos.z - z) < 10).length >= 4) continue;
-    for (let tries = 0; tries < 8; tries++) {
-      const sx = x + randInt(-2, 2), sz = z + randInt(-2, 2);
-      if ((sx === x && sz === z) || solidAny(sx, y, sz) || solidAny(sx, y + 1, sz)) continue;
-      if (!solidAny(sx, y - 1, sz) && y - 1 !== topY(sx, sz)) continue;
-      spawnMob(type, sx + 0.5, sz + 0.5, y);
-      sparks.emit(sx + 0.5, y + 0.8, sz + 0.5, [0.8, 0.3, 1], 25, 2, 1);
-      break;
-    }
-  }
-}
+// (spawnery: updateSpawners v shared/sim/mobs.js)

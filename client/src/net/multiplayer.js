@@ -1,43 +1,37 @@
 // Hra pro více hráčů: hostitel a klient (zprávy, změny světa, tvorové).
 import '../game/loop.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { ITEMS } from '../../../shared/data/index.js';
+import { NET, isBusy, uiBusy } from '../../../shared/net/net.js';
+import { setDay } from '../../../shared/sim/day.js';
+import { groundItems, spawnGroundItem } from '../../../shared/sim/ground-items.js';
+import { MOBS, mobs, removeMob, spawnMob } from '../../../shared/sim/mobs.js';
+import { markPowerDirty, queuePrint } from '../../../shared/sim/power.js';
+import { clamp, wrapAngle } from '../../../shared/util.js';
+import { worldState } from '../../../shared/world/save.js';
+import { KV_MAPS, blockMeta, blocks, removed, ruinsBuilt, ruinsOpened, setPortalActive, vehicles } from '../../../shared/world/state.js';
+import { getVox, setVox } from '../../../shared/world/voxels.js';
 import { Sound } from '../audio/sound.js';
-import { BOOT, NET, isBusy, uiBusy } from '../game/boot.js';
-import { worldState } from '../game/save.js';
-import { furnaces } from '../machines/furnace.js';
-import { crops, stoves } from '../machines/kitchen.js';
-import { markPowerDirty, power } from '../machines/power.js';
-import { MOBS, hitMob, mobs, removeMob, spawnMob } from '../mobs/mobs.js';
-import { chatLine, leaveGame, renderPause, sysLine } from './mp-ui.js';
+import { BOOT } from '../game/boot.js';
+import { hitMob, viewOf } from '../mobs/mobs.js';
 import { receiveGift } from '../pc/papers-world.js';
-import { paperSpots, pcDisks, queuePrint } from '../pc/printer.js';
-import { chairRot, refreshSpecial, tableItems } from '../player/eating.js';
+import { refreshSpecial } from '../player/eating.js';
 import { swapHeld } from '../player/interaction.js';
 import { addItem, countItem, heldStack, removeItem } from '../player/inventory.js';
 import { creative, player, setCreative } from '../player/player.js';
 import { damagePlayer } from '../player/survival.js';
 import { specials } from '../render/blocks.js';
-import { setDay } from '../render/daylight.js';
 import { cutGrass } from '../render/grass.js';
 import { scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
-import { chests, fires, invOpen, renderInventory, ui } from '../ui/inventory-ui.js';
-import { vehicles } from '../vehicles/car.js';
-import { setVox } from '../world/dig.js';
-import { groundItems, spawnGroundItem } from '../world/ground-items.js';
-import { papers } from '../world/papers.js';
-import { setPortalActive } from '../world/shrine.js';
-import { BUILDERS, buildStructure, ruinsBuilt, ruinsOpened, spawners } from '../world/structures.js';
-import { blockMeta, blocks, removed } from '../world/world-state.js';
-import { ITEMS } from '../../../shared/data/index.js';
-import { clamp, wrapAngle } from '../../../shared/util.js';
-import { getVox } from '../../../shared/world/voxels.js';
+import { invOpen, renderInventory, ui } from '../ui/inventory-ui.js';
+import { BUILDERS, buildStructure } from '../world/structures.js';
+import { chatLine, leaveGame, renderPause, sysLine } from './mp-ui.js';
 
 // ============================================================ hra pro více hráčů (PeerJS, hostitel = server)
 // Hostitel drží svět: klienti mu posílají změny (bloky, stromy, podzemí…), on je provede a rozešle ostatním.
 // Tvory simuluje jen hostitel. Malé mapy (táboráky, truhly, sporáky, pole…) se porovnávají a posílají změněné klíče.
 export const MAX_PLAYERS = 6;
-const KV_MAPS = { fires, stoves, crops, tableItems, chairRot, chests, spawners, furnaces, power, vehicles, papers, pcDisks, paperSpots };
 export const others = new Map(); // ostatní hráči: pid -> { pid, name, pose, perm, conn?, avatar? }
 const puppets = new Map(); // klient: tvorové podle hostitele (nid -> tvor)
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -271,10 +265,11 @@ function syncPuppets(list) {
 }
 export function updatePuppets(dt) {
   for (const [nid, m] of puppets) {
+    const V = viewOf(m);
     if (m.dead) {
       m.deathT += dt;
-      m.group.scale.setScalar(Math.max(0.01, 1 - m.deathT * 2.5));
-      m.group.rotation.z += dt * 6;
+      V.group.scale.setScalar(Math.max(0.01, 1 - m.deathT * 2.5));
+      V.group.rotation.z += dt * 6;
       if (m.deathT > 0.4) { removeMob(m); puppets.delete(nid); }
       continue;
     }
@@ -286,19 +281,19 @@ export function updatePuppets(dt) {
     if (m.type === 'crawler') {
       hop = Math.abs(Math.sin(m.phase)) * (sp > 2 ? 0.5 : 0.18);
       const squash = 1 + Math.cos(m.phase * 2) * 0.12;
-      m.body.scale.set(1 / Math.sqrt(squash), 0.8 * squash, 1.15 / Math.sqrt(squash));
-    } else if (m.arms.length) {
+      V.body.scale.set(1 / Math.sqrt(squash), 0.8 * squash, 1.15 / Math.sqrt(squash));
+    } else if (V.arms.length) {
       const swing = Math.sin(m.phase * (m.type === 'golem' ? 1.1 : 1.6)) * Math.min(sp / 2, 1) * 0.8;
-      m.legs[0].rotation.x = swing; m.legs[1].rotation.x = -swing;
-      m.arms[0].rotation.x = -swing * 0.8; m.arms[1].rotation.x = swing * 0.6;
+      V.legs[0].rotation.x = swing; V.legs[1].rotation.x = -swing;
+      V.arms[0].rotation.x = -swing * 0.8; V.arms[1].rotation.x = swing * 0.6;
     } else {
       const swing = Math.sin(m.phase * 2.2) * Math.min(sp / 2, 1) * 0.7;
-      m.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
+      V.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
     }
-    m.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
-    m.group.rotation.y += wrapAngle(m.ry - m.group.rotation.y) * Math.min(1, dt * 10);
-    m.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
+    V.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
+    V.group.rotation.y += wrapAngle(m.ry - V.group.rotation.y) * Math.min(1, dt * 10);
+    V.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
     m.flash = Math.max(0, m.flash - dt * 5);
-    for (const mat of m.mats) if (!mat.userData.glow) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
+    for (const mat of V.mats) if (!mat.userData.glow) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
   }
 }

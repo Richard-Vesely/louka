@@ -1,16 +1,19 @@
 // Herní smyčka (tick).
 import '../ui/touch.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { NET } from '../../../shared/net/net.js';
+import { dayTime } from '../../../shared/sim/day.js';
+import { updateCrops, updateFires, updateFurnaces, updateStoves } from '../../../shared/sim/machines.js';
+import { updateMobs, updateSpawners, updateSpawns } from '../../../shared/sim/mobs.js';
+import { updatePower } from '../../../shared/sim/power.js';
+import { EYE } from '../../../shared/world/constants.js';
+import { vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { dining, updateDining } from '../dining/dining.js';
-import { MP, NET } from './boot.js';
-import { game } from './debug.js';
-import { GFX } from './prefs.js';
-import { save } from './save-load.js';
-import { updateFurnaceGlow, updateFurnaces } from '../machines/furnace.js';
-import { updateCrops, updateStoves } from '../machines/kitchen.js';
-import { updatePower, updatePowerVisuals } from '../machines/power.js';
-import { updateMobs, updateSpawns } from '../mobs/mobs.js';
+import { refreshFurnaceUI, updateFurnaceGlow } from '../machines/furnace.js';
+import { stoveVisuals } from '../machines/kitchen.js';
+import { updatePowerVisuals } from '../machines/power.js';
+import { animateMobs, syncMobViews } from '../mobs/mobs.js';
 import { updatePuppets } from '../net/multiplayer.js';
 import { pcOpen, updatePC } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
@@ -20,7 +23,7 @@ import { updateInteraction } from '../player/interaction.js';
 import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
 import { updateShards, updateSurvival } from '../player/survival.js';
 import { rebuildBlocks, specials, updateLights } from '../render/blocks.js';
-import { applyUnderground, dayTime, updateDay } from '../render/daylight.js';
+import { applyUnderground, updateDay } from '../render/daylight.js';
 import { applyDimension } from '../render/dimension.js';
 import { rebuildForest } from '../render/forest.js';
 import { grassLayers, regrowGrass } from '../render/grass.js';
@@ -32,14 +35,17 @@ import { sky, stars, updateEnvironment } from '../render/sky.js';
 import { updateVoxChunks } from '../render/vox-mesh.js';
 import { $ } from '../ui/dom.js';
 import { updateHUD, updateTips } from '../ui/hud.js';
-import { invOpen, renderHotbar, updateFires } from '../ui/inventory-ui.js';
+import { invOpen, refreshFireUI, renderCraftArea, renderHotbar, ui } from '../ui/inventory-ui.js';
 import { touchUI } from '../ui/touch.js';
-import { driveVehicle, placeCarCamera, updateVehicles, vehicles } from '../vehicles/car.js';
+import { driveVehicle, placeCarCamera, updateVehicles } from '../vehicles/car.js';
 import { updateFishing } from '../world/fishing.js';
-import { updateGroundItems } from '../world/ground-items.js';
+import { syncGroundItemViews, tickGroundItems } from '../world/ground-items.js';
 import { checkPortal, updatePortals } from '../world/shrine.js';
-import { updateRuins, updateSpawners } from '../world/structures.js';
-import { EYE } from '../../../shared/world/constants.js';
+import { updateRuins } from '../world/structures.js';
+import { MP } from './boot.js';
+import { game } from './debug.js';
+import { GFX } from './prefs.js';
+import { save } from './save-load.js';
 
 // ============================================================ herní smyčka
 addEventListener('resize', () => {
@@ -84,25 +90,28 @@ export function tick(realDt) {
     if (player.alive && !dining && !player.vehicle) updateInteraction(dt); // z auta se netěží
     updateDining(dt);
     updateSurvival(dt);
-    if (!MP) { updateMobs(dt, day); updateSpawns(dt, night); }
+    if (!MP) { updateMobs(dt, day); animateMobs(dt); updateSpawns(dt, night); }
     updateShards(dt);
-    if (!MP) updateGroundItems(dt);
+    if (!MP) tickGroundItems(dt);
     updateFishing(dt);
     updateEating(dt);
     checkPortal(dt);
   }
   if (MP) { // tvory simuluje jen hostitel, klient je ukazuje podle něj
-    if (NET.client) updatePuppets(realDt); else { updateMobs(realDt, day); updateSpawns(realDt, night); }
-    updateGroundItems(realDt);
+    if (NET.client) updatePuppets(realDt); else { updateMobs(realDt, day); animateMobs(realDt); updateSpawns(realDt, night); }
+    tickGroundItems(realDt);
   }
-  if (!NET.client) updateFires(realDt);
-  if (!NET.client) updateFurnaces(realDt); // pec taví u hostitele, klient jen ukazuje
+  syncGroundItemViews();
+  syncMobViews();
+  if (!NET.client) { updateFires(realDt); refreshFireUI(realDt); }
+  if (!NET.client) { updateFurnaces(realDt); refreshFurnaceUI(realDt); } // pec taví u hostitele, klient jen ukazuje
   updateFurnaceGlow(gameClock);
-  updatePower(realDt, day); // elektrické sítě (energie 4× za sekundu)
+  if (updatePower(realDt, day) && invOpen && ui.mode === 'power') renderCraftArea(); // elektrické sítě (energie 4× za sekundu)
   updatePowerVisuals(realDt, gameClock);
   updatePC(realDt); // počítač: start, napájení, aplikace
   updateDocs(realDt); // papíry a rámečky ve světě
   updateStoves(realDt);
+  stoveVisuals(realDt);
   if (!NET.client) updateCrops(W);
   updatePortals(realDt);
   regrowGrass(realDt);

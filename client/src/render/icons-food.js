@@ -1,7 +1,7 @@
 // Ikony jídla, surovin, nádobí, ryb a nábytku.
 import '../world/dig.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { ICONS } from './icons.js';
 import { clamp, hash2 } from '../../../shared/util.js';
+import { ICONS } from './icons.js';
 
 // ============================================================ ikony jídla, surovin a nádobí
 // Kreslí se tvary (elipsy, obdélníky) po pixelech 16×16 a nakonec se přidá tmavý obrys jako v Minecraftu.

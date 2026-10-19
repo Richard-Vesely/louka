@@ -1,10 +1,12 @@
 // Postavičky ostatních hráčů.
 import './multiplayer.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { ITEMS } from '../../../shared/data/index.js';
+import { r2 } from '../../../shared/net/net.js';
+import { clamp, wrapAngle } from '../../../shared/util.js';
+import { vehicles } from '../../../shared/world/state.js';
 import { dining } from '../dining/dining.js';
 import { iconVoxels } from '../dining/food-models.js';
-import { r2 } from '../game/boot.js';
-import { others } from './multiplayer.js';
 import { heldStack } from '../player/inventory.js';
 import { creative, input, isLocked, player } from '../player/player.js';
 import { blockMat } from '../render/blocks.js';
@@ -13,9 +15,8 @@ import { swingT } from '../render/held-item.js';
 import { ICONS } from '../render/icons.js';
 import { scene } from '../render/renderer.js';
 import { armor, fullSet, invOpen, ui } from '../ui/inventory-ui.js';
-import { hornN, vehicles } from '../vehicles/car.js';
-import { ITEMS } from '../../../shared/data/index.js';
-import { clamp, wrapAngle } from '../../../shared/util.js';
+import { hornN } from '../vehicles/car.js';
+import { others } from './multiplayer.js';
 
 // ---------- postavičky ostatních hráčů
 function nameTag(name) {

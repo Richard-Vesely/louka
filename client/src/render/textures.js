@@ -1,8 +1,8 @@
 // Textury bloků generované kódem.
 import './sky.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { renderer } from './renderer.js';
 import { hash2, rng } from '../../../shared/util.js';
+import { renderer } from './renderer.js';
 
 // ============================================================ textury (generované kódem)
 function noiseField(N, seed, octs = [4, 8, 16, 32, 64]) {

@@ -1,22 +1,17 @@
 // Tiskárna a fronta tisku.
 import './tanks.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { NET } from '../game/boot.js';
-import { save } from '../game/save-load.js';
-import { elecOf, powerOf } from '../machines/power.js';
-import { dayCount } from '../render/daylight.js';
+import { NET } from '../../../shared/net/net.js';
+import { dayCount } from '../../../shared/sim/day.js';
+import { PRINT_TIME, elecOf, queuePrint } from '../../../shared/sim/power.js';
+import { papers } from '../../../shared/world/state.js';
 import { slotHTML } from '../ui/inventory-ui.js';
-import { papers } from '../world/papers.js';
-import { blocks } from '../world/world-state.js';
-import { clamp } from '../../../shared/util.js';
 
 // ============================================================ dokumenty: textový editor, tiskárna, papíry ve světě, čtení a předání
 // pcDisks: uložené dokumenty každého počítače (klíč bloku -> { docs: [{ id, name, text, day }] }).
 // Tiskárna (power[k]): slots[0] papír, slots[1..3] vytištěné listy, q = fronta úloh { p: id papíru, n: kopií, done }.
 // paperSpots: papíry položené na zemi a na stole, pověšené na zdi, rámečky (id -> { d: id papíru | null, x, y, z, ry, w: na zdi, fr: rámeček }).
-export const pcDisks = new Map(Object.entries(save?.pcDisks || {}));
-export const paperSpots = new Map(Object.entries(save?.paperSpots || {}));
-export const PRINT_TIME = 3, PRINT_QUEUE = 5, DISK_MAX = 30, DOC_TEXT_MAX = 4000;
+export const DISK_MAX = 30, DOC_TEXT_MAX = 4000;
 export const escH = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 export const kvPend = (m, k) => { if (NET.client) NET.pend.set(m + '|' + k, performance.now() + 1500); }; // vlastní změnu hostitel hned nepřepíše
 export function newPaper(title, text) {
@@ -25,26 +20,10 @@ export function newPaper(title, text) {
   return id;
 }
 
-// ---------- tiskárna
-export function queuePrint(k, p, n) { // provádí hostitel (ve hře pro jednoho hra sama)
-  if (blocks.get(k) !== 'printer' || typeof p !== 'string') return false;
-  const st = powerOf(k);
-  if (st.q.length >= PRINT_QUEUE) return false;
-  st.q.push({ p: p.slice(0, 80), n: clamp(Math.floor(n) || 1, 1, 5), done: 0 });
-  return true;
-}
+// ---------- tiskárna (fronta a tisk: shared/sim/power.js)
 export function printJob(k, p, n) {
   if (NET.client) { NET.req(['print', k, p, n]); return true; }
   return queuePrint(k, p, n);
-}
-export const printerReady = (st) => !!(st.q?.length && st.slots[0]?.id === 'paper' && st.slots.slice(1).some((s) => !s));
-export function printStep(st, step) {
-  if ((st.t = (st.t || 0) + step) < PRINT_TIME) return;
-  st.t = 0;
-  const job = st.q[0];
-  if (!--st.slots[0].n) st.slots[0] = null;
-  st.slots[st.slots.findIndex((s, i) => i > 0 && !s)] = { id: 'doc_' + job.p, n: 1 };
-  if (++job.done >= job.n) st.q.shift();
 }
 export function printerDev(st) {
   const job = st.q?.[0], title = job && (papers.get(job.p)?.title || '…'), out = st.slots.slice(1).filter(Boolean).length;

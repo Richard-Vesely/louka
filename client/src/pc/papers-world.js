@@ -1,24 +1,24 @@
 // Papíry ve světě: na zemi, na stole, na zdi, v rámečku; předání hráči.
 import './printer.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { BLOCKS, ITEMS } from '../../../shared/data/index.js';
+import { NET } from '../../../shared/net/net.js';
+import { spawnGroundItem } from '../../../shared/sim/ground-items.js';
+import { clamp } from '../../../shared/util.js';
+import { REACH } from '../../../shared/world/constants.js';
+import { bkey, paperSpots, papers } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
-import { MP, NET } from '../game/boot.js';
+import { MP } from '../game/boot.js';
 import { others, sendTo } from '../net/multiplayer.js';
-import { openDoc } from './doc-view.js';
-import { paperSpots } from './printer.js';
 import { target } from '../player/interaction.js';
 import { addItem, consumeSelected, heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { rayD, rayO } from '../player/targeting.js';
-import { bkey, specials } from '../render/blocks.js';
+import { specials } from '../render/blocks.js';
 import { scene } from '../render/renderer.js';
 import { planksTex } from '../render/textures.js';
 import { toast } from '../ui/hud.js';
-import { spawnGroundItem } from '../world/ground-items.js';
-import { papers } from '../world/papers.js';
-import { BLOCKS, ITEMS } from '../../../shared/data/index.js';
-import { clamp } from '../../../shared/util.js';
-import { REACH } from '../../../shared/world/constants.js';
+import { openDoc } from './doc-view.js';
 
 // ---------- papír jako textura (nadpis, text, autor)
 const paperGeo = new THREE.PlaneGeometry(0.42, 0.594), paperTexCache = new Map();

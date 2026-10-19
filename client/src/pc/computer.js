@@ -1,14 +1,14 @@
 // Počítač s ŘíšeOS: model, okna, aplikace.
 import '../machines/power.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { Sound } from '../audio/sound.js';
-import { NET } from '../game/boot.js';
-import { elecOf, netOf, netStats, power, powerOf } from '../machines/power.js';
-import { tanksInit } from './tanks.js';
-import { input, keys, lockPointer, player, unlockPointer } from '../player/player.js';
-import { dayCount, dayTime } from '../render/daylight.js';
-import { blocks } from '../world/world-state.js';
+import { NET } from '../../../shared/net/net.js';
+import { dayCount, dayTime } from '../../../shared/sim/day.js';
+import { elecOf, netOf, netStats, powerOf } from '../../../shared/sim/power.js';
 import { clamp } from '../../../shared/util.js';
+import { blocks, power } from '../../../shared/world/state.js';
+import { Sound } from '../audio/sound.js';
+import { input, keys, lockPointer, player, unlockPointer } from '../player/player.js';
+import { tanksInit } from './tanks.js';
 
 // ============================================================ počítač: model, operační systém ŘíšeOS a hra Tanky 2D
 // Zapnutí je společné pro všechny hráče (power[k].pc, ukládá se a synchronizuje jako stav ostatních zařízení),

@@ -1,12 +1,20 @@
 // Auto: model, jízda, kufr.
 import '../world/fishing.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { NET } from '../../../shared/net/net.js';
+import { mobs } from '../../../shared/sim/mobs.js';
+import { clamp, randInt, wrapAngle } from '../../../shared/util.js';
+import { solidAny, voxFloor } from '../../../shared/world/collision.js';
+import { PH, PW } from '../../../shared/world/constants.js';
+import { waterAt } from '../../../shared/world/nature.js';
+import { vehicles } from '../../../shared/world/state.js';
+import { terrainH } from '../../../shared/world/terrain.js';
+import { groundHeight } from '../../../shared/world/voxels.js';
 import { Sound } from '../audio/sound.js';
-import { MP, NET } from '../game/boot.js';
+import { MP } from '../game/boot.js';
 import { gameTime } from '../game/loop.js';
 import { TOUCH } from '../game/prefs.js';
-import { save } from '../game/save-load.js';
-import { hitMob, mobs, voxFloor } from '../mobs/mobs.js';
+import { hitMob } from '../mobs/mobs.js';
 import { others } from '../net/multiplayer.js';
 import { clearTarget, groundRing, outline, preview, target } from '../player/interaction.js';
 import { collidesBlocks, input, keys, player } from '../player/player.js';
@@ -18,17 +26,10 @@ import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { slotHTML, ui } from '../ui/inventory-ui.js';
 import { PLANE, buildPlaneModel, flyPlane, placePlaneCamera } from './plane.js';
-import { solidAny } from '../world/structures.js';
-import { clamp, randInt, wrapAngle } from '../../../shared/util.js';
-import { PH, PW } from '../../../shared/world/constants.js';
-import { waterAt } from '../../../shared/world/nature.js';
-import { terrainH } from '../../../shared/world/terrain.js';
-import { groundHeight } from '../../../shared/world/voxels.js';
 
 // ============================================================ vozidla: auto
 // Stav auta se ukládá a v multiplayeru synchronizuje jako malá mapa (vehicles). Kdo řídí, počítá fyziku u sebe
 // a polohu posílá s pozicí hráče (12× za sekundu); ostatní auto plynule dopočítávají.
-export const vehicles = new Map(Object.entries(save?.vehicles || {})); // id -> { type, x, y, z, yaw, pitch, roll, spd, steer, fuel, bat, slots[19], lights, driver }
 export const CAR = { len: 4.2, wid: 1.9, wb: 2.6, track: 1.6, maxFwd: 22, maxRev: 6, accel: 7, brake: 16, steerMax: 0.55, fuelMax: 40, step: 0.65 };
 export const myDriverId = () => (MP ? NET.pid : 'me');
 // Rozměry a vlastnosti podle druhu vozidla (letadlo je definované v 19c)
@@ -36,8 +37,6 @@ export const vehDim = (t) => (t === 'plane' ? { wid: PLANE.span, len: PLANE.len,
   : { wid: CAR.wid, len: CAR.len, h: 1.62, push: CAR.wid, name: 'Auto', fuelMax: CAR.fuelMax });
 const remoteVeh = new Map(); // id auta -> poslední poloha od hráče, který ho řídí (neukládá se)
 export const carWarn = { t: 0 }; // odpočet do dalšího upozornění (auto i letadlo)
-// Po načtení nikdo nesedí za volantem (u klienta to určuje hostitel)
-if (!NET.client) for (const v of vehicles.values()) { v.driver = null; v.engine = false; v.spd = 0; }
 export let carCam = 0;
 export function toggleCarCam() { carCam = 1 - carCam; } // 0 = z první osoby, 1 = ze třetí osoby
 const vehMeshes = new Map();

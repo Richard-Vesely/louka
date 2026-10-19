@@ -1,12 +1,12 @@
 // Povrch terénu (shader).
 import './icons-food.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { MARK_X } from '../../../shared/world/terrain.js';
+import { DIG_N } from '../../../shared/world/voxels.js';
+import { digTex } from '../world/dig.js';
 import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
 import { scene, shaderUniforms } from './renderer.js';
 import { detailTex } from './textures.js';
-import { digTex } from '../world/dig.js';
-import { MARK_X } from '../../../shared/world/terrain.js';
-import { DIG_N } from '../../../shared/world/voxels.js';
 
 // ============================================================ zem
 function makeGroundGeometry(N = 320, R = 3000) {

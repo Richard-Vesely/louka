@@ -1,6 +1,11 @@
 // Dvouplošník: model a let.
 import './car.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { clamp } from '../../../shared/util.js';
+import { solidAny } from '../../../shared/world/collision.js';
+import { waterAt } from '../../../shared/world/nature.js';
+import { terrainH } from '../../../shared/world/terrain.js';
+import { groundHeight } from '../../../shared/world/voxels.js';
 import { Sound } from '../audio/sound.js';
 import { input, keys, player } from '../player/player.js';
 import { damagePlayer } from '../player/survival.js';
@@ -10,11 +15,6 @@ import { debris, sparks } from '../render/particles.js';
 import { camera } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { carCam, carWarn, floorAt } from './car.js';
-import { solidAny } from '../world/structures.js';
-import { clamp } from '../../../shared/util.js';
-import { waterAt } from '../../../shared/world/nature.js';
-import { terrainH } from '../../../shared/world/terrain.js';
-import { groundHeight } from '../../../shared/world/voxels.js';
 
 // ============================================================ dvouplošník: model a letová fyzika
 // Zjednodušená, ale fyzikální: tah motoru, odpor vzduchu ~ v², vztlak ~ v² × součinitel podle úhlu náběhu,

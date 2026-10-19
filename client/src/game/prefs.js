@@ -1,6 +1,7 @@
 // Nastavení zařízení (grafika, ovládání) a klíč uložené hry.
 import './boot.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { BOOT, NET } from './boot.js';
+import { NET } from '../../../shared/net/net.js';
+import { BOOT } from './boot.js';
 
 // ============================================================ nastavení zařízení: grafika a ovládání
 // Ukládá je menu (Nastavení) do localStorage; kvalita a typ ovládání se použijí při spuštění hry.

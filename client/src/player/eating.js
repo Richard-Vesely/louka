@@ -1,23 +1,21 @@
 // Stůl, židle a jedení.
 import '../vehicles/plane.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { ITEMS } from '../../../shared/data/index.js';
+import { chairRot, tableItems } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { DINE_STYLE } from '../dining/dine-view.js';
 import { canDine, dining, startDining } from '../dining/dining.js';
-import { save } from '../game/save-load.js';
-import { addItem, consumeSelected, heldStack, inv } from './inventory.js';
-import { input, player } from './player.js';
 import { rebuildBlocks, specials } from '../render/blocks.js';
 import { debris } from '../render/particles.js';
 import { camera, scene } from '../render/renderer.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { renderHotbar } from '../ui/inventory-ui.js';
-import { ITEMS } from '../../../shared/data/index.js';
+import { addItem, consumeSelected, heldStack, inv } from './inventory.js';
+import { input, player } from './player.js';
 
 // ============================================================ stolování: stůl, židle, příbor
-export const tableItems = new Map(Object.entries(save?.tableItems || {})); // klíč stolu -> { food, cutlery }
-export const chairRot = new Map(Object.entries(save?.chairRot || {}).map(([k, v]) => [k, Number(v)]));
 export function refreshSpecial(k) {
   const s = specials.get(k);
   if (s) { scene.remove(s.obj); specials.delete(k); }

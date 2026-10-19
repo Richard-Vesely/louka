@@ -1,6 +1,9 @@
 // Předmět v ruce a máchnutí.
 import '../player/player.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { ITEMS } from '../../../shared/data/index.js';
+import { lerp, smoothstep } from '../../../shared/util.js';
+import { WALK } from '../../../shared/world/constants.js';
 import { iconVoxels } from '../dining/food-models.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
@@ -8,9 +11,6 @@ import { blockMat } from './blocks.js';
 import { ICONS } from './icons.js';
 import { camera } from './renderer.js';
 import { glowTex } from './sky.js';
-import { ITEMS } from '../../../shared/data/index.js';
-import { lerp, smoothstep } from '../../../shared/util.js';
-import { WALK } from '../../../shared/world/constants.js';
 
 // ============================================================ předmět v ruce
 export const holder = new THREE.Group();

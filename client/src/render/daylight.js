@@ -1,27 +1,24 @@
 // Den a noc, tma v podzemí.
 import '../player/survival.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { advanceDay, dayCount, dayTime, sunElevation } from '../../../shared/sim/day.js';
+import { lerp, smoothstep } from '../../../shared/util.js';
+import { EYE } from '../../../shared/world/constants.js';
+import { terrainH } from '../../../shared/world/terrain.js';
 import { gameTime } from '../game/loop.js';
 import { GFX } from '../game/prefs.js';
-import { save } from '../game/save-load.js';
 import { player } from '../player/player.js';
+import { toast } from '../ui/hud.js';
 import { U, camera, renderer, scene } from './renderer.js';
 import { hemi, moon, skyU, stars, sunDir, sunLight } from './sky.js';
-import { toast } from '../ui/hud.js';
-import { lerp, smoothstep } from '../../../shared/util.js';
-import { DAY_LENGTH, EYE } from '../../../shared/world/constants.js';
-import { terrainH } from '../../../shared/world/terrain.js';
 
 // ============================================================ den a noc
-export let dayTime = save?.dayTime ?? 0.3, dayCount = save?.day ?? 1, wasNight = false;
-export function setDay(t, count = dayCount) { dayTime = t; dayCount = count; }
+let wasNight = false; // (čas dne a počítadlo dní jsou v shared/sim/day.js)
 export const tmpV = new THREE.Vector3();
 const DAY_FOG = new THREE.Color(0xc4d3de), NIGHT_FOG = new THREE.Color(0x070b14), DUSK_FOG = new THREE.Color(0xd9a98a);
 export function updateDay(dt) {
-  const elev0 = Math.sin((dayTime - 0.25) * Math.PI * 2);
-  dayTime += (dt / DAY_LENGTH) * (elev0 < 0 ? 2 : 1);
-  if (dayTime >= 1) { dayTime -= 1; dayCount++; }
-  const elev = Math.sin((dayTime - 0.25) * Math.PI * 2);
+  advanceDay(dt);
+  const elev = sunElevation();
   sunDir.setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - elev * 62), THREE.MathUtils.degToRad(120 + dayTime * 360));
   skyU.sunPosition.value.copy(sunDir);
   skyU.turbidity.value = lerp(4.5, 9, 1 - smoothstep(0.0, 0.4, elev));

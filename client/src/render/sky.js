@@ -2,8 +2,8 @@
 import './renderer.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { Sky } from 'three/addons/objects/Sky.js';
 import * as THREE from 'three';
-import { renderer, scene } from './renderer.js';
 import { rng } from '../../../shared/util.js';
+import { renderer, scene } from './renderer.js';
 
 // ============================================================ obloha, slunce, měsíc, hvězdy
 export const sky = new Sky();

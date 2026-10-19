@@ -1,4 +1,6 @@
 // Podzemí z bloků 1×1 m: co je kde od přírody, změny od hráčů a výška povrchu (s vykopanými dírami).
+import { emit } from '../events.js';
+import { NET } from '../net/net.js';
 import { hash3, makeNoise3 } from '../util.js';
 import { biomeAt, isMark, shrineDist, terrainH, volcanoDist } from './terrain.js';
 
@@ -93,3 +95,14 @@ export const DIG_N = 512;
 export const digData = new Uint8Array(DIG_N * DIG_N);
 export const digIdx = (x, z) => (((z % DIG_N) + DIG_N) % DIG_N) * DIG_N + (((x % DIG_N) + DIG_N) % DIG_N);
 const isDug = (x, z) => digData[digIdx(x, z)] > 0 && columnDug(x, z);
+
+// Změna podzemního bloku (vykopání, vrácení hlíny). Prohlížeč na událost 'vox' překreslí chunky a masku děr.
+export function setVox(x, y, z, id) {
+  NET.op(['v', x, y, z, id]);
+  const ck = vchunkKey(x, z), k = `${x},${y},${z}`, top = topY(x, z);
+  let m = voxEdits.get(ck);
+  if (id === naturalAt(x, y, z, top)) m?.delete(k);
+  else { if (!m) voxEdits.set(ck, (m = new Map())); m.set(k, id); }
+  if (y === top) digData[digIdx(x, z)] = id === V.AIR ? 255 : 0;
+  emit('vox', x, y, z, y === top);
+}

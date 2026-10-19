@@ -1,10 +1,11 @@
 // Chat, menu Esc se seznamem hráčů, informační okénko.
 import './avatars.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { BOOT, NET } from '../game/boot.js';
+import { NET } from '../../../shared/net/net.js';
+import { BOOT } from '../game/boot.js';
 import { saveGame } from '../game/save.js';
-import { MAX_PLAYERS, broadcast, esc, kick, others, setPerm, toHost } from './multiplayer.js';
 import { lockPointer, unlockPointer } from '../player/player.js';
 import { $ } from '../ui/dom.js';
+import { MAX_PLAYERS, broadcast, esc, kick, others, setPerm, toHost } from './multiplayer.js';
 
 // ---------- chat, oznámení, Esc menu, informační okénko
 export function chatLine(name, text) {

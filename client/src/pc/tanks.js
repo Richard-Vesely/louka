@@ -1,10 +1,10 @@
 // Hra Tanky 2D v počítači.
 import './computer.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
+import { powerOf } from '../../../shared/sim/power.js';
+import { clamp } from '../../../shared/util.js';
 import { Sound } from '../audio/sound.js';
 import { TOUCH } from '../game/prefs.js';
-import { powerOf } from '../machines/power.js';
 import { pc, pcSet } from './computer.js';
-import { clamp } from '../../../shared/util.js';
 
 // ============================================================ Tanky 2D
 // Bludiště 20 × 12 polí (ocel se nedá zničit, cihly vydrží 2 zásahy), dva tanky se 3 životy, střely se jednou odrazí od oceli.

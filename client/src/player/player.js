@@ -1,32 +1,32 @@
 // Hráč: ovládání, pohyb a kolize.
 import '../pc/editor.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { BLOCKS, shapeBoxes } from '../../../shared/data/index.js';
+import { NET } from '../../../shared/net/net.js';
+import { clamp } from '../../../shared/util.js';
+import { EYE, GRAVITY, JUMP, PH, PW, RUN, WALK } from '../../../shared/world/constants.js';
+import { bkey, blockMeta, blocks, vehicles } from '../../../shared/world/state.js';
+import { shrineOf, terrainH } from '../../../shared/world/terrain.js';
+import { V, VMIN, getVox, groundHeight, solidVox, topY } from '../../../shared/world/voxels.js';
 import { Sound } from '../audio/sound.js';
-import { MP, NET } from '../game/boot.js';
+import { MP } from '../game/boot.js';
 import { game } from '../game/debug.js';
 import { TOUCH, lookSens } from '../game/prefs.js';
 import { save } from '../game/save-load.js';
 import { openChat } from '../net/mp-ui.js';
 import { pcOpen } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
-import { resetUseCd, target } from './interaction.js';
-import { inv } from './inventory.js';
-import { bkey } from '../render/blocks.js';
 import { forestColliders } from '../render/forest.js';
 import { sparks } from '../render/particles.js';
 import { camera, renderer } from '../render/renderer.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { closeInventory, fullSet, invOpen, openInventory, renderHotbar, renderInventory } from '../ui/inventory-ui.js';
-import { enterVehicle, exitVehicle, honk, toggleCarCam, vehiclePush, vehicles } from '../vehicles/car.js';
+import { enterVehicle, exitVehicle, honk, toggleCarCam, vehiclePush } from '../vehicles/car.js';
 import { dropHeld } from '../world/ground-items.js';
 import { shrineColliders } from '../world/shrine.js';
-import { blockMeta, blocks } from '../world/world-state.js';
-import { BLOCKS, shapeBoxes } from '../../../shared/data/index.js';
-import { clamp } from '../../../shared/util.js';
-import { EYE, GRAVITY, JUMP, PH, PW, RUN, WALK } from '../../../shared/world/constants.js';
-import { shrineOf, terrainH } from '../../../shared/world/terrain.js';
-import { V, VMIN, getVox, groundHeight, solidVox, topY } from '../../../shared/world/voxels.js';
+import { resetUseCd, target } from './interaction.js';
+import { inv } from './inventory.js';
 
 // ============================================================ hráč a ovládání
 const canvas = renderer.domElement;

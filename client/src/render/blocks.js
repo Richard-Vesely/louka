@@ -3,21 +3,23 @@ import '../world/shrine.js'; // pořadí spouštění: nejdřív předchozí mod
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { BLOCKS, CROPS, SHAPES } from '../../../shared/data/index.js';
+import { on } from '../../../shared/events.js';
+import { isPowered, markPowerDirty } from '../../../shared/sim/power.js';
+import { solidAt } from '../../../shared/world/collision.js';
+import { blockMeta, blocks, chairRot, crops, tableItems } from '../../../shared/world/state.js';
+import { groundHeight, solidVox } from '../../../shared/world/voxels.js';
 import { DINE_STYLE } from '../dining/dine-view.js';
 import { buildFoodInto } from '../dining/food-models.js';
 import { GFX } from '../game/prefs.js';
-import { buildCropModel, crops } from '../machines/kitchen.js';
-import { buildElecModel, isPowered, markPowerDirty, rebuildCables } from '../machines/power.js';
-import { chairRot, tableItems } from '../player/eating.js';
+import { buildCropModel } from '../machines/kitchen.js';
+import { buildElecModel, rebuildCables } from '../machines/power.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { dummy, lumpy } from './forest.js';
 import { camera, scene } from './renderer.js';
 import { glowTex } from './sky.js';
 import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, dirtTex, farmlandTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, markdirtTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, rockTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex } from './textures.js';
-import { blockMeta, blocks } from '../world/world-state.js';
-import { BLOCKS, CROPS, SHAPES } from '../../../shared/data/index.js';
-import { groundHeight, solidVox } from '../../../shared/world/voxels.js';
 
 // ============================================================ položené bloky a stavby
 const blockMats = {
@@ -66,8 +68,6 @@ const shapeGeoCache = {};
 const shapeGeo = (shape) => (shapeGeoCache[shape] ||= mergeGeometries((SHAPES[shape].render || SHAPES[shape].box).map(cellBoxGeo)));
 const instPool = new Map(); // "tvar|materiál" -> InstancedMesh (zvětší se, když bloků přibude)
 export const specials = new Map(); // klíč -> { type, x, y, z, obj, flames }
-export const bkey = (x, y, z) => `${x},${y},${z}`;
-export const solidAt = (x, y, z) => { const t = blocks.get(bkey(x, y, z)); return !!t && BLOCKS[t].solid; };
 
 function buildSpecial(type, key) {
   const g = new THREE.Group();
@@ -334,6 +334,7 @@ function buildSpecial(type, key) {
   return { obj: g, flames };
 }
 
+on('blocksChanged', () => rebuildBlocks()); // pravidla změnila bloky (stavba, růst plodin)
 export function rebuildBlocks() {
   // Obyčejné bloky se kreslí po skupinách (stejný tvar + materiál = jeden InstancedMesh); schody a další tvary jsou natočené.
   const groups = new Map();
@@ -401,4 +402,3 @@ export function updateLights(time) {
   });
   for (const s of list) for (const f of s.flames) f.scale.setScalar(f.userData.base * (0.85 + 0.2 * Math.sin(time * 17 + s.x + f.position.y * 9)));
 }
-export const nearLight = (x, z, r) => { for (const s of specials.values()) if (BLOCKS[s.type].light && s.type !== 'spawner' && (s.x + 0.5 - x) ** 2 + (s.z + 0.5 - z) ** 2 < r * r) return true; return false; };

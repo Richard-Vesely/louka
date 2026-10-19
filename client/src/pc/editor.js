@@ -1,13 +1,13 @@
 // Textový editor v počítači.
 import './doc-view.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { Sound } from '../audio/sound.js';
-import { NET } from '../game/boot.js';
-import { netOf, power } from '../machines/power.js';
-import { PC_APPS, pc } from './computer.js';
-import { DISK_MAX, DOC_TEXT_MAX, PRINT_QUEUE, escH, kvPend, newPaper, pcDisks, printJob } from './printer.js';
-import { dayCount } from '../render/daylight.js';
-import { blocks } from '../world/world-state.js';
+import { NET } from '../../../shared/net/net.js';
+import { dayCount } from '../../../shared/sim/day.js';
+import { PRINT_QUEUE, netOf } from '../../../shared/sim/power.js';
 import { clamp } from '../../../shared/util.js';
+import { blocks, pcDisks, power } from '../../../shared/world/state.js';
+import { Sound } from '../audio/sound.js';
+import { PC_APPS, pc } from './computer.js';
+import { DISK_MAX, DOC_TEXT_MAX, escH, kvPend, newPaper, printJob } from './printer.js';
 
 // ---------- textový editor v počítači
 const diskOf = (k) => pcDisks.get(k)?.docs || [];

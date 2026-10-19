@@ -1,6 +1,8 @@
 // Načtení uložené hry z prohlížeče (nebo světa od hostitele).
 import './prefs.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { BOOT, NET } from './boot.js';
+import { NET } from '../../../shared/net/net.js';
+import { loadWorld } from '../../../shared/world/save.js';
+import { BOOT } from './boot.js';
 import { SAVE_KEY } from './prefs.js';
 
 // ============================================================ uložená hra
@@ -10,3 +12,4 @@ if (NET.client) { // svět dodá hostitel, z vlastního uložení se vezme jen b
   const me = save || {}, w = BOOT.welcome;
   save = { ...w.world, inv: me.inv, pos: me.pos || w.spawn, yaw: me.yaw, hp: me.hp, hunger: me.hunger, crafted: me.crafted, placedAny: me.placedAny, armor: me.armor, flyT: me.flyT, creative: !!me.creative && !!w.perm, flying: !!me.flying && !!w.perm };
 }
+loadWorld(save); // svět (bloky, truhly, stroje…) do shared/world/state.js

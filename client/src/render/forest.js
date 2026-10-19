@@ -1,16 +1,15 @@
 // Les a balvany kolem hráče.
 import '../world/world-state.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { hash2 } from '../../../shared/util.js';
+import { ROCK_CELL, TREE_CELL } from '../../../shared/world/constants.js';
+import { TREE_THICK, rockAt, treeAt } from '../../../shared/world/nature.js';
+import { isMark, terrainH } from '../../../shared/world/terrain.js';
 import { GFX } from '../game/prefs.js';
+import { refreshPonds } from '../world/fishing.js';
 import { scene } from './renderer.js';
 import { refreshShards } from './shards.js';
 import { rockTex } from './textures.js';
-import { refreshPonds } from '../world/fishing.js';
-import { removed } from '../world/world-state.js';
-import { hash2, smoothstep } from '../../../shared/util.js';
-import { ROCK_CELL, SHARD_CELL, TREE_CELL } from '../../../shared/world/constants.js';
-import { TREE_DENSITY, TREE_OF_BIOME, TREE_TRUNK, shardAt } from '../../../shared/world/nature.js';
-import { biomeAt, forest, isMark, pondDip, shrineDist, terrainH, volcanoDist } from '../../../shared/world/terrain.js';
 
 // ============================================================ les a balvany
 export function lumpy(geo, amt, seed) {
@@ -30,28 +29,7 @@ const trunks = makeInstanced(new THREE.CylinderGeometry(0.16, 0.28, 1, 7).transl
 const blobs = makeInstanced(lumpy(new THREE.IcosahedronGeometry(1, 2), 0.22, 1.3).scale(1, 0.85, 1), new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: true }), MAX_TREES * 5);
 const cones = makeInstanced(lumpy(new THREE.ConeGeometry(1, 1, 9, 3).translate(0, 0.5, 0), 0.08, 2.1), new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), MAX_TREES * 4);
 const rocks = makeInstanced(lumpy(new THREE.IcosahedronGeometry(1, 1), 0.3, 4.2).scale(1, 0.6, 1), new THREE.MeshStandardMaterial({ map: rockTex, roughness: 0.95, flatShading: true }), 1500);
-function treeAt(cx, cz) {
-  const key = `t${cx},${cz}`;
-  if (removed.has(key)) return null;
-  const r = hash2(cx, cz);
-  const x = (cx + 0.15 + hash2(cx + 911, cz) * 0.7) * TREE_CELL;
-  const z = (cz + 0.15 + hash2(cx, cz + 577) * 0.7) * TREE_CELL;
-  const f = forest(x, z), mark = isMark(x), bio = mark ? 'meadow' : biomeAt(x, z);
-  let kind;
-  if (bio === 'meadow') {
-    if (r > (f > 0.62 ? 0.6 : f > 0.5 ? 0.15 : 0.025)) return null;
-    kind = hash2(cx + 7, cz + 11) < 0.25 + 0.5 * smoothstep(0.55, 0.8, f) ? 'pine' : 'oak';
-  } else {
-    if (r > TREE_DENSITY[bio]) return null;
-    kind = bio === 'desert' ? (hash2(cx + 19, cz + 23) < 0.65 ? 'cactus' : 'deadbush') : TREE_OF_BIOME[bio];
-  }
-  if (shrineDist(x, z) < 30 || pondDip(x, z) > 0) return null; // ne ve vodě
-  if (bio === 'volcanic' && volcanoDist(x, z) < 22) return null; // ani v kráteru s lávou
-  const sh = shardAt(Math.floor(x / SHARD_CELL), Math.floor(z / SHARD_CELL));
-  if (sh && (sh.x - x) ** 2 + (sh.z - z) ** 2 < 40) return null;
-  const s = (0.75 + hash2(cx + 3, cz + 5) * 0.6) * (kind === 'deadbush' ? 0.45 : 1);
-  return { key, x, z, s, rot: r * 1000, kind, pine: kind === 'pine' || kind === 'spruce', mark, trunkH: TREE_TRUNK[kind] * s * (mark ? 1.4 : 1), v: hash2(cx + 13, cz + 17) };
-}
+// (kde roste který strom a leží který balvan: treeAt a rockAt v shared/world/nature.js)
 
 export const forestTrees = [], forestRocks = [], forestColliders = [];
 export const dummy = new THREE.Object3D();
@@ -81,7 +59,7 @@ export function rebuildForest(px, pz, force = false) {
       const y = terrainH(t.x, t.z) - 0.2;
       t.y = y;
       forestTrees.push(t);
-      const K = t.kind, thick = { jungle: 1.4, cactus: 1.7, mushroom: 1.6, deadbush: 0.6 }[K] || 1;
+      const K = t.kind, thick = TREE_THICK[K] || 1;
       const trunkCol = t.mark ? tmpColor.setRGB(0.55, 0.8, 1.5) : K === 'cactus' ? tmpColor.setRGB(0.55, 1.7 + t.v * 0.3, 0.5) : K === 'mushroom' ? tmpColor.setRGB(2.3, 2.2, 1.95)
         : K === 'cherry' ? tmpColor.setHSL(0.02, 0.3, 0.42) : K === 'dead' || K === 'deadbush' ? tmpColor.setHSL(0.08, 0.1, 0.38) : K === 'acacia' ? tmpColor.setHSL(0.06, 0.15, 0.55) : tmpColor.setHSL(0.08, 0.25, 0.75 + t.v * 0.25);
       put(trunks, nt++, t.x, y, t.z, t.s * thick, t.trunkH, t.s * thick, t.rot, trunkCol);
@@ -128,12 +106,9 @@ export function rebuildForest(px, pz, force = false) {
   const RR = GFX.rocks;
   for (let cz = Math.floor((pz - RR) / ROCK_CELL); cz <= Math.floor((pz + RR) / ROCK_CELL); cz++) {
     for (let cx = Math.floor((px - RR) / ROCK_CELL); cx <= Math.floor((px + RR) / ROCK_CELL); cx++) {
-      const key = `r${cx},${cz}`;
-      const r = hash2(cx + 5000, cz - 3000);
-      const x = (cx + hash2(cx, cz + 99) * 0.8) * ROCK_CELL, z = (cz + hash2(cx + 99, cz) * 0.8) * ROCK_CELL;
-      if (removed.has(key) || r > (forest(x, z) < 0.45 ? 0.12 : 0.06) || shrineDist(x, z) < 20 || pondDip(x, z) > 0 || (x - px) ** 2 + (z - pz) ** 2 > RR * RR || nr >= 1500) continue;
-      const iron = hash2(cx - 7, cz + 13) < 0.16;
-      const s = (iron ? 0.6 : 0.35) + hash2(cx + 1, cz + 2) ** 2 * 1.3;
+      const rk = rockAt(cx, cz);
+      if (!rk || (rk.x - px) ** 2 + (rk.z - pz) ** 2 > RR * RR || nr >= 1500) continue;
+      const { key, x, z, s, iron, r } = rk;
       const y = terrainH(x, z) - 0.25 * s;
       forestRocks.push({ key, x, y, z, s, iron });
       put(rocks, nr++, x, y, z, s * 1.2, s, s, r * 900, iron ? tmpColor.setHSL(0.06, 0.55, 0.42) : isMark(x) ? tmpColor.setHSL(0.72, 0.25, 0.45 + hash2(cx, cz) * 0.25) : tmpColor.setHSL(0.1, 0.06, 0.55 + hash2(cx, cz) * 0.3), r * 3, r * 7);
