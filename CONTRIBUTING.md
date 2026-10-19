@@ -41,8 +41,11 @@ npm install
 
 ## 3. Udělej si větev
 
-Větev je tvoje vlastní kopie, kde nic nerozbiješ:
+Větev je tvoje vlastní kopie, kde nic nerozbiješ. Nejdřív si stáhni, co mezitím přidali ostatní:
 ```bash
+git switch main
+git pull
+npm install
 git switch -c med-a-vcely
 ```
 Pojmenuj ji podle toho, co děláš (malá písmena, bez háčků, slova spoj pomlčkou).
