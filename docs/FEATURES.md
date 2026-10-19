@@ -40,10 +40,20 @@ When you add or change a feature, update this file in the same pull request.
 - After leaving a multiplayer game the menu shows why (e.g. *Spojení se přerušilo. Zkus se připojit znovu.*).
 - **Nastavení**: graphics quality (auto/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity,
   and the sound sliders **Hlasitost** (80 %), **Zvuky** (100 %) and **Hudba** (60 %); they apply at once (a short click plays at the new volume).
+- **Můj oblek** (link in the main menu, **O** or *Oblek (O)* in the backpack in the game): pick a futuristic suit
+  with a live 3D preview on a holographic stand (drag to turn it; the model walks and swings to show off). Suits:
+  *Průzkumník* (backpack with a blinking antenna), *Inženýr* (headlamp, glowing power cell, tool belt), *Pilot* (big
+  visor, jet pack), *Strážce* (heavy shoulder plates, a cape that flutters), *Vědec* (lab coat whose flaps swing,
+  a hologram next to the head), *Stínový* (dark hood, torn cape) and *Nebeský* (white and gold, halo, small jets).
+  Then **Barva obleku** (12), **Světla** (only the game's glow colours: azurová, jantarová, zelená, purpurová),
+  **Hledí** (5 tinted visors) and **Znak na hrudi** (8 emblems, glowing in the light colour). *Náhodně*, *Zrušit*,
+  *Hotovo* (Enter / Esc work too). Every new name starts in its own colour. The suit is saved in the browser per
+  player name (`rise-obleky`) and, on the club server, in the player's profile, so it comes back on any computer.
+  In the game a toast says *Nový oblek je na tobě!*
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
 
-*Kód:* `index.html` (menu, Návod text), `client/src/menu/menu.js`, `client/src/menu/settings.js`, tips in `client/src/ui/hud.js`.
+*Kód:* `index.html` (menu, Návod text), `client/src/menu/menu.js`, `client/src/menu/settings.js`, costume picker `client/src/menu/costume.js` (data and checks `shared/data/costumes.js`), tips in `client/src/ui/hud.js`.
 
 ## 2. World
 - **Endless terrain** with smooth hills and a **voxel underground** (1 m blocks down to bedrock at y = −48).
@@ -75,8 +85,25 @@ When you add or change a feature, update this file in the same pull request.
 - **Armor**: helmet, chestplate, leggings, boots in iron, crystal, markorite; special sets:
   *Stínové* (shadow: faster, shadow-eaters ignore you) and *Nebeské* (sky: double jump, slow fall, healing; chests only).
 - **Mark apple** (*Markojablko*) lets you fly for 10 s.
+- **Your character** is a kid in a futuristic suit (see *Můj oblek*): bevelled parts that catch the light, fabric,
+  painted shell, metal plates, a reflective visor with glowing eyes behind it (they blink), glowing strips in the
+  light colour that stand out at night, an emblem on the chest and a soft shadow under the feet. **Armor shows on
+  the model** as plates on the helmet, chest, shoulders, thighs and boots: iron is steel, crystal is icy with glowing
+  cyan cracks, markorite is violet metal with a purple glow, *Stínové* is dark with magenta seams, *Nebeské* is white
+  enamel with gold trim. Putting on a piece clicks.
+- **Animations** (procedural, also on other players): walk and run (longer stride, leaning forward, knees bend),
+  idle breathing and looking around now and then, the head follows where you look (the body turns after 75°),
+  swings that depend on the tool (pick and axe chop, sword sweeps, shovel scoops, hand and blocks punch), eating
+  (hand to the mouth, crumbs fly), flying (legs back, jets glow and spark), sitting, a short squash when landing,
+  red flash when hurt; capes, coat flaps and the halo move on their own. Sneaking is supported by the model (pose
+  `sn`) but has no key yet.
+- **First-person hand**: a gloved suit sleeve (your colours, glowing cuff) holds the item. It sways with your steps,
+  lags a little behind fast turns, dips and comes back up when you switch items, jolts when you get hurt, and swings
+  with the same tool arcs.
+- **V** switches the view: *Pohled z první osoby*, *Pohled zezadu*, *Pohled zepředu* (in a vehicle V still switches
+  the car camera). The camera stops in front of walls; aiming still works from the eyes.
 
-*Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`.
+*Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`; character model, armor plates and animation `client/src/render/character.js` (one skinned mesh per material, joints are bones), first-person hand `client/src/render/held-item.js`, own body and third-person view `client/src/net/avatars.js`.
 
 ## 4. Mining, building, items
 - **Mining** with hold-to-break and tool tiers: wood → stone → iron → crystal → markorite.
@@ -123,7 +150,17 @@ When you add or change a feature, update this file in the same pull request.
 
 Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 
-*Kód:* behaviour, spawning, loot `shared/sim/mobs.js`; models, animation, sounds `client/src/mobs/mobs.js`.
+- **Models** (Hytale-like, blocky but detailed): bevelled parts with generated wool, fur, hide and feather textures
+  with normal maps, eyes with a white catchlight, a soft contact shadow. Sheep have a woolly cap, cows spots, horns and
+  a tail tuft, chickens a comb and wings, deer antlers and a white tail, boars tusks and a bristly back, wolves a
+  light mane. Hostile mobs have glowing eyes (wolf amber, shadow-eater magenta slits, Markoman magenta, golem cyan).
+  *Markoman* is a guard suit in iron armor with an iron sword; the *Krystalový golem* is stone with pulsing cyan cracks.
+- **Life**: eyes blink, the head turns to look at a player within 8 m, animals graze, sniff or look around when
+  standing, ears and tails twitch, chickens flap on the run, running kicks up dust, the shadow-eater trails smoke, the
+  golem gives off light motes, hit = short red flash, death = tips over sideways, then a puff of smoke (and a soft
+  sound). At night mobs and players get a faint blue moonlight rim so their outline reads in the dark.
+
+*Kód:* behaviour, spawning, loot `shared/sim/mobs.js`; models `client/src/mobs/mob-models.js`; animation, life, sounds `client/src/mobs/mobs.js` (`poseMob`, also for the client's puppets).
 
 ## 7. Technology
 - **Furnace** (*Pec*): ores → ingots (iron, copper, gold), quartz → silicon, iron → steel, resin → rubber,
@@ -168,8 +205,10 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
   Esc menu show the world name.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
 - **Chat** (T), only to players in the same world.
-- Everyone sees other players (name tag, armor, held item, walking, sitting, eating), their blocks, vehicles,
-  animals, day/night. Only one player can have a chest or machine open at a time.
+- Everyone sees other players in **their own suit** (*Můj oblek*, sent in the position as `lk`), with a modern
+  name tag (dark glass, cyan edge, a dot in their light colour, a health bar when hurt; it fades with distance),
+  armor plates, the held item, and all the animations (walking, running with dust, swinging per tool, eating with
+  crumbs, flying with jet sparks, sitting, red flash when hurt); their blocks, vehicles, animals, day/night. Only one player can have a chest or machine open at a time.
 
 *Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/` (worlds: `server/worlds.js`, `server/world-worker.js`; profiles: `server/profiles.js`, `server/me.js`; admin: `server/admin-http.js`, `server/admin.js`); menu `client/src/menu/menu.js` (world buttons: `renderWorlds`, login: `askProfile`).
 
@@ -216,7 +255,7 @@ under the feet / being mined), `ambience.js` (ambience beds and one-shots), `hum
 
 ## 12. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
-E inventory · G drop · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
+E inventory · G drop · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V view (first person / behind / front; car camera in a vehicle) · O suit (*Můj oblek*) · Esc menu.
 Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.

@@ -42,6 +42,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `shared/data/items.js` | items (tools, armor, food, ingredients, utensils), basic recipes, stove cookbook `KITCHEN`, crops `CROPS`, campfire `COOKING`, block list `BLOCKS` |
 | `shared/data/blocks.js` | building blocks: stones, stairs/slabs, biome blocks, glass, concrete and dyes |
 | `shared/data/tech.js` | ores, furnace (`FURNACE_ONLY`, `FUEL`), workshop parts, engines, vehicles, computers, electric devices |
+| `shared/data/costumes.js` | suits for *Můj oblek* (`SUITS`, colours, emblems), `cleanCostume`, the short text `encodeCostume` sent in the pose (`lk`) |
 | `shared/data/index.js` | **import data from here**; finalizes recipes (grid pattern, category) once |
 | `shared/world/terrain.js` | terrain height and biomes (its GLSL twin is `client/src/render/glsl.js`, keep them identical) |
 | `shared/world/voxels.js` | the underground (what is where naturally, player edits, `setVox`, `groundHeight`) |
@@ -56,13 +57,13 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/main.js` | entry point: menu, then the game modules |
 | `client/src/menu/` | main menu (world buttons first from `GET /worlds`, then *Hrát sám*, then *Nastavení · Další možnosti*; club password asked once; player name + PIN asked once per device, then "Hraješ jako X · Změnit hráče"; *Další možnosti*: host in the browser / join by code) and settings |
 | `client/src/game/` | boot (`NET` setup), prefs, save/load in the browser, the frame loop `loop.js` (`tick`), `debug.js` (`window.game`) |
-| `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item, day/night colours |
+| `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item + first-person suit hand, day/night colours; `character.js` = the suit model, armor plates and animation (no side effects, the menu uses it too) |
 | `client/src/player/` | player movement and collisions, aiming, mining/placing/using, backpack, survival, eating |
-| `client/src/mobs/mobs.js` | creature 3D models, animation, sounds (behaviour is in `shared/sim/mobs.js`) |
+| `client/src/mobs/` | `mob-models.js` creature 3D models; `mobs.js` animation and life (`poseMob`), sounds, sparks (behaviour is in `shared/sim/mobs.js`) |
 | `client/src/audio/` | all sound (WebAudio synthesis): `sound.js` mix + `Sound.at(x, y, z, fn)` positional sound, recipes in `sfx.js` / `voices.js`, materials, ambience, machine hums, music; `soundscape.js` runs it each frame |
 | `client/src/ui/` | HUD, inventory window, touch controls |
 | `client/src/machines/`, `pc/`, `vehicles/`, `dining/`, `world/` | the browser side of machines, the computer + Tanks + documents, car + plane, table manners, shrine/fishing/dropped items |
-| `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars, chat + Esc menu, the net loop (`mp-start.js`) |
+| `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars (other players, own body + third-person view, name tags), chat + Esc menu, the net loop (`mp-start.js`) |
 | `server/` | `index.js` (env config), `worlds.js` (`WORLDS` list, moving old data), `server.js` (HTTP + WebSocket, logs players in, sends each player's messages to their world), `profiles.js` (player profiles: name + PIN, tokens, wrong-PIN throttle, `players.json`), `world-worker.js` (one world in its own thread: room + 20 Hz loop + saving + the players' backpacks), `me.js` (checks a player's state before it is saved), `sim.js` (one world step), `persist.js` (saving + backups), `admin-http.js` (`/admin` page + local admin port), `admin.js` (CLI: `players`, `reset-pin`), `static.js` |
 
 ## How it fits together
@@ -93,7 +94,8 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 
 Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/net/room.js`, client = `client/src/net/multiplayer.js`.
 
-- Client → host: `['ops', creative, ops]`, `['kv', changes]` (5×/s), `['pose', pose]` (12×/s), `['pk', gid]` pick up,
+- Client → host: `['ops', creative, ops]`, `['kv', changes]` (5×/s), `['pose', pose]` (12×/s; optional fields `lk` = the suit as
+  `suit.colour.light.visor.emblem`, e.g. `'pilot.9.0.1.4'`, and `sn: 1` while sneaking; the host passes the pose on unchanged), `['pk', gid]` pick up,
   `['hit', nid, dmg, yaw]`, `['mu', nid]` eggs/milk, `['print', key, paperId, copies]`, `['giveTo', pid, docId]`, `['chat', text]`.
 - Host → client: `['welcome', { pid, name, perm, world, spawn, max }]`, `['full']`, `['join'|'leave', name]`, `['ops', ops]`,
   `['kv', changes]` (2×/s), `['pl', [[pid, name, pose, perm]…]]` (12×/s), `['mobs', dayTime, day, [[nid, type, x, y, z, ry, hp, flash, dead, eggs, milk]…]]` (5×/s),
@@ -119,7 +121,8 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
   connection then closes; the client asks again. The same profile already in that world: the old connection gets
   `['kick', 'Přihlásil ses jinde.']` and is closed. The welcome also has `me`: that player's saved state in this world
   (`null` = first time; added by `server/world-worker.js`). The client sends `['me', { inv, armor, pos, yaw, hp, hunger,
-  crafted, placedAny, creative, flying, flyT }]` every 10 s and when leaving; the world thread checks it (`server/me.js`:
+  crafted, placedAny, creative, flying, flyT, look }]` every 10 s and when leaving (`look` = the suit object, optional, cleaned by
+  `cleanCostume`; the newer of server and browser wins by its time `t`); the world thread checks it (`server/me.js`:
   ≤ 64 KB, 36 + 4 slots, known item ids) and saves it in `world.json` → `players[profile id]`. The browser host ignores `me`.
 - Each world of the Node server runs in its own `worker_threads` thread, because `shared/` keeps one world in module
   state. Rooms, chat and players are per world; there are no messages between worlds.
