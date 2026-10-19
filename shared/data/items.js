@@ -3,7 +3,12 @@
 // ============================================================ předměty a recepty
 // Úrovně materiálu: 1 dřevo, 2 kámen, 3 železo, 4 krystal, 5 markorit (nejlepší).
 const TIER_COLOR = { 1: '#a0784a', 2: '#a8a8a8', 3: '#eef0f6', 4: '#7ff3ff', 5: '#e070ff' };
-export const TOOL_SPEED = { 1: 2, 2: 3.5, 3: 6, 4: 8, 5: 11 };
+export const TOOL_SPEED = { 1: 2, 2: 4, 3: 6, 4: 8, 5: 10 };
+// Odolnost (kolik použití vydrží) podle materiálu: dřevo, kámen, železo, krystal, markorit (shared/tools.js).
+export const TOOL_DUR = { 1: 59, 2: 131, 3: 250, 4: 900, 5: 2000 };
+// Brnění: odolnost = násobek materiálu × základ kusu (helma 11, brnění 16, kalhoty 15, boty 13), jako v Minecraftu.
+const ARMOR_DUR_BASE = [11, 16, 15, 13];
+const ARMOR_DUR_MUL = { 3: 15, 4: 25, 5: 37, shadow: 20, sky: 33 };
 export const ITEMS = {
   log: { name: 'Kmen', icon: '🪵' },
   planks: { name: 'Prkna', icon: '🟫', block: 'planks' },
@@ -38,10 +43,10 @@ const TIERS = [
   [1, 'wood', 'Dřevěn'], [2, 'stone', 'Kamenn'], [3, 'iron', 'Železn'], [4, 'crystal', 'Krystalov'], [5, 'markorite', 'Markoritov'],
 ];
 for (const [t, key, mat] of TIERS) {
-  ITEMS[`${key}_axe`] = { name: `${mat}á sekera`, tool: 'axe', tier: t, dmg: 1 + t, stack: 1 };
-  ITEMS[`${key}_pick`] = { name: `${mat}ý krumpáč`, tool: 'pick', tier: t, dmg: 1 + t * 0.5, stack: 1 };
-  ITEMS[`${key}_sword`] = { name: `${mat}ý meč`, tool: 'sword', tier: t, dmg: [0, 3, 4, 6, 9, 13][t], stack: 1 };
-  ITEMS[`${key}_shovel`] = { name: `${mat}á lopata`, tool: 'shovel', tier: t, dmg: 1 + t * 0.5, stack: 1 };
+  ITEMS[`${key}_axe`] = { name: `${mat}á sekera`, tool: 'axe', tier: t, dmg: 1 + t, stack: 1, dur: TOOL_DUR[t] };
+  ITEMS[`${key}_pick`] = { name: `${mat}ý krumpáč`, tool: 'pick', tier: t, dmg: 1 + t * 0.5, stack: 1, dur: TOOL_DUR[t] };
+  ITEMS[`${key}_sword`] = { name: `${mat}ý meč`, tool: 'sword', tier: t, dmg: [0, 3, 4, 6, 9, 13][t], stack: 1, dur: TOOL_DUR[t] };
+  ITEMS[`${key}_shovel`] = { name: `${mat}á lopata`, tool: 'shovel', tier: t, dmg: 1 + t * 0.5, stack: 1, dur: TOOL_DUR[t] };
 }
 // Brnění: helma, brnění, kalhoty, boty. Každý bod ochrany ubere 3,5 % zranění (max. 80 %).
 export const ARMOR_SLOTS = ['helmet', 'chestplate', 'leggings', 'boots'];
@@ -49,7 +54,7 @@ export const ARMOR_SLOT_NAMES = ['Helma', 'Brnění', 'Kalhoty', 'Boty'];
 const ARMOR_PTS = { 3: [2, 6, 5, 2], 4: [3, 7, 6, 3], 5: [4, 8, 7, 4] };
 for (const [t, key, mat] of TIERS.slice(2)) {
   const names = [`${mat}á helma`, `${mat}é brnění`, `${mat}é kalhoty`, `${mat}é boty`];
-  ARMOR_SLOTS.forEach((s, i) => { ITEMS[`${key}_${s}`] = { name: names[i], armor: { slot: i, pts: ARMOR_PTS[t][i] }, tier: t, stack: 1 }; });
+  ARMOR_SLOTS.forEach((s, i) => { ITEMS[`${key}_${s}`] = { name: names[i], armor: { slot: i, pts: ARMOR_PTS[t][i] }, tier: t, stack: 1, dur: ARMOR_DUR_MUL[t] * ARMOR_DUR_BASE[i] }; });
 }
 // Speciální sady brnění s bonusem za celou sadu (všechny 4 kusy).
 export const ARMOR_SETS = {
@@ -58,7 +63,7 @@ export const ARMOR_SETS = {
 };
 for (const [set, def] of Object.entries(ARMOR_SETS)) {
   const names = [`${def.name}á helma`, `${def.name}é brnění`, `${def.name}é kalhoty`, `${def.name}é boty`];
-  ARMOR_SLOTS.forEach((sl, i) => { ITEMS[`${set}_${sl}`] = { name: names[i], armor: { slot: i, pts: def.pts[i], set }, tier: set, stack: 1 }; });
+  ARMOR_SLOTS.forEach((sl, i) => { ITEMS[`${set}_${sl}`] = { name: names[i], armor: { slot: i, pts: def.pts[i], set }, tier: set, stack: 1, dur: ARMOR_DUR_MUL[set] * ARMOR_DUR_BASE[i] }; });
 }
 for (const it of Object.values(ITEMS)) it.stack ??= 64;
 
@@ -146,7 +151,7 @@ Object.assign(ITEMS, {
   mill: { name: 'Ruční mlýnek', utensil: true, stack: 1 },
   bowl: { name: 'Mísa', utensil: true, stack: 1 },
   whisk: { name: 'Metla', utensil: true, stack: 1 },
-  hoe: { name: 'Motyka', utensil: true, stack: 1 },
+  hoe: { name: 'Motyka', utensil: true, stack: 1, dur: 131 },
   // bloky
   stove: { name: 'Sporák', block: 'stove', stack: 8 },
   well: { name: 'Studna', block: 'well', stack: 8 },
@@ -234,7 +239,7 @@ KITCHEN.push(
 
 // Sushi (ryby z rybníků, rýže, řasa) a stolování (stůl, židle, příbor).
 Object.assign(ITEMS, {
-  fishing_rod: { name: 'Rybářský prut', utensil: true, stack: 1 },
+  fishing_rod: { name: 'Rybářský prut', utensil: true, stack: 1, dur: 64 },
   raw_salmon: { name: 'Syrový losos', food: 4, stack: 16 },
   raw_trout: { name: 'Syrový pstruh', food: 3, stack: 16 },
   seaweed: { name: 'Vodní řasa', stack: 64 },

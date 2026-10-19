@@ -53,6 +53,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `shared/net/ops.js` | applying world changes from others (`applyOp`), small maps diff (`kvDiff`, `applyKV`) |
 | `shared/net/room.js` | **the host**: accepts players, handles their messages, broadcasts (browser host and Node server) |
 | `shared/events.js` | events from rules to the browser (`emit('mobHit', m)` → sparks and sound) |
+| `shared/tools.js` | tools and combat rules: durability and wear, mining speed, attack charge and crits, repair in the crafting grid |
 | `client/src/main.js` | entry point: menu, then the game modules |
 | `client/src/menu/` | main menu (world buttons first from `GET /worlds`, then *Hrát sám*, then *Nastavení · Další možnosti*; club password asked once; player name + PIN asked once per device, then "Hraješ jako X · Změnit hráče"; *Další možnosti*: host in the browser / join by code) and settings |
 | `client/src/game/` | boot (`NET` setup), prefs, save/load in the browser, the frame loop `loop.js` (`tick`), `debug.js` (`window.game`) |
@@ -94,13 +95,13 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/net/room.js`, client = `client/src/net/multiplayer.js`.
 
 - Client → host: `['ops', creative, ops]`, `['kv', changes]` (5×/s), `['pose', pose]` (12×/s), `['pk', gid]` pick up,
-  `['hit', nid, dmg, yaw]`, `['mu', nid]` eggs/milk, `['print', key, paperId, copies]`, `['giveTo', pid, docId]`, `['chat', text]`.
+  `['hit', nid, dmg, yaw, kb?]` (kb = knockback 0–2, default 1), `['mu', nid]` eggs/milk, `['print', key, paperId, copies]`, `['giveTo', pid, docId]`, `['chat', text]`.
 - Host → client: `['welcome', { pid, name, perm, world, spawn, max }]`, `['full']`, `['join'|'leave', name]`, `['ops', ops]`,
   `['kv', changes]` (2×/s), `['pl', [[pid, name, pose, perm]…]]` (12×/s), `['mobs', dayTime, day, [[nid, type, x, y, z, ry, hp, flash, dead, eggs, milk]…]]` (5×/s),
-  `['give', id, n]`, `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`,
+  `['give', id, n, w?]` (w = tool wear), `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`,
   `['kick', reason?]` (the browser host sends no reason; the Node server sends `['kick', 'Přihlásil ses jinde.']` when the same player logs in again in that world).
 - Ops: `['m', 'blocks'|'blockMeta', key, value|null]`, `['s', 'removed'|'ruinsOpened', key]`, `['r', structure]`, `['v', x, y, z, id]`,
-  `['c', x, z, r]` grass cut, `['p']` portal, `['g', gid, id, n, pos, vel, delay]` dropped item, `['gx', gid, n]`.
+  `['c', x, z, r]` grass cut, `['p']` portal, `['g', gid, id, n, pos, vel, delay, w?]` dropped item (w = tool wear, only for worn tools), `['gx', gid, n]`.
 - WebSocket only (Node server, `server/server.js`): the client first sends `['hello', { name, pass, v: 2, world, pin | token }]`.
   A wrong password gets `['denied', 'password']`. A known `world` id joins that world. A new client (`v: 2`) without
   a world or with an unknown one, on a server with several worlds, gets `['worlds', [{ id, name, creative, players, max }…]]`
@@ -120,7 +121,7 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
   `['kick', 'Přihlásil ses jinde.']` and is closed. The welcome also has `me`: that player's saved state in this world
   (`null` = first time; added by `server/world-worker.js`). The client sends `['me', { inv, armor, pos, yaw, hp, hunger,
   crafted, placedAny, creative, flying, flyT }]` every 10 s and when leaving; the world thread checks it (`server/me.js`:
-  ≤ 64 KB, 36 + 4 slots, known item ids) and saves it in `world.json` → `players[profile id]`. The browser host ignores `me`.
+  ≤ 64 KB, 36 + 4 slots, known item ids; a slot is `{ id, n, w? }`, `w` = tool wear) and saves it in `world.json` → `players[profile id]`. The browser host ignores `me`.
 - Each world of the Node server runs in its own `worker_threads` thread, because `shared/` keeps one world in module
   state. Rooms, chat and players are per world; there are no messages between worlds.
 - Trust model (Marek's, kept for now): the host decides mobs, pick-ups, time and machines; players are trusted for
@@ -154,7 +155,7 @@ npm install                     # once
 npm run dev                     # the game: open http://localhost:5173 (Hrát sám)
 npm test                        # unit tests + the Node server over WebSocket (fast)
 npm run build                   # build into dist/
-npm run playtest                # menu + single player in a real browser (43 checks), then the inventory tricks (27 checks); needs the build
+npm run playtest                # menu + single player in a real browser (50+ checks), then the inventory tricks (27 checks); needs the build
 npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart; then player profiles (name + PIN, backpack on the server, admin page)
 npm run test:worlds             # Node server with 2 worlds + 2 browsers: world buttons, password once, isolation, creative, saves per world
 npm run test:peer               # browser host + browser client over PeerJS (needs internet)

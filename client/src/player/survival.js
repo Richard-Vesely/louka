@@ -13,20 +13,36 @@ import { $ } from '../ui/dom.js';
 import { setVignette, toast, vignette } from '../ui/hud.js';
 import { armorPoints, fullSet } from '../ui/inventory-ui.js';
 import { exitVehicle } from '../vehicles/car.js';
+import { hurtPulse } from './camera-feel.js';
+import { wearArmor } from './durability.js';
 import { addItem } from './inventory.js';
 import { creative, player } from './player.js';
 
 // ============================================================ přežití
 export function damagePlayer(amount, dx, dz) {
   if (!player.alive || creative) return;
-  if (dx || dz) amount *= 1 - Math.min(0.8, armorPoints() * 0.035); // brnění tlumí útoky
+  if (dx || dz) { // brnění tlumí útoky a přitom se opotřebuje
+    const raw = amount;
+    amount *= 1 - Math.min(0.8, armorPoints() * 0.035);
+    wearArmor(raw, [player.pos.x, player.pos.y + 1.1, player.pos.z]);
+  }
   player.hp -= amount;
   player.lastHurt = gameTime;
-  player.shake = 0.3;
+  player.shake = 0.12;
+  hurtPulse(dx, dz);
+  flashHearts();
   if (dx || dz) { player.vel.x += dx * 6; player.vel.z += dz * 6; player.vel.y = 3.5; player.onGround = false; }
   setVignette(1);
   Sound.hurt();
   if (player.hp <= 0) die();
+}
+// Srdíčko a lišta zdraví bliknou
+function flashHearts() {
+  const w = $('hpfill')?.closest('.wrap');
+  if (!w) return;
+  w.classList.remove('hit');
+  void w.offsetWidth; // znovu spustit animaci
+  w.classList.add('hit');
 }
 function die() {
   if (player.vehicle) exitVehicle();

@@ -2,11 +2,13 @@
 import '../player/inventory.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { ARMOR_SLOTS, ARMOR_SLOT_NAMES, COOKING, COOK_TIME, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, smeltResult } from '../../../shared/data/index.js';
 import { insertStack } from '../../../shared/inventory.js';
+import { durLeft, maxDur, repairResult } from '../../../shared/tools.js';
 import { NET } from '../../../shared/net/net.js';
 import { others } from '../../../shared/net/room.js';
 import { powerOf } from '../../../shared/sim/power.js';
 import { blocks, chestOf, fireOf, furnaceOf, stoveOf, vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { MP } from '../game/boot.js';
 import { SAVE_KEY } from '../game/prefs.js';
 import { save } from '../game/save-load.js';
@@ -23,7 +25,7 @@ import { feed, toast } from './hud.js';
 import { btnOf, fitInventory, shiftOf } from './touch.js';
 import { uiSound } from '../audio/ui-sound.js';
 import { tooltipHTML } from './item-tooltip.js';
-import { iconImg, paintHotbar, slotHTML } from './slots.js';
+import { iconImg, paintHotbar, slotHTML, slotInner } from './slots.js';
 import { afterRender, installInvTricks, previewGhost, previewRecipe, slotDown, sortContainer } from './inv-tricks.js';
 export { iconImg, slotHTML };
 
@@ -42,7 +44,14 @@ export function renderHotbar() { paintHotbar(inv.slots, inv.sel); }
 
 let onlyCraftable = false;
 // Složité součástky (adv) jdou vyrobit jen v dílně
-const currentResult = () => { if (ui.mode === 'fire' || ui.mode === 'furnace') return null; const r = findRecipe(ui.craft, ui.size); return r && r.adv && ui.mode !== 'adv' ? null : r; };
+// Když mřížka nesedí na recept, zkusí se oprava (dva stejné nástroje nebo nástroj + surovina, shared/tools.js).
+const currentResult = () => {
+  if (ui.mode === 'fire' || ui.mode === 'furnace') return null;
+  const r = findRecipe(ui.craft, ui.size);
+  if (r) return r.adv && ui.mode !== 'adv' ? null : r;
+  return repairResult(ui.craft);
+};
+const resultStack = (r) => (r.repair ? { id: r.out, n: 1, ...(r.w > 0 ? { w: r.w } : {}) } : { id: r.out, n: r.n });
 export function renderCraftArea() {
   const area = $('craftArea');
   if (ui.mode === 'kitchen') return renderKitchen(area);
@@ -84,10 +93,10 @@ export function renderCraftArea() {
     <div class="craft-ui">${armorCol}
       <div class="cgrid" style="grid-template-columns: repeat(${n}, 40px)">${cells}</div>
       <span class="carrow">➜</span>
-      <div class="out-col"><div class="slot out ${r ? 'ready' : pr ? 'ghost' : ''}" data-out="1" ${r ? `data-item="${r.out}"` : ''}>${r ? iconImg(r.out) + (r.n > 1 ? `<b>${r.n}</b>` : '') : pr ? iconImg(pr.out) : ''}</div>
-        <small class="out-hint">${r ? 'Shift + klik = vyrob vše' : ''}</small></div>
+      <div class="out-col"><div class="slot out ${r ? 'ready' : pr ? 'ghost' : ''}${r?.repair ? ' repair' : ''}" data-out="1" ${r ? `data-item="${r.out}"` : ''}>${r ? (r.repair ? slotInner(resultStack(r)) : iconImg(r.out) + (r.n > 1 ? `<b>${r.n}</b>` : '')) : pr ? iconImg(pr.out) : ''}</div>
+        <small class="out-hint">${r ? (r.repair ? '🔧 Oprava' : 'Shift + klik = vyrob vše') : ''}</small></div>
     </div>
-    <div class="mc-note">${ui.mode === 'adv' ? 'Mřížka 3×3 – všechny recepty včetně složitých součástek.' : ui.mode === 'bench' ? 'Mřížka 3×3. Složité součástky (motory, obvody…) vyrobíš v dílně.' : 'Větší recepty vyrobíš u pracovního stolu.'}</div>`;
+    <div class="mc-note">${r?.repair ? `<span class="repair-note">🔧 Oprava: ${ITEMS[r.out].name} bude mít odolnost ${durLeft(resultStack(r))} / ${maxDur(r.out)}</span>` : ui.mode === 'adv' ? 'Mřížka 3×3 – všechny recepty včetně složitých součástek.' : ui.mode === 'bench' ? 'Mřížka 3×3. Složité součástky (motory, obvody…) vyrobíš v dílně.' : 'Větší recepty vyrobíš u pracovního stolu.'}</div>`;
 }
 // Záložky kategorií receptů nad knihou
 function renderCatTabs(show) {
@@ -162,7 +171,7 @@ export function renderInventory() {
 // Tooltip s názvem, popisem a vlastnostmi předmětu (item-tooltip.js).
 const tooltip = $('tooltip');
 export const tipState = { adv: false, el: null };
-const stackAt = (el) => { const c = el.dataset.c, i = +el.dataset.i; if (!c || c === 'cursor' || Number.isNaN(i)) return null; try { return container(c)?.[i] || null; } catch { return null; } };
+const stackAt = (el) => { if (el.dataset.out) { const r = currentResult(); return r ? resultStack(r) : null; } const c = el.dataset.c, i = +el.dataset.i; if (!c || c === 'cursor' || Number.isNaN(i)) return null; try { return container(c)?.[i] || null; } catch { return null; } };
 export function showTooltip(el) {
   tipState.el = el;
   if (!el || !invOpen || inv.cursor) { tooltip.style.display = 'none'; return; }
@@ -259,7 +268,7 @@ export function slotClick(c, i, button, shift) {
     if (s) { inv.cursor = s; arr[i] = null; }
   } else if (!s) {
     arr[i] = inv.cursor; inv.cursor = null;
-  } else if (s.id === inv.cursor.id) {
+  } else if (s.id === inv.cursor.id && ITEMS[s.id].stack > 1) {
     const k = Math.min(ITEMS[s.id].stack - s.n, inv.cursor.n);
     s.n += k;
     if ((inv.cursor.n -= k) <= 0) inv.cursor = null;
@@ -282,15 +291,15 @@ export function takeResult(shift) {
   lastRecipe = r;
   let made = 0;
   do {
-    if (shift) { if (roomIn(r.out) < r.n) break; insertInto({ id: r.out, n: r.n }, 0, 36); }
-    else if (!inv.cursor) inv.cursor = { id: r.out, n: r.n };
-    else if (inv.cursor.id === r.out && inv.cursor.n + r.n <= ITEMS[r.out].stack) inv.cursor.n += r.n;
+    if (shift) { if (roomIn(r.out) < r.n) break; insertInto(resultStack(r), 0, 36); }
+    else if (!inv.cursor) inv.cursor = resultStack(r);
+    else if (!r.repair && inv.cursor.id === r.out && inv.cursor.n + r.n <= ITEMS[r.out].stack) inv.cursor.n += r.n;
     else break;
     for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i] && !--ui.craft[i].n) ui.craft[i] = null;
     crafted[r.out] = true;
     made++;
   } while (shift && made < 64 && currentResult() === r);
-  if (made) Sound.craft();
+  if (made) { if (r.repair) toolSound('repair'); else Sound.craft(); }
   if (shift && made) feed(r.out, `+${made * r.n} ${ITEMS[r.out].name}`);
   if (shift && currentResult() === r && made < 64) toast('Batoh je plný');
   refreshUI();
@@ -298,9 +307,10 @@ export function takeResult(shift) {
 
 // Kniha receptů: rozloží suroviny do mřížky (jako recipe book v Minecraftu).
 // Vrátí předměty do batohu; co se nevejde, vypadne na zem (dřív se ztratilo).
-export function giveOrDrop(id, n) { const left = addItem(id, n, true); if (left > 0) throwItem(id, left); }
+// w = opotřebení nástroje (zůstane i v batohu, i když se nevejde a vypadne na zem)
+export function giveOrDrop(id, n, w = 0) { const left = addItem(id, n, true, w); if (left > 0) throwItem(id, left, w); }
 function returnGrid() {
-  for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i]) { const s = ui.craft[i]; ui.craft[i] = null; giveOrDrop(s.id, s.n); }
+  for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i]) { const s = ui.craft[i]; ui.craft[i] = null; giveOrDrop(s.id, s.n, s.w); }
 }
 export function fillRecipe(r, shift) {
   if (r.adv && ui.mode !== 'adv') { toast('Tento recept potřebuje dílnu (pokročilý pracovní stůl)'); return; }
@@ -327,7 +337,7 @@ export function fillRecipe(r, shift) {
 }
 export function fillCooking(id) {
   const f = fireOf(ui.fireKey);
-  if (f.slots[0] && f.slots[0].id !== id) { const old = f.slots[0]; f.slots[0] = null; giveOrDrop(old.id, old.n); }
+  if (f.slots[0] && f.slots[0].id !== id) { const old = f.slots[0]; f.slots[0] = null; giveOrDrop(old.id, old.n, old.w); }
   const have = countItem(id);
   if (!have) { toast('Nemáš ' + ITEMS[id].name.toLowerCase()); return; }
   const k = Math.min(have, ITEMS[id].stack - (f.slots[0]?.n || 0));
@@ -341,7 +351,7 @@ invEl.addEventListener('mousedown', (e) => {
     const c = inv.cursor;
     const n = btnOf(e) === 2 ? 1 : c.n;
     if ((c.n -= n) <= 0) inv.cursor = null;
-    throwItem(c.id, n);
+    throwItem(c.id, n, c.w);
     return refreshUI();
   }
   const out = e.target.closest('[data-out]');
@@ -390,7 +400,7 @@ export function openInventory(mode = 'inv', fireKey = null) {
 }
 export function closeInventory() {
   returnGrid();
-  if (inv.cursor) { const c = inv.cursor; inv.cursor = null; giveOrDrop(c.id, c.n); }
+  if (inv.cursor) { const c = inv.cursor; inv.cursor = null; giveOrDrop(c.id, c.n, c.w); }
   invOpen = false;
   invEl.style.display = 'none';
   cursorEl.style.display = 'none';

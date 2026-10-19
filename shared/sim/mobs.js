@@ -3,6 +3,7 @@
 // Model a animace jsou v client/src/mobs/mobs.js; pravidla tady jen ohlásí události (zvuky, jiskry).
 import { emit } from '../events.js';
 import { insertStack } from '../inventory.js';
+import { MOB_INVULN } from '../tools.js';
 import { NET, nearestTarget } from '../net/net.js';
 import { randInt } from '../util.js';
 import { Vec3 } from '../vec3.js';
@@ -30,7 +31,9 @@ export const MOBS = {
   golem: { name: 'Krystalový golem', hp: 60, radius: 1.2, cy: 1.5, dmg: 22, tall: true, drops: [['shard', 1, 3], ['markorite', 1, 1, 0.5], ['markapple', 1, 1, 0.25]] },
 };
 export const HOSTILE_SPEED = { boar: 5.2, crawler: 4.7, markoman: 4.4, wolf: 6.2, golem: 2.4 };
-export const mobs = []; // { nid, type, def, pos, vel, hp, ry, flash, dead, … }
+export const mobs = []; // { nid, type, def, pos, vel, hp, ry, flash, dead, invT, … }
+// Jak dlouho zůstane mrtvý tvor vidět (převrátí se na bok a rozplyne v obláčku).
+export const DEATH_TIME = 0.8;
 
 // y: výška (jen u tvorů ze spawneru v podzemí); jinak stojí na povrchu.
 export function spawnMob(type, x, z, y) {
@@ -48,18 +51,22 @@ export function removeMob(m) {
   const i = mobs.indexOf(m);
   if (i >= 0) mobs.splice(i, 1);
 }
-// Zásah tvora (yaw = odkud přišla rána). Útok připojeného hráče přijde hostiteli zprávou 'hit'.
-export function hurtMob(m, dmg, yaw) {
+// Zásah tvora (yaw = odkud přišla rána, kb = síla odhození: 1 běžně, víc při úderu v běhu).
+// Útok připojeného hráče přijde hostiteli zprávou 'hit'. Po zásahu je tvor 0,5 s nezranitelný; vrací false, když rána nic neudělala.
+export function hurtMob(m, dmg, yaw, kb = 1) {
+  if (m.dead || m.invT > 0) return false;
+  m.invT = MOB_INVULN;
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   m.hp -= dmg;
   m.flash = 1;
-  const kb = m.type === 'golem' ? 2 : 8;
-  m.vel.x += fx * kb;
-  m.vel.z += fz * kb;
-  emit('mobHit', m, !NET.killer); // jiskry a zvuk; !NET.killer = udeřil hráč u této obrazovky
+  const push = (m.type === 'golem' ? 2 : 8) * kb;
+  m.vel.x += fx * push;
+  m.vel.z += fz * push;
+  emit('mobHit', m, !NET.killer, dmg); // jiskry a zvuk; !NET.killer = udeřil hráč u této obrazovky
   if (m.type === 'sheep' || m.type === 'deer' || m.type === 'chicken' || m.type === 'cow') m.fleeT = 5;
   if (m.type === 'boar' || m.type === 'wolf') m.aggro = true;
   if (m.hp <= 0) killMob(m, true);
+  return true;
 }
 // Kořist: ze zabití hráčem jde do batohu; z pasti (hroty) do nejbližší truhly do 5 bloků – základ farmy.
 export function killMob(m, drops, trap = false) {
@@ -91,7 +98,7 @@ export function updateMobs(dt, day) {
   for (const m of [...mobs]) {
     if (m.dead) {
       m.deathT += dt;
-      if (m.deathT > 0.4) removeMob(m);
+      if (m.deathT > DEATH_TIME) removeMob(m);
       continue;
     }
     const T = nearestTarget(TG, m.pos), tp = T.pos;
@@ -171,6 +178,7 @@ export function updateMobs(dt, day) {
     if (Math.hypot(m.vel.x, m.vel.z) > 0.15) m.ry = Math.atan2(-m.vel.x, -m.vel.z); // natočení ve směru pohybu
 
     m.flash = Math.max(0, m.flash - dt * 5);
+    if (m.invT > 0) m.invT -= dt;
     m.cd -= dt;
     const reach = { markoman: 1.7, golem: 2.4 }[m.type] || 1.4;
     if (hostile && dist < reach && Math.abs(dyP) < 2 && m.cd <= 0 && T.alive) {
