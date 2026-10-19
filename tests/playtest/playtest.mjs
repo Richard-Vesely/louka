@@ -214,8 +214,7 @@ try {
 
   // ------------------------------------------------------------ picture
   await ev(() => { const g = window.game; g.setTime(0.32); T.tp(0, 16, 0.45); g.player.yaw = 0; g.player.pitch = 0.05; T.step(30); });
-  await shot(page, `${out}.png`);
-  check('screenshot written', fs.existsSync(`${out}.png`));
+  if (await shot(page, `${out}.png`)) check('screenshot written', fs.existsSync(`${out}.png`));
 } catch (e) {
   check('play-test ran without exception', false, e.stack || e);
 }

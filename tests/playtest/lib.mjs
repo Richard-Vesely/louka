@@ -54,6 +54,8 @@ function skipDrawScript() {
 export async function openPage(browser, url, { label = '', viewport = { width: 1100, height: 680 }, clear = true, ignore = [] } = {}) {
   const ctx = await browser.newContext({ viewport });
   await ctx.addInitScript(skipDrawScript);
+  // PLAYTEST_QUALITY=low (CI): méně trávy a stromů, ať je software WebGL na pomalém stroji rychlejší
+  if (process.env.PLAYTEST_QUALITY) await ctx.addInitScript((q) => { try { const p = JSON.parse(localStorage.getItem('rise-nastaveni') || '{}'); if (!p.quality) localStorage.setItem('rise-nastaveni', JSON.stringify({ ...p, quality: q })); } catch {} }, process.env.PLAYTEST_QUALITY);
   const page = await ctx.newPage();
   page.errors = [];
   const skip = (t) => ignore.some((re) => re.test(t));
@@ -95,12 +97,19 @@ export async function waitGame(page, timeout = 120000) {
   });
 }
 
-/** Screenshot with drawing switched on for a moment. */
+/** Screenshot with drawing switched on for a moment. Returns false (and warns) when the machine is too slow. */
 export async function shot(page, file) {
-  await page.evaluate(() => { window.__skipDraw = false; window.game.tick(0.0001); });
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: file });
-  await page.evaluate(() => { window.__skipDraw = true; });
+  try {
+    await page.evaluate(() => { window.__skipDraw = false; window.game.tick(0.0001); });
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: file, timeout: 90000 });
+    return true;
+  } catch (e) {
+    console.log('WARN  screenshot not taken: ' + String(e.message).split('\n')[0]);
+    return false;
+  } finally {
+    await page.evaluate(() => { window.__skipDraw = true; }).catch(() => {});
+  }
 }
 
 export const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));

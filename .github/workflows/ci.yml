@@ -26,12 +26,19 @@ jobs:
         run: npm test
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
+      # Software WebGL on CI is slow: low graphics (less grass and trees) for the browser tests.
       - name: Play-test – single player
+        env:
+          PLAYTEST_QUALITY: low
         run: node tests/playtest/playtest.mjs dist playtest-sp
       - name: Multiplayer – Node server + 2 browsers
+        env:
+          PLAYTEST_QUALITY: low
         run: node tests/playtest/server-mp.mjs playtest-server
       - name: Multiplayer – browser host + browser client (PeerJS, needs the public broker)
         continue-on-error: true
+        env:
+          PLAYTEST_QUALITY: low
         run: node tests/playtest/peer.mjs dist playtest-peer
       - uses: actions/upload-artifact@v7
         if: always()
