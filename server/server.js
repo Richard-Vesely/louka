@@ -1,88 +1,126 @@
-// Herní server: HTTP (hra ze složky dist/ a /health) a na stejném portu WebSocket pro hráče.
+// Herní server: HTTP (hra ze složky dist/, /health, /worlds) a na stejném portu WebSocket pro hráče.
+// Server může mít víc světů (server/worlds.js); každý běží ve vlastním vlákně (server/world-worker.js) se svou
+// místností, simulací a ukládáním. Tohle hlavní vlákno jen drží spojení a posílá zprávy hráčů do jejich světa.
 import http from 'node:http';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { Worker } from 'node:worker_threads';
 import { WebSocketServer } from 'ws';
-import { accept, others } from '../shared/net/room.js';
-import { worldState } from '../shared/world/save.js';
-import { loadWorldFile, saveWorldFile } from './persist.js';
-import { setupWorld, stepWorld } from './sim.js';
 import { staticHandler } from './static.js';
+import { migrateOldLayout } from './worlds.js';
+
+const WORKER = new URL('./world-worker.js', import.meta.url);
 
 /**
  * Spustí herní server.
  * @param {object} [o]
  * @param {number} [o.port] port (0 = libovolný volný, pro testy)
- * @param {string} [o.password] heslo (prázdné = bez hesla)
- * @param {string|null} [o.dataDir] kam ukládat svět (null = neukládat)
+ * @param {string} [o.password] heslo (prázdné = bez hesla), jedno pro všechny světy
+ * @param {string|null} [o.dataDir] kam ukládat světy: dataDir/<id>/world.json (null = neukládat)
  * @param {string|null} [o.staticDir] složka se sestavenou hrou (dist/)
- * @param {number} [o.maxPlayers] kolik hráčů najednou
- * @param {boolean} [o.allowCreative] smí hráči kreativní režim
+ * @param {number} [o.maxPlayers] kolik hráčů najednou v jednom světě
+ * @param {{ id: string, name: string, creative: boolean }[]} [o.worlds] světy (výchozí: jeden "Hlavní svět")
+ * @param {boolean} [o.allowCreative] kreativní režim pro výchozí svět (když není `worlds`)
  * @param {number} [o.tickHz] kolikrát za sekundu běží svět
  * @param {number} [o.saveEveryMs] jak často ukládat (výchozí 30 s)
  */
-export async function startServer({ port = 8787, password = '', dataDir = null, staticDir = null, maxPlayers = 8, allowCreative = false, tickHz = 20, saveEveryMs = 30_000, log = console.log } = {}) {
-  const world = dataDir ? loadWorldFile(dataDir, log) : null;
-  setupWorld({ world, maxPlayers, allowCreative, code: 'server', log });
-  log(world ? 'Svět načten ze souboru.' : 'Nový svět.');
+export async function startServer({ port = 8787, password = '', dataDir = null, staticDir = null, maxPlayers = 8, worlds, allowCreative = false, tickHz = 20, saveEveryMs = 30_000, log = console.log } = {}) {
+  worlds ||= [{ id: 'svet', name: 'Hlavní svět', creative: allowCreative }];
+  if (dataDir) migrateOldLayout(dataDir, worlds[0].id, log);
   const started = Date.now();
-  // Zatížení: kolik ms trvá jeden krok světa (průměr a maximum za posledních ~10 s) a kolik paměti server bere.
-  const ticks = [];
+  let closing = false;
+  const W = worlds.map((def, i) => ({ ...def, first: i === 0, sockets: new Map(), players: 0, stats: null, worker: null }));
+  const byId = new Map(W.map((w) => [w.id, w]));
+
+  // ---------- vlákna světů
+  function startWorld(w) {
+    return new Promise((ok, fail) => {
+      const worker = new Worker(WORKER, { workerData: { id: w.id, name: w.name, creative: w.creative, first: w.first, dir: dataDir && path.join(dataDir, w.id), maxPlayers, tickHz, saveEveryMs } });
+      w.worker = worker;
+      worker.on('message', (m) => {
+        switch (m.t) {
+          case 'send': { const ws = w.sockets.get(m.cid); if (ws?.readyState === ws.OPEN) ws.send(m.raw); break; }
+          case 'close': w.sockets.get(m.cid)?.close(); break;
+          case 'stats': w.stats = m; w.players = m.players; break;
+          case 'log': log(`[${w.id}] ${m.text}`); break;
+          case 'ready': log(`[${w.id}] ${w.name}${w.creative ? ' (kreativní)' : ''}: ${m.loaded ? 'svět načten ze souboru' : 'nový svět'}.`); ok(); break;
+          case 'stopped': w.onStopped?.(); break;
+        }
+      });
+      worker.on('error', (e) => { log(`[${w.id}] Svět spadl: ${e.stack || e}`); fail(e); });
+      worker.on('exit', (code) => {
+        if (closing || w.worker !== worker) return;
+        // Spadlý svět: hráče odpojit (připojí se znovu) a svět za chvíli spustit znovu z posledního uložení.
+        log(`[${w.id}] Vlákno světa skončilo (kód ${code}), spouštím ho znovu.`);
+        for (const ws of w.sockets.values()) ws.terminate();
+        w.sockets.clear();
+        w.players = 0;
+        setTimeout(() => { if (!closing) startWorld(w).catch(() => {}); }, 3000);
+      });
+    });
+  }
+  await Promise.all(W.map(startWorld));
+
+  // ---------- /health a /worlds
+  const list = () => W.map((w) => ({ id: w.id, name: w.name, creative: w.creative, players: w.players, max: maxPlayers }));
+  const round = (v) => Math.round(v * 100) / 100;
   const health = () => {
-    const avg = ticks.length ? ticks.reduce((a, b) => a + b, 0) / ticks.length : 0;
+    const mem = process.memoryUsage();
     return {
-      ok: true, louka: 2, players: others.size, max: maxPlayers, password: !!password, uptime: Math.round((Date.now() - started) / 1000),
+      ok: true, louka: 2, players: W.reduce((a, w) => a + w.players, 0), max: maxPlayers * W.length, password: !!password,
+      uptime: Math.round((Date.now() - started) / 1000),
       cpuSec: Math.round((process.cpuUsage().user + process.cpuUsage().system) / 1e4) / 100,
-      rssMB: Math.round(process.memoryUsage().rss / 1048576), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576),
-      tickMs: { avg: Math.round(avg * 100) / 100, max: Math.round(Math.max(0, ...ticks) * 100) / 100, budget: Math.round(1000 / tickHz) },
+      rssMB: Math.round(mem.rss / 1048576),
+      heapMB: Math.round(mem.heapUsed / 1048576) + W.reduce((a, w) => a + (w.stats?.heapMB || 0), 0),
+      // všechny světy dohromady: průměr = součet průměrů (na jednom jádře se kroky sčítají), max = nejhorší krok
+      tickMs: { avg: round(W.reduce((a, w) => a + (w.stats?.tickAvg || 0), 0)), max: round(Math.max(0, ...W.map((w) => w.stats?.tickMax || 0))), budget: Math.round(1000 / tickHz) },
+      worlds: W.map((w) => ({ id: w.id, name: w.name, creative: w.creative, players: w.players, max: maxPlayers, heapMB: w.stats?.heapMB ?? null, tickMs: { avg: w.stats?.tickAvg ?? 0, max: w.stats?.tickMax ?? 0 } })),
     };
   };
-  const server = http.createServer(staticHandler(staticDir, health));
+  const server = http.createServer(staticHandler(staticDir, { '/health': health, '/worlds': list }, () => ({ password: !!password })));
   const wss = new WebSocketServer({ server, maxPayload: 2 * 1024 * 1024 });
 
+  // ---------- hráči
   wss.on('connection', (ws, req) => {
     ws.isAlive = true;
     ws.on('pong', () => { ws.isAlive = true; });
-    // První zpráva je ['hello', { name, pass }]; teprve potom hráč vstoupí do místnosti.
-    const handlers = { data: [], close: [], error: [] };
-    let joined = false;
-    const conn = {
-      peer: 'p-' + crypto.randomBytes(4).toString('hex'),
-      metadata: { name: 'Hráč' },
-      get open() { return ws.readyState === ws.OPEN; },
-      send(msg) { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg)); },
-      on(ev, fn) { handlers[ev]?.push(fn); },
-      close() { ws.close(); },
-    };
-    const hello = setTimeout(() => { if (!joined) ws.terminate(); }, 10_000);
+    // První zpráva je ['hello', { name, pass, v, world }]; teprve potom hráč vstoupí do místnosti svého světa.
+    // Nový klient (v: 2) bez světa (nebo s neznámým) dostane seznam ['worlds', …] a pošle hello znovu.
+    // Starý klient (bez v) a server s jediným světem: rovnou první svět.
+    const cid = 'p-' + crypto.randomBytes(4).toString('hex');
+    let world = null;
+    let hello = setTimeout(() => { if (!world) ws.terminate(); }, 10_000);
     ws.on('message', (raw) => {
+      if (world) { world.worker.postMessage({ t: 'data', cid, raw: raw.toString() }); return; }
       let msg;
       try { msg = JSON.parse(raw.toString()); } catch { return; }
-      if (joined) { for (const fn of handlers.data) fn(msg); return; }
       if (!Array.isArray(msg) || msg[0] !== 'hello') return;
-      clearTimeout(hello);
       const h = msg[1] || {};
+      const send = (m) => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(m)); };
       if (password && String(h.pass || '') !== password) {
-        conn.send(['denied', 'password']);
+        clearTimeout(hello);
+        send(['denied', 'password']);
         log(`Špatné heslo (${req.socket.remoteAddress}).`);
         setTimeout(() => ws.close(), 200);
         return;
       }
-      joined = true;
-      conn.metadata.name = String(h.name || 'Hráč').slice(0, 16).trim() || 'Hráč';
-      accept(conn);
+      const w = byId.get(String(h.world || '').toLowerCase()) || (h.v && W.length > 1 ? null : W[0]);
+      if (!w) { // nový klient si teprve vybírá svět: dostane seznam a na výběr má 2 minuty
+        send(['worlds', list()]);
+        clearTimeout(hello);
+        hello = setTimeout(() => { if (!world) ws.terminate(); }, 120_000);
+        return;
+      }
+      clearTimeout(hello);
+      world = w;
+      w.sockets.set(cid, ws);
+      w.worker.postMessage({ t: 'join', cid, name: String(h.name || 'Hráč').slice(0, 16).trim() || 'Hráč' });
     });
-    ws.on('close', () => { clearTimeout(hello); if (joined) for (const fn of handlers.close) fn(); });
-    ws.on('error', () => { if (joined) for (const fn of handlers.error) fn(); });
+    const gone = () => { clearTimeout(hello); if (world && world.sockets.get(cid) === ws) { world.sockets.delete(cid); world.worker.postMessage({ t: 'gone', cid }); } };
+    ws.on('close', gone);
+    ws.on('error', gone);
   });
 
-  let last = performance.now();
-  const ticker = setInterval(() => {
-    const now = performance.now();
-    try { stepWorld(Math.min((now - last) / 1000, 0.25)); } catch (e) { log('Chyba ve světě: ' + (e.stack || e)); }
-    ticks.push(performance.now() - now);
-    if (ticks.length > 10 * tickHz) ticks.shift();
-    last = now;
-  }, 1000 / tickHz);
   // Spojení, které neodpovídá (spadlá wifi), se po 10 s zavře.
   const heartbeat = setInterval(() => {
     for (const ws of wss.clients) {
@@ -91,18 +129,24 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
       ws.ping();
     }
   }, 5000);
-  const save = () => { if (dataDir) saveWorldFile(dataDir, worldState()); };
-  const saver = setInterval(() => { try { save(); } catch (e) { log('Uložení selhalo: ' + e.message); } }, saveEveryMs);
 
   await new Promise((ok) => server.listen(port, ok));
   return {
     port: server.address().port,
-    save,
-    /** Uloží svět, odpojí hráče a vypne server. */
+    worlds: W.map((w) => w.id),
+    /** Hned uloží všechny světy. */
+    save() { for (const w of W) w.worker.postMessage({ t: 'save' }); },
+    /** Uloží světy, odpojí hráče a vypne server. */
     async close() {
-      clearInterval(ticker); clearInterval(heartbeat); clearInterval(saver);
-      save();
+      closing = true;
+      clearInterval(heartbeat);
       for (const ws of wss.clients) ws.terminate();
+      await Promise.all(W.map((w) => new Promise((ok) => {
+        const t = setTimeout(ok, 10_000);
+        w.onStopped = () => { clearTimeout(t); ok(); };
+        w.worker.postMessage({ t: 'stop' });
+      })));
+      await Promise.all(W.map((w) => w.worker.terminate()));
       wss.close();
       await new Promise((ok) => server.close(ok));
     },

@@ -35,6 +35,10 @@ jobs:
         env:
           PLAYTEST_QUALITY: low
         run: node tests/playtest/server-mp.mjs playtest-server
+      - name: Multiplayer – two worlds on one Node server + 2 browsers
+        env:
+          PLAYTEST_QUALITY: low
+        run: node tests/playtest/server-worlds.mjs playtest-worlds
       - name: Multiplayer – browser host + browser client (PeerJS, needs the public broker)
         continue-on-error: true
         env:

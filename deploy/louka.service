@@ -11,7 +11,7 @@ User=louka
 Group=louka
 WorkingDirectory=/opt/louka
 EnvironmentFile=/etc/louka.env
-# Malý VPS (1 GB RAM): server bere kolem 80 MB, strop haldy 384 MB, systemd ho při 600 MB restartuje.
+# Malý VPS (1 GB RAM): server bere kolem 90 MB (+ ~16 MB za každý další svět), strop haldy 384 MB, systemd ho při 600 MB restartuje.
 ExecStart=/usr/bin/node --max-old-space-size=384 server/index.js
 MemoryHigh=450M
 MemoryMax=600M

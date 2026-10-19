@@ -1,6 +1,6 @@
 // Load test of the Node server: N simulated players (WebSocket bots) walk around, build, use chests and hit mobs.
 // Measures the server's memory (RSS), CPU and the time of one world step, like on a small VPS.
-// Usage: node tests/load/bots.mjs [players=8] [seconds=60]
+// Usage: node tests/load/bots.mjs [players=8] [seconds=60] [worlds=1]   (worlds > 1: players are spread over the worlds)
 // The server runs with --max-old-space-size=384 (the same as deploy/louka.service).
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -8,10 +8,11 @@ import os from 'node:os';
 import path from 'node:path';
 import WebSocket from 'ws';
 
-const N = Number(process.argv[2] || 8), SECONDS = Number(process.argv[3] || 60);
+const N = Number(process.argv[2] || 8), SECONDS = Number(process.argv[3] || 60), WORLDS = Number(process.argv[4] || 1);
+const worldIds = Array.from({ length: WORLDS }, (_, i) => `w${i + 1}`);
 const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'louka-load-'));
-const child = spawn(process.execPath, ['--max-old-space-size=384', 'server/index.js'], { env: { ...process.env, PORT: '0', DATA_DIR: dataDir, STATIC_DIR: '', MAX_PLAYERS: String(Math.max(8, N)) }, stdio: ['ignore', 'pipe', 'pipe'] });
+const child = spawn(process.execPath, ['--max-old-space-size=384', 'server/index.js'], { env: { ...process.env, PORT: '0', DATA_DIR: dataDir, STATIC_DIR: '', MAX_PLAYERS: String(Math.max(8, N)), ...(WORLDS > 1 ? { WORLDS: worldIds.map((id, i) => `${id}:Svět ${i + 1}`).join(',') } : {}) }, stdio: ['ignore', 'pipe', 'pipe'] });
 let log = '';
 const port = await new Promise((ok, fail) => {
   const t = setTimeout(() => fail(new Error(log)), 20000);
@@ -30,7 +31,7 @@ for (let i = 0; i < N; i++) {
     const m = JSON.parse(raw.toString());
     if (m[0] === 'mobs') bot.mobs = m[3];
   });
-  ws.on('open', () => ws.send(JSON.stringify(['hello', { name: `Bot ${i + 1}` }])));
+  ws.on('open', () => ws.send(JSON.stringify(['hello', { name: `Bot ${i + 1}`, v: 2, world: worldIds[i % WORLDS] }])));
   bots.push(bot);
   await sleep(150);
 }
@@ -58,7 +59,7 @@ for (const b of bots) b.ws.close();
 await sleep(300);
 child.kill();
 const r = {
-  players: h1.players, seconds: Math.round(wall),
+  players: h1.players, worlds: (h1.worlds || []).map((w) => `${w.id}: ${w.players} players, step ${w.tickMs.avg} ms avg / ${w.tickMs.max} max, heap ${w.heapMB} MB`), seconds: Math.round(wall),
   rssMB: { start: h0.rssMB, max: Math.max(...samples.map((x) => x.rssMB)), end: h1.rssMB },
   heapMB: Math.max(...samples.map((x) => x.heapMB)),
   cpuPercent: Math.round(((h1.cpuSec - h0.cpuSec) / wall) * 1000) / 10,

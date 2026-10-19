@@ -5,11 +5,14 @@ There are three ways to host a shared world. All use the same game code and the 
 | | Who runs it | Always on? | Saved where | Players join with |
 |---|---|---|---|---|
 | **A. Browser host** ("Vytvořit server") | any player's browser tab | only while the tab is open | that browser (`localStorage`) | the code `LOUKA-XXXX` |
-| **B. Laptop server** (`npm start`) | a laptop (Windows/Mac/Linux) | while the laptop runs | `server/data/world.json` | the laptop's address (same Wi-Fi) or a tunnel |
-| **C. VPS server** (`npm start` as a service) | a small rented Linux server | yes | `/opt/louka/server/data/` + daily backups | `hry.example.cz` |
+| **B. Laptop server** (`npm start`) | a laptop (Windows/Mac/Linux) | while the laptop runs | `server/data/<world>/world.json` | the laptop's address (same Wi-Fi) or a tunnel |
+| **C. VPS server** (`npm start` as a service) | a small rented Linux server | yes | `/opt/louka/server/data/<world>/` + daily backups | `hry.example.cz` |
 
 The game page itself is static. GitHub Pages (`.github/workflows/pages.yml`) can host it for single player and the
 browser host; the Node server (B, C) also serves the page itself, so for B and C nothing else is needed.
+
+The Node server (B, C) can hold **several worlds** at once, e.g. a survival world and a creative world (`WORLDS`, see
+[Several worlds](#6-several-worlds-worlds)). Without `WORLDS` it has one world, *Hlavní svět* (id `svet`).
 
 ---
 
@@ -44,7 +47,8 @@ With a password (PowerShell): `$env:ROOM_PASSWORD = 'heslo'; npm start` (bash: `
 - Players elsewhere need a tunnel. Example with Cloudflare (free, no router setup; install it yourself first:
   `winget install --id Cloudflare.cloudflared`): `cloudflared tunnel --url http://localhost:8787` prints
   `https://something.trycloudflare.com` – that is the game address. The quick-tunnel address changes every time.
-- Ctrl+C stops the server and saves the world. The world is in `server/data/world.json` (copy it to the VPS later to keep it).
+- Ctrl+C stops the server and saves the world. The world is in `server/data/svet/world.json` (copy the `svet` folder to
+  the VPS later to keep it). Several worlds: `$env:WORLDS = 'svet:Hlavní svět,kreativ:Kreativní svět:creative'` before `npm start`.
 - Keep the laptop awake (Windows: Power & sleep → Never).
 
 **Status:** `npm start` with saving, restart, password and two browsers is tested (`npm run test:server`). The tunnel was not
@@ -71,17 +75,24 @@ not one with private data or tokens.
 - Without GitHub Actions (or to test a local change): build on the PC and copy it over:
   `npm run build` then `scp -r dist/* root@hry.example.cz:/opt/louka/dist/` (the server serves the new files at once).
 
-### Measured load (`node tests/load/bots.mjs 8 60`)
+### Measured load (`node tests/load/bots.mjs 8 60`, with 2 worlds `npm run test:load:worlds`)
 Simulated players over WebSocket walk around 60 m apart (so mobs spawn around each), send positions 12×/s, build,
 change chests and hit mobs. Server started like the service (`--max-old-space-size=384`), measured on 19.10.2026 on a
 desktop PC (Ryzen 7 5700X); a 1 vCPU VPS is maybe 2–4× slower, still far below the 50 ms budget per step.
 
 | Players | RSS memory | JS heap | CPU (one core) | World step (20×/s) avg / max | Data to each player |
 |---|---|---|---|---|---|
-| 6 | 74–75 MB | 12 MB | 1.8 % | 0.57 / 1.74 ms | 17 KB/s |
-| 8 | 75–76 MB | 13 MB | 1.6 % | 0.60 / 1.74 ms | 22 KB/s |
+| 6, one world | 86–88 MB | 20 MB | 3.1 % | 0.29 / 1.19 ms | 17 KB/s |
+| 8, one world | 87 MB | 19 MB | 1.6 % | 0.30 / 1.27 ms | 21 KB/s |
+| 8, **2 worlds × 4** | 103 MB | 30 MB | 3.2 % | 0.54 / 1.44 ms (both worlds together) | 12 KB/s |
 
-`/health` shows the live numbers: `rssMB`, `heapMB`, `cpuSec`, `tickMs` (avg/max over the last 10 s).
+Since multiple worlds, every world runs in its own thread (`server/world-worker.js`): one world costs ~12 MB more than
+before (75 → 87 MB), each further world ~16 MB (87 → 103 MB). With `MemoryMax=600M` and 1 GB RAM, 2–4 worlds are easy.
+Earlier single-thread numbers (before worlds): 6 players 74–75 MB / 0.57 ms, 8 players 75–76 MB / 0.60 ms.
+
+`/health` shows the live numbers: `rssMB`, `heapMB` (all threads), `cpuSec`, `tickMs` (avg/max over the last 10 s; the
+average is the sum over all worlds), and `worlds[]` with `players`, `max`, `heapMB`, `tickMs` per world. `players` and
+`max` at the top are all worlds together.
 
 ### 1. DNS
 Point a hostname at the VPS IP, e.g. an `A` record `hry.example.cz → 203.0.113.10`.
@@ -104,18 +115,19 @@ curl https://hry.example.cz/health          # {"ok":true,"louka":2,"players":0,.
 systemctl status louka
 journalctl -u louka -f                      # live log: who joins/leaves, errors
 ```
-Players open `https://hry.example.cz`, type a name, **Hrát na serveru**, then the password.
+Players open `https://hry.example.cz`, type a name, **Hrát na serveru**, then the password (and the world, when there are several).
 
 ### 3. Settings (`/etc/louka.env`, then `systemctl restart louka`)
 | Variable | Default | Meaning |
 |---|---|---|
 | `PORT` | 8787 | server port (Caddy forwards to it) |
-| `ROOM_PASSWORD` | – | password players type when joining (empty = anyone with the address) |
-| `DATA_DIR` | `server/data` | world file and backups |
+| `ROOM_PASSWORD` | – | password players type when joining (empty = anyone with the address); one password for all worlds |
+| `DATA_DIR` | `server/data` | worlds and backups: one folder per world, `DATA_DIR/<id>/` |
 | `STATIC_DIR` | `dist` | the built game the server also serves (`""` = don't) |
-| `MAX_PLAYERS` | 8 | players at once |
-| `ALLOW_CREATIVE` | 0 | `1` = everyone may use creative mode |
-| `SAVE_SECONDS` | 30 | how often the world is saved |
+| `WORLDS` | one world `svet` "Hlavní svět" | the worlds on this server, see [Several worlds](#6-several-worlds-worlds) |
+| `MAX_PLAYERS` | 8 | players at once **in each world** |
+| `ALLOW_CREATIVE` | 0 | `1` = everyone may use creative mode (only without `WORLDS`; with `WORLDS` use `:creative`) |
+| `SAVE_SECONDS` | 30 | how often each world is saved |
 
 ### 4. Updating
 ```bash
@@ -124,11 +136,40 @@ sudo bash /opt/louka/deploy/update.sh       # git pull (code + dist branch), npm
 Connected players see *"Spojení se serverem se přerušilo."* and join again.
 
 ### 5. Data and backups
-- `/opt/louka/server/data/world.json`: the whole world (saved every 30 s and on shutdown, written atomically).
-- `/opt/louka/server/data/backups/world-YYYY-MM-DD.json`: one per day, last 7 kept.
-- Restore: `systemctl stop louka`, copy a backup over `world.json`, `systemctl start louka`.
-- Each player's backpack and position are stored in their own browser (keyed by the server address), like with the browser host.
+Every world has its own folder `/opt/louka/server/data/<id>/` (e.g. `svet/`, `kreativ/`):
+- `<id>/world.json`: the whole world (saved every 30 s and on shutdown, written atomically).
+- `<id>/backups/world-YYYY-MM-DD.json`: one per day, last 7 kept.
+- Restore one world: `systemctl stop louka`, copy a backup over `<id>/world.json`, `systemctl start louka`. The other worlds are not touched.
+- Each player's backpack and position are stored in their own browser, keyed by the server address and the world
+  (`rise-klient-<address>#<id>`), so a backpack from the creative world does not come into the survival world.
+- **From one world to several:** a server from before `WORLDS` kept its world in `data/world.json` + `data/backups/`.
+  On the first start of this version, these are moved into the folder of the **first** world in `WORLDS` (default `svet`)
+  and the log says so (`journalctl -u louka`). Players' backpacks from then also stay with the first world.
 - An old `world.json` from the v1 game is moved aside (`world-v1-….json`) and a new world starts.
+
+### 6. Several worlds (`WORLDS`)
+One server (one address, one password, one process) can run several worlds. Each world has its own buildings, animals,
+day, players and chat, its own folder with backups, and creative mode on or off for everyone in it. After
+**Hrát na serveru** (and the password) the menu shows the worlds as buttons with the player count; the last choice is
+remembered, and a link `https://hry.example.cz/?world=kreativ` preselects a world.
+
+Add or change worlds in `/etc/louka.env`, then restart:
+```bash
+sudo nano /etc/louka.env
+#   WORLDS="svet:Hlavní svět,kreativ:Kreativní svět:creative"
+sudo systemctl restart louka
+curl -s http://127.0.0.1:8787/worlds        # [{"id":"svet","name":"Hlavní svět",...},{"id":"kreativ",...}]
+```
+- Format: `id:Name[:creative]`, worlds separated by commas. The **id** is the folder name and the `?world=` link
+  (small letters, digits, `-`, `_`); the **name** is what the kids see (Czech is fine); `:creative` = creative mode for everyone.
+- **Keep the main world first.** Old game pages (before this version) always join the first world, and it is the
+  world that took over the old data.
+- **Rename** a world: change only the name (`svet:Velká říše`), the id stays and so do its files and the players' backpacks.
+  Changing the id means a new, empty world; to keep the buildings, stop the server and rename the folder
+  (`mv /opt/louka/server/data/stare /opt/louka/server/data/nove`) before starting it again.
+- **Remove** a world: delete it from `WORLDS`. Its folder stays on disk (nothing is deleted); add it back to bring it back.
+- Memory: each world is one extra thread with its own copy of the rules, about 16 MB (see the measured load above);
+  a 1 GB VPS is fine for 2–4 worlds. `/health` shows `worlds[]` with players, step time and heap per world.
 
 ---
 

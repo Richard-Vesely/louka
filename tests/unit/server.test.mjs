@@ -2,37 +2,10 @@
 // Runs the real server (node server/index.js) in a child process, players are WebSocket clients.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import WebSocket from 'ws';
-
-const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
-function startServer(env) {
-  const child = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT: '0', STATIC_DIR: '', ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
-  let out = '';
-  return new Promise((ok, fail) => {
-    const t = setTimeout(() => fail(new Error('server did not start: ' + out)), 15000);
-    child.stdout.on('data', (d) => {
-      out += d;
-      const m = out.match(/http:\/\/localhost:(\d+)\//);
-      if (m) { clearTimeout(t); ok({ child, port: Number(m[1]), out: () => out }); }
-    });
-    child.stderr.on('data', (d) => { out += d; });
-  });
-}
-const stop = (s) => new Promise((ok) => { s.child.on('exit', ok); s.child.kill(); });
-function player(port, name, pass) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
-  const p = { ws, msgs: [], welcome: null };
-  ws.on('message', (raw) => { const m = JSON.parse(raw.toString()); p.msgs.push(m); if (m[0] === 'welcome') p.welcome = m[1]; });
-  p.ready = new Promise((ok) => ws.on('open', () => { ws.send(JSON.stringify(['hello', { name, pass }])); ok(); }));
-  p.send = (m) => ws.send(JSON.stringify(m));
-  p.waitFor = async (fn, ms = 8000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const m = p.msgs.find(fn); if (m) return m; await sleep(30); } return null; };
-  return p;
-}
-const pose = (x, z) => ({ x, y: 0.45, z, yaw: 0, pitch: 0, held: null, ui: null, mv: 0, sw: 0, eat: 0, veh: null, hn: 0, ar: [null, null, null, null], sit: 0, fly: 0, flyT: 0, alive: true, cr: 0, set: null, hp: 100 });
+import { player, pose, sleep, startServer, stop } from './server-helpers.mjs';
 
 test('server: password, welcome, shared edits, mobs, save and restart', { timeout: 60000 }, async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'louka-srv-'));
@@ -77,8 +50,8 @@ test('server: password, welcome, shared edits, mobs, save and restart', { timeou
   } finally {
     await stop(srv);
   }
-  assert.ok(fs.existsSync(path.join(dataDir, 'world.json')), 'world.json written');
-  assert.ok(fs.readdirSync(path.join(dataDir, 'backups')).length === 1, 'daily backup written');
+  assert.ok(fs.existsSync(path.join(dataDir, 'svet', 'world.json')), 'world.json written (the default world is svet)');
+  assert.ok(fs.readdirSync(path.join(dataDir, 'svet', 'backups')).length === 1, 'daily backup written');
   srv = await startServer({ DATA_DIR: dataDir, ROOM_PASSWORD: 'tajne' });
   try {
     const c = player(srv.port, 'Cyril', 'tajne');

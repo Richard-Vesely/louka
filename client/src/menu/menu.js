@@ -13,7 +13,7 @@ const ls = {
 $m('mName').value = ls.get(NAME_KEY) || '';
 $m('mName').addEventListener('input', () => ls.set(NAME_KEY, $m('mName').value.trim()));
 const myName = () => $m('mName').value.trim().slice(0, 16) || 'Hráč';
-const pages = ['pgMain', 'pgHost', 'pgJoin', 'pgBusy'];
+const pages = ['pgMain', 'pgHost', 'pgJoin', 'pgWorlds', 'pgBusy'];
 const show = (id) => pages.forEach((p) => ($m(p).hidden = p !== id));
 const msg = (text) => { $m('menuMsg').hidden = !text; $m('menuMsg').textContent = text || ''; };
 try { const m = sessionStorage.getItem('rise-menu-msg'); if (m) { msg(m); sessionStorage.removeItem('rise-menu-msg'); } } catch {}
@@ -122,7 +122,9 @@ function wsUrl(s) {
   if (u.pathname === '/' || u.pathname === '') u.pathname = '/ws';
   return u.href;
 }
-function joinServer(addr, pass) {
+// Server může mít víc světů: v hello posíláme vybraný svět (v: 2 = umíme vybírat). Bez světa server pošle
+// seznam ['worlds', …] a menu ukáže tlačítka (showWorlds). Server s jediným světem hráče pustí rovnou.
+function joinServer(addr, pass, world) {
   let url, ws;
   try { url = wsUrl(addr); ws = new WebSocket(url); } catch { fail('Neplatná adresa serveru.', 'pgJoin'); return; }
   let done = false;
@@ -132,7 +134,7 @@ function joinServer(addr, pass) {
   // Spojení se stejnými funkcemi jako spojení PeerJS (hra ho používá stejně).
   const conn = { get open() { return ws.readyState === 1; }, send(m) { if (ws.readyState === 1) ws.send(JSON.stringify(m)); }, on() {}, close() { ws.close(); } };
   const queue = [];
-  ws.onopen = () => ws.send(JSON.stringify(['hello', { name: myName(), pass }]));
+  ws.onopen = () => ws.send(JSON.stringify(['hello', { name: myName(), pass, v: 2, world }]));
   ws.onerror = () => end('Nepodařilo se spojit se serverem. Zkontroluj adresu a jestli server běží.');
   ws.onclose = () => { if (window.__netOnClose) window.__netOnClose(); else end('Server spojení ukončil.'); };
   ws.onmessage = (e) => {
@@ -141,9 +143,39 @@ function joinServer(addr, pass) {
     if (window.__netOnData) { window.__netOnData(d); return; }
     if (done) { queue.push(d); return; }
     if (d?.[0] === 'denied') { $m('mPassRow').hidden = false; end(pass ? 'Špatné heslo.' : 'Server chce heslo – napiš ho a připoj se znovu.'); return; }
-    if (d?.[0] === 'full') { end('Server je plný.'); return; }
-    if (d?.[0] === 'welcome') { done = true; clearTimeout(timer); ls.set(SERVER_KEY, addr); finish({ mode: 'client', peer: null, conn, code: url, welcome: d[1], queue }); }
+    if (d?.[0] === 'full') { end(world ? 'Tenhle svět je plný. Zkus jiný.' : 'Server je plný.'); return; }
+    if (d?.[0] === 'worlds' && Array.isArray(d[1])) { done = true; clearTimeout(timer); ws.onclose = null; ws.close(); showWorlds(addr, pass, url, d[1]); return; }
+    if (d?.[0] === 'welcome') {
+      done = true; clearTimeout(timer); ls.set(SERVER_KEY, addr);
+      if (d[1]?.worldInfo?.id) rememberWorld(url, d[1].worldInfo.id);
+      finish({ mode: 'client', peer: null, conn, code: url, welcome: d[1], queue });
+    }
   };
+}
+// ---------- výběr světa (server s víc světy, např. přežití a kreativní)
+const WORLD_KEY = 'rise-server-svet'; // { adresa: id naposledy vybraného světa }
+const chosenWorlds = () => { try { return JSON.parse(ls.get(WORLD_KEY)) || {}; } catch { return {}; } };
+const rememberWorld = (url, id) => ls.set(WORLD_KEY, JSON.stringify({ ...chosenWorlds(), [url]: id }));
+function showWorlds(addr, pass, url, list) {
+  const pick = params.get('world') || chosenWorlds()[url]; // odkaz s ?world=id, jinak naposledy vybraný svět
+  const box = $m('mWorlds');
+  box.replaceChildren(...list.map((w) => {
+    const b = document.createElement('button');
+    const full = w.players >= w.max;
+    b.className = 'mc-btn big world-btn' + (w.id === pick ? ' on' : '');
+    b.dataset.world = w.id;
+    b.disabled = full;
+    const name = document.createElement('span');
+    name.textContent = w.name;
+    const tags = document.createElement('small');
+    tags.textContent = `${w.creative ? 'kreativní · ' : ''}${full ? 'plný' : `${w.players}/${w.max} hráčů`}`;
+    b.append(name, tags);
+    b.addEventListener('click', () => { rememberWorld(url, w.id); joinServer(addr, pass, w.id); });
+    return b;
+  }));
+  msg('');
+  show('pgWorlds');
+  setTimeout(() => (box.querySelector('.on:not([disabled])') || box.querySelector('button:not([disabled])'))?.focus(), 0);
 }
 // Známý server: hra načtená přímo ze serveru, odkaz s ?server=adresa, nebo adresa serveru kroužku při sestavení (VITE_SERVER_URL).
 const params = new URLSearchParams(location.search);

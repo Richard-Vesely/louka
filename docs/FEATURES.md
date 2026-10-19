@@ -133,12 +133,17 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 - **Server** (Node.js, `npm start`, v2): always-on world on a VPS or a laptop, saved to disk every 30 s with daily backups,
   serves the game itself; players join by address (**Připojit se** accepts a code or an address, **Hrát na serveru** when
   the game comes from the server or a `?server=` link), optional password, max. 8 players by default.
+- **Several worlds on one server** (`WORLDS`, e.g. *Hlavní svět* + *Kreativní svět*): after the password the menu shows
+  **Vyber svět** with a button per world (name, *kreativní* label, players n/max, full worlds disabled); the last choice
+  is remembered and a `?world=<id>` link preselects one. Each world has its own buildings, animals, day, players and chat;
+  creative mode is on or off for everyone in a world. The backpack and position are saved per world. The info box and the
+  Esc menu show the world name. A server with one world skips the choice.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
-- **Chat** (T).
+- **Chat** (T), only to players in the same world.
 - Everyone sees other players (name tag, armor, held item, walking, sitting, eating), their blocks, vehicles,
   animals, day/night. Only one player can have a chest or machine open at a time.
 
-*Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/`; menu `client/src/menu/menu.js`.
+*Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/` (worlds: `server/worlds.js`, `server/world-worker.js`); menu `client/src/menu/menu.js` (world choice: `showWorlds`).
 
 ## 11. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·

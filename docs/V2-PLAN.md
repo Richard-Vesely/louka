@@ -197,3 +197,11 @@ clients' machines; trap kill without chest gives loot to the host or loses it; i
   fixed in 4b359fa), so check out a later commit. Lean VPS flow checked locally: `npm ci --omit=dev` installs only `ws`
   (200 KB), server serves a clone of `dist-v2`, ~73 MB RSS. Still open: run `deploy/setup-vps.sh` on the real VPS,
   move inventory/crafting functions to `shared/` (not needed by the server today), items in docs/KNOWN-ISSUES.md.
+- 19.10.2026, several worlds on one Node server (Richard's request): env `WORLDS="id:Name[:creative],…"` (default: one
+  world `svet` "Hlavní svět" + `ALLOW_CREATIVE`), each world in its own `worker_threads` thread (`server/world-worker.js`:
+  room, 20 Hz loop, saving to `DATA_DIR/<id>/`), one port, one password, `MAX_PLAYERS` per world. Old `DATA_DIR/world.json`
+  + backups move into the first world on start. Protocol: `['hello', { name, pass, v: 2, world }]`, reply `['worlds', list]`
+  when a world is needed, `GET /worlds`, `worldInfo` in the welcome; old clients join the first world. Menu **Vyber svět**
+  (remembers the choice, `?world=` preselects), saves `rise-klient-<address>#<id>` (first world reads the old key), world name
+  in the info box. Tests: `npm test` 11/11 (new `tests/unit/worlds.test.mjs`), `npm run test:worlds` 19/19 (new, in CI),
+  server 22/22, single player 36/36, PeerJS 18/18. Load 2 worlds × 4 bots: 103 MB RSS, 3.2 % CPU, 0.54 ms per step (docs/HOSTING.md).

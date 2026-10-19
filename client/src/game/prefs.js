@@ -17,7 +17,11 @@ export const GFX = {
 export const prefNum = (k, d) => (Number.isFinite(+PREFS[k]) && +PREFS[k] > 0 ? +PREFS[k] : d);
 export let lookSens = prefNum('sens', 1); // citlivost otáčení (myš i dotyk)
 // Hra pro jednoho má svoje uložení; svět serveru i hráč na cizím serveru se ukládají zvlášť.
-export const SAVE_KEY = NET.host ? 'rise-server-v1' : NET.client ? `rise-klient-${BOOT.code}` : 'rise-svet-v2';
+// Server s víc světy: batoh a pozice zvlášť pro každý svět (rise-klient-<adresa>#<id světa>).
+const WORLD = BOOT.welcome?.worldInfo;
+export const SAVE_KEY = NET.host ? 'rise-server-v1' : NET.client ? `rise-klient-${BOOT.code}${WORLD ? '#' + WORLD.id : ''}` : 'rise-svet-v2';
+// Uložení z doby, kdy měl server jen jeden svět: platí pro první svět, dokud se neuloží pod novým klíčem.
+export const OLD_SAVE_KEY = NET.client && WORLD?.first ? `rise-klient-${BOOT.code}` : null;
 export const GRASS_LAYERS = [
   { area: 32 * GFX.gs, count: GFX.grass[0], seg: 4, width: [0.007, 0.016], height: [0.25, 0.6], fadeIn: [0, 0], fadeOut: [7 * GFX.gs, 15.5 * GFX.gs], flowers: 0.006 },
   { area: 96 * GFX.gs, count: GFX.grass[1], seg: 2, width: [0.022, 0.04], height: [0.25, 0.6], fadeIn: [5 * GFX.gs, 14 * GFX.gs], fadeOut: [26 * GFX.gs, 46 * GFX.gs], flowers: 0.01 },

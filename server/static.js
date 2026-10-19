@@ -8,18 +8,19 @@ const TYPES = {
 };
 
 /**
- * Vytvoří obsluhu HTTP požadavků pro složku `root` (nebo jen /health, když složka není).
+ * Vytvoří obsluhu HTTP požadavků pro složku `root` (nebo jen JSON adresy, když složka není).
  * Do index.html vloží značku <meta name="louka-server">, podle které menu nabídne "Hrát na serveru".
  * @param {string|null} root složka se sestavenou hrou (dist/)
- * @param {() => object} health co vrátit na /health
+ * @param {Record<string, () => unknown>} api JSON adresy, např. { '/health': …, '/worlds': … } (bez hesla, smí je číst i jiné stránky)
+ * @param {() => { password: boolean }} meta co vložit do index.html
  */
-export function staticHandler(root, health) {
+export function staticHandler(root, api, meta) {
   const base = root && fs.existsSync(root) ? path.resolve(root) : null;
   return (req, res) => {
     const url = decodeURIComponent((req.url || '/').split('?')[0]);
-    if (url === '/health') {
-      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      res.end(JSON.stringify(health()));
+    if (Object.hasOwn(api, url)) {
+      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store', 'access-control-allow-origin': '*' });
+      res.end(JSON.stringify(api[url]()));
       return;
     }
     if (!base) { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); res.end('Herní server Říše běží.'); return; }
@@ -29,7 +30,7 @@ export function staticHandler(root, health) {
       if (err) { res.writeHead(404); res.end('Nenalezeno'); return; }
       const type = TYPES[path.extname(file)] || 'application/octet-stream';
       if (path.basename(file) === 'index.html') {
-        const info = JSON.stringify({ password: !!health().password }).replace(/"/g, '&quot;');
+        const info = JSON.stringify({ password: !!meta().password }).replace(/"/g, '&quot;');
         buf = Buffer.from(buf.toString('utf8').replace('<head>', `<head>\n  <meta name="louka-server" content="${info}">`));
         res.writeHead(200, { 'content-type': type, 'cache-control': 'no-cache' });
       } else res.writeHead(200, { 'content-type': type, 'cache-control': /\/assets\//.test(url) ? 'public, max-age=31536000, immutable' : 'no-cache' });

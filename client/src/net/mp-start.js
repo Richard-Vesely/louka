@@ -81,7 +81,7 @@ if (MP) {
     window.__netOnClose = () => { if (!NET.leaving) leaveGame(NET.kicked ? 'Hostitel tě vyhodil ze hry.' : BOOT.peer ? 'Hostitel ukončil hru.' : 'Spojení se serverem se přerušilo.'); };
     for (const d of BOOT.queue || []) window.__netOnData(d);
     if (!NET.perm && creative) setCreative(false);
-    sysLine(`Připojeno k serveru ${NET.code}`);
+    sysLine(`Připojeno k serveru ${NET.code}${NET.worldName ? ` · svět ${NET.worldName}` : ''}`);
   }
   // Záložka na pozadí: prohlížeč zastaví snímky (requestAnimationFrame), svět (hlavně u hostitele) ale musí běžet dál.
   setInterval(() => {

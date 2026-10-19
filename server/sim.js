@@ -16,11 +16,12 @@ import { loadWorld } from '../shared/world/save.js';
  * @param {boolean} o.allowCreative smí všichni hráči kreativní režim?
  * @param {string} o.code jak se server jmenuje v menu hráčů (adresa)
  * @param {(msg: string) => void} o.log
+ * @param {() => void} [o.onChange] změnil se seznam hráčů
  */
-export function setupWorld({ world, maxPlayers, allowCreative, code, log }) {
+export function setupWorld({ world, maxPlayers, allowCreative, code, log, onChange = () => {} }) {
   Object.assign(NET, { mode: 'server', host: false, client: false, name: '', perm: true, uidPrefix: 's', code, allowAll: allowCreative });
   loadWorld(world);
-  startRoom({ maxPlayers, onLog: log });
+  startRoom({ maxPlayers, onLog: log, onChange });
 }
 
 /** Jeden krok světa (stejné pořadí jako herní smyčka hostitele v client/src/game/loop.js). */

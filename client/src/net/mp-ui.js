@@ -70,7 +70,7 @@ export function renderPause() {
   };
   pauseEl.innerHTML = `<div class="mc-panel pause-panel">
     <div class="mc-title">Hra pro více hráčů</div>
-    <div class="pause-code">${NET.host ? 'Kód serveru:' : 'Server:'} <b>${esc(NET.code)}</b>${NET.host ? '<button class="mc-btn" data-copy>Zkopírovat</button>' : ''}</div>
+    <div class="pause-code">${NET.host ? 'Kód serveru:' : 'Server:'} <b>${esc(NET.code)}</b>${NET.worldName ? ` · svět <b>${esc(NET.worldName)}</b>` : ''}${NET.host ? '<button class="mc-btn" data-copy>Zkopírovat</button>' : ''}</div>
     ${NET.host ? `<label class="mc-toggle"><input type="checkbox" id="pAllow" ${NET.allowAll ? 'checked' : ''}> Povolit hráčům kreativní režim (všem)</label>` : `<div class="mc-note">Kreativní režim: ${NET.perm ? 'povolen (klávesa C)' : 'zakázal hostitel'}</div>`}
     <div class="mc-title">Hráči (${count}/${NET.maxPlayers})</div>
     <div class="plist"><div class="prow"><span class="pname">${esc(NET.name)} <small>(ty${NET.host ? ', hostitel' : ''})</small></span></div>${[...others.values()].map(row).join('')}</div>
@@ -95,7 +95,7 @@ export const netBox = document.createElement('div');
 netBox.id = 'netbox';
 document.body.append(netBox);
 export function renderNetBox() {
-  const html = `🌐 ${NET.host ? 'Server' : 'Připojeno'} <b>${esc(NET.code)}</b> · ${others.size + 1}/${NET.maxPlayers} hráčů${NET.host ? ' <button class="mc-btn" data-copy>Zkopírovat kód</button>' : ''}`;
+  const html = `🌐 ${NET.host ? 'Server' : 'Připojeno'} <b>${esc(NET.code)}</b>${NET.worldName ? ` · ${esc(NET.worldName)}` : ''} · ${others.size + 1}/${NET.maxPlayers} hráčů${NET.host ? ' <button class="mc-btn" data-copy>Zkopírovat kód</button>' : ''}`;
   if (netBox.innerHTML !== html) netBox.innerHTML = html;
 }
 netBox.addEventListener('click', (e) => { const b = e.target.closest('[data-copy]'); if (b) copyCode(b); });

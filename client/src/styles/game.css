@@ -166,6 +166,9 @@ body.touch #vehHud { bottom: 92px; font-size: 13px; }
 .mc-btn.big { padding: 9px 12px; font-size: 17px; }
 .menu-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; }
 .menu-row .mc-btn { flex: 1; }
+.world-list { display: flex; flex-direction: column; gap: 8px; }
+.world-btn { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; text-align: left; }
+.world-btn small { font-size: 13px; color: #c8c8d0; white-space: nowrap; }
 .menu-msg { margin: 0 0 12px; padding: 8px 10px; text-align: left; font-size: 14px; line-height: 1.4; color: #ffd9cf; background: #4a2326;
   box-shadow: inset 2px 2px 0 #2a1214, inset -2px -2px 0 #7a3a3e; }
 .menu-busy { padding: 18px 4px; text-align: center; font-size: 16px; color: #e8e2d0; }

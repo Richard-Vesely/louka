@@ -16,9 +16,10 @@ There are **three ways to play, with one set of rules and one protocol**:
 |---|---|---|---|
 | **Hra pro jednoho** | this browser | none | `localStorage` (`rise-svet-v2`) |
 | **Vytvořit server** | the host's browser tab (host = player `'host'`) | PeerJS code `LOUKA-XXXX` | host's `localStorage` (`rise-server-v1`) |
-| **Server** (`npm start`) | Node.js process, no player | WebSocket, address (+ optional password) | `DATA_DIR/world.json` + daily backups |
+| **Server** (`npm start`) | Node.js process, no player; one or more worlds (`WORLDS`) | WebSocket, address (+ optional password), then a world | `DATA_DIR/<world>/world.json` + daily backups |
 
-Players who join (by code or address) keep their own backpack/position in their browser (`rise-klient-<code or address>`).
+Players who join (by code or address) keep their own backpack/position in their browser (`rise-klient-<code or address>`;
+on the Node server per world: `rise-klient-<address>#<world id>`, the first world also reads the old key).
 
 ## Folder map
 
@@ -58,7 +59,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/ui/` | HUD, inventory window, touch controls |
 | `client/src/machines/`, `pc/`, `vehicles/`, `dining/`, `world/` | the browser side of machines, the computer + Tanks + documents, car + plane, table manners, shrine/fishing/dropped items |
 | `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars, chat + Esc menu, the net loop (`mp-start.js`) |
-| `server/` | `index.js` (env config), `server.js` (HTTP + WebSocket + loop), `sim.js` (one world step), `persist.js` (saving + backups), `static.js` |
+| `server/` | `index.js` (env config), `worlds.js` (`WORLDS` list, moving old data), `server.js` (HTTP + WebSocket, sends each player's messages to their world), `world-worker.js` (one world in its own thread: room + 20 Hz loop + saving), `sim.js` (one world step), `persist.js` (saving + backups), `static.js` |
 
 ## How it fits together
 
@@ -95,7 +96,14 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
   `['give', id, n]`, `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`, `['kick']`.
 - Ops: `['m', 'blocks'|'blockMeta', key, value|null]`, `['s', 'removed'|'ruinsOpened', key]`, `['r', structure]`, `['v', x, y, z, id]`,
   `['c', x, z, r]` grass cut, `['p']` portal, `['g', gid, id, n, pos, vel, delay]` dropped item, `['gx', gid, n]`.
-- WebSocket only: the client first sends `['hello', { name, pass }]`; a wrong password gets `['denied', 'password']`.
+- WebSocket only (Node server, `server/server.js`): the client first sends `['hello', { name, pass, v: 2, world }]`.
+  A wrong password gets `['denied', 'password']`. A known `world` id joins that world. A new client (`v: 2`) without
+  a world or with an unknown one, on a server with several worlds, gets `['worlds', [{ id, name, creative, players, max }…]]`
+  and sends `hello` again with the chosen `world` (the menu reconnects). An old client (no `v`) and every client on a
+  one-world server join the first world. The welcome then also has `worldInfo: { id, name, creative, first }`
+  (added by `server/world-worker.js`; the browser host doesn't send it). `GET /worlds` returns the same list over HTTP (no password).
+- Each world of the Node server runs in its own `worker_threads` thread, because `shared/` keeps one world in module
+  state. Rooms, chat and players are per world; there are no messages between worlds.
 - Trust model (Marek's, kept for now): the host decides mobs, pick-ups, time and machines; players are trusted for
   their own position, backpack and world edits. See [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
 
@@ -127,9 +135,11 @@ npm test                        # unit tests + the Node server over WebSocket (f
 npm run build                   # build into dist/
 npm run playtest                # single player in a real browser (36 checks, needs the build)
 npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart
+npm run test:worlds             # Node server with 2 worlds + 2 browsers: world menu, isolation, creative, saves per world
 npm run test:peer               # browser host + browser client over PeerJS (needs internet)
 npm start                       # the server on http://localhost:8787 (serves dist/)
 npm run test:load               # 8 simulated players: server memory, CPU, time per world step
+npm run test:load:worlds        # the same with 2 worlds × 4 players
 ```
 Console helpers (single player or host): `game.addItem('iron', 5)`, `game.setTime(0.9)` (night),
 `game.spawnMob('boar', x, z)`, `game.setCreative(true)`, `game.teleport(x, z)`.

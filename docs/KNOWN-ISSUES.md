@@ -19,9 +19,12 @@ changed. Pick one, open an issue, fix it in a small PR (ask Richard for anything
 - **Chat is free text** (kept from Marek's version; Richard decides whether it stays).
 
 ## Node server
-- No admin tools yet: no kick/ban, no way to give creative to one player (only `ALLOW_CREATIVE=1` for everyone).
+- No admin tools yet: no kick/ban, no way to give creative to one player (only for everyone: `ALLOW_CREATIVE=1` or a `:creative` world).
+- Several worlds: the backpack is kept per world only in the player's browser, so someone who edits `localStorage` could carry
+  creative items into the survival world (same trust model as above). There is no way to travel between worlds in the
+  game: leave (Esc → Odejít) and choose another world. Changing a world's id in `WORLDS` starts an empty world (rename its folder).
 - No rate limiting of messages; the password is the only protection. Use a password on a public server.
-- Each player's backpack lives in their browser (keyed by the server address): another device or cleared browser data
+- Each player's backpack lives in their browser (keyed by the server address and world): another device or cleared browser data
   means an empty backpack. The world itself is on the server.
 - A new player gets the whole world in one message (fine for club-sized worlds).
 - When nobody is online, mobs are removed; machines, crops and the day keep running.
