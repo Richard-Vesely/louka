@@ -53,6 +53,7 @@ canvas { display: block; }
 .slot { position: relative; width: 40px; height: 40px; box-sizing: border-box; display: grid; place-items: center;
   background: #24242a; box-shadow: inset 2px 2px 0 #121215, inset -2px -2px 0 #54545e; }
 .slot img { width: 32px; height: 32px; image-rendering: pixelated; pointer-events: none; }
+img.sm { image-rendering: auto !important; } /* 3D ikony bloků a strojů jsou hladké (render/icon-render.js) */
 .slot b { position: absolute; right: 2px; bottom: -1px; font: 600 15px 'Pixelify Sans', monospace; color: #fff; text-shadow: 2px 2px 0 #3a3a3a; pointer-events: none; }
 #hotbar { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; padding: 3px; background: rgba(28, 28, 33, 0.82);
   border: 3px solid #000; box-shadow: inset 2px 2px 0 #5a5a64, inset -2px -2px 0 #141417; pointer-events: none; }

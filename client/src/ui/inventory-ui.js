@@ -34,7 +34,7 @@ export const armorPoints = () => armor.reduce((n, s) => n + (s ? ITEMS[s.id].arm
 export const fullSet = () => { const s0 = armor[0] && ITEMS[armor[0].id].armor.set; return s0 && armor.every((a) => a && ITEMS[a.id].armor.set === s0) ? s0 : null; };
 const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots, furnace: () => furnaceOf(ui.fireKey).slots, power: () => powerOf(ui.fireKey).slots || [], car: () => vehicles.get(ui.fireKey)?.slots || [], kitchen: () => stoveOf(ui.fireKey).slots })[c]();
 
-export const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
+export const iconImg = (id) => `<img src="${ICONS[id].url}"${ICONS[id].smooth ? ' class="sm"' : ''} alt="">`;
 export function slotHTML(s, i, cls = '', c = 'inv') {
   if (!s) return `<div class="slot ${cls}" data-c="${c}" data-i="${i}"></div>`;
   return `<div class="slot ${cls}" data-c="${c}" data-i="${i}" data-item="${s.id}">${iconImg(s.id)}${s.n > 1 ? `<b>${s.n}</b>` : ''}</div>`;
@@ -270,6 +270,7 @@ export function slotClick(c, i, button, shift) {
   refreshUI();
 }
 export function refreshUI() { renderInventory(); renderHotbar(); }
+addEventListener('rise-icons', () => refreshUI()); // nové 3D ikony bloků (render/icon-render.js)
 
 // Vybrání výsledku z výstupního políčka spotřebuje po jednom kusu z každého políčka mřížky.
 export function takeResult(shift) {
