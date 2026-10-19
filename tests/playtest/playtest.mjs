@@ -136,6 +136,86 @@ try {
   });
   check('dig grass then dirt (voxel underground)', r.air && r.dirt >= 1 && r.fiber >= 1 && r.dug, JSON.stringify(r));
 
+  // ------------------------------------------------------------ tools and combat: durability, cracks, repair, attack charge, armor wear
+  r = await ev(() => {
+    const g = window.game; T.clearInv(); T.give('wood_pick', 1); T.hold('wood_pick'); g.renderHotbar();
+    T.tpg(-14, 30); T.step(5);
+    const p = g.player.pos, x = Math.floor(p.x), y = Math.floor(p.y) + 1, z = Math.floor(p.z) - 2, k = `${x},${y},${z}`;
+    g.blocks.set(k, 'cobble'); g.rebuildBlocks();
+    T.aim(x + 0.5, y + 0.5, z + 0.5);
+    g.input.lmb = true; T.step(10);
+    const mid = { stage: g.crackStage(), p: +g.mineState().p.toFixed(2) };
+    const n = T.mineUntil(() => !g.blocks.has(k));
+    const s = g.inv.slots[0];
+    return { mid, n, w: s?.w, bar: !!document.querySelector('#hotbar .slot .dur'), stone: T.count('stone'), cracksGone: g.crackStage() === -1, k };
+  });
+  check('tools: mining shows crack stages (10) and the right speed', r.mid.stage >= 2 && r.mid.stage <= 6 && r.n >= 12 && r.n <= 20 && r.cracksGone, JSON.stringify(r));
+  check('tools: a mined block wears the pickaxe by 1 and shows a durability bar', r.w === 1 && r.bar && r.stone === 1, JSON.stringify(r));
+  r = await ev((k) => {
+    const g = window.game; g.inv.slots[0].w = 58;
+    g.blocks.set(k, 'cobble'); g.rebuildBlocks(); T.step(8);
+    const [x, y, z] = k.split(',').map(Number);
+    T.aim(x + 0.5, y + 0.5, z + 0.5);
+    T.mineUntil(() => !g.blocks.has(k));
+    return { held: g.inv.slots[0], toast: T.text('toast'), stone: T.count('stone') };
+  }, r.k);
+  check('tools: a worn-out pickaxe breaks with a Czech message (and the block still drops)', r.held === null && r.toast === 'Dřevěný krumpáč se rozbil!' && r.stone === 2, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; T.clearInv(); T.give('iron_pick', 1); T.hold('iron_pick'); g.setCreative(true);
+    const p = g.player.pos, x = Math.floor(p.x), y = Math.floor(p.y) + 1, z = Math.floor(p.z) - 2, k = `${x},${y},${z}`;
+    g.blocks.set(k, 'cobble'); g.rebuildBlocks(); T.aim(x + 0.5, y + 0.5, z + 0.5);
+    T.mineUntil(() => !g.blocks.has(k));
+    g.setCreative(false);
+    return { w: g.inv.slots[0]?.w ?? 0, gone: !g.blocks.has(k) };
+  });
+  check('tools: no wear in creative mode', r.gone && r.w === 0, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; T.clearInv();
+    g.ui.craft[0] = { id: 'iron_sword', n: 1, w: 200 }; g.ui.craft[1] = { id: 'iron_sword', n: 1, w: 150 };
+    g.openInventory('inv');
+    const shown = !!document.querySelector('[data-out].repair .dur');
+    g.takeResult(false);
+    const cursor = g.inv.cursor && { ...g.inv.cursor };
+    const grid = g.ui.craft.slice(0, 2);
+    g.closeInventory();
+    const sword = g.inv.slots.find((s) => s?.id === 'iron_sword');
+    return { shown, cursor, grid, sword };
+  });
+  check('tools: two worn swords repair into one in the crafting grid', r.shown && r.cursor?.w === 88 && r.grid.every((s) => !s) && r.sword?.w === 88, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; T.clearInv(); T.give('iron_sword', 1); T.hold('iron_sword');
+    T.tpg(-30, 30); T.step(30);
+    const p = g.player.pos;
+    g.spawnMob('cow', p.x, p.z - 2.5);
+    const m = g.mobs[g.mobs.length - 1]; m.idleT = 99; m.moving = false; T.step(1, 0.0001);
+    T.aim(m.pos.x, m.pos.y + m.def.cy, m.pos.z);
+    const hp0 = m.hp;
+    g.input.lmb = true; T.step(1); g.input.lmb = false; T.step(1);
+    const hp1 = m.hp, charge = g.mineState().charge, meter = document.getElementById('atkMeter').classList.contains('show');
+    T.aim(m.pos.x, m.pos.y + m.def.cy, m.pos.z);
+    g.input.lmb = true; T.step(1); g.input.lmb = false; // hned znovu: tvor je ještě nezranitelný
+    const hp2 = m.hp;
+    return { hp0, hp1, hp2, charge: +charge.toFixed(2), meter, w: g.inv.slots[0].w };
+  });
+  check('combat: full-charge sword hit, cooldown meter, invulnerability, sword wears by 1', r.hp0 - r.hp1 === 6 && r.charge < 0.3 && r.meter && r.hp2 === r.hp1 && r.w === 1, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; g.armor[1] = { id: 'iron_chestplate', n: 1 }; const hp = g.player.hp;
+    g.damagePlayer(20, 1, 0); T.step(1);
+    const res = { w: g.armor[1]?.w, lost: +(hp - g.player.hp).toFixed(2), flash: document.getElementById('hpfill').closest('.wrap').classList.contains('hit') };
+    g.armor[1] = null; g.player.hp = 100;
+    return res;
+  });
+  check('combat: armor absorbs part of a hit and wears by 1', r.w === 1 && r.lost < 20 && r.lost > 0 && r.flash, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; T.clearInv(); g.addItem('iron_axe', 1, true, 40); T.hold('iron_axe');
+    T.tpg(-40, 30); T.step(3);
+    g.dropHeld(true); T.step(40);
+    const it = g.groundItems[g.groundItems.length - 1], w = it?.w;
+    T.tp(it.pos.x, it.pos.z, it.pos.y); T.step(10);
+    return { w, picked: g.inv.slots.find((s) => s?.id === 'iron_axe') };
+  });
+  check('tools: a dropped worn axe keeps its wear when picked up', r.w === 40 && r.picked?.w === 40, JSON.stringify(r));
+
   // ------------------------------------------------------------ mobs
   r = await ev(() => {
     const g = window.game; T.clearInv(); T.give('iron_sword', 1); T.hold('iron_sword');
@@ -145,7 +225,7 @@ try {
     m.idleT = 99; m.moving = false;
     let n = 0;
     while (!m.dead && n < 200) { T.aim(m.pos.x, m.pos.y + m.def.cy, m.pos.z); g.input.lmb = true; T.step(1); n++; }
-    g.input.lmb = false; T.step(15);
+    g.input.lmb = false; T.step(25); // tvor se převrací a mizí 0,8 s
     return { dead: m.dead, n, mutton: T.count('raw_mutton'), wool: T.count('wool'), gone: !g.mobs.includes(m) };
   });
   check('kill a sheep with a sword, get mutton', r.dead && r.mutton >= 1 && r.gone, JSON.stringify(r));
@@ -257,7 +337,7 @@ try {
 
   // ------------------------------------------------------------ save and load
   const before = await ev(() => {
-    const g = window.game; T.clearInv(); T.give('stone', 7); T.give('apple', 3);
+    const g = window.game; T.clearInv(); T.give('stone', 7); T.give('apple', 3); g.addItem('iron_pick', 1, true, 33);
     g.blocks.set('3,1,40', 'bricks'); g.rebuildBlocks(); g.setTime(0.3);
     g.saveGame();
     return { blocks: g.blocks.size, stone: T.count('stone'), apple: T.count('apple'), portal: g.portalActive, built: g.ruinsBuilt.size, vox: g.worldState().vox.length };
@@ -265,8 +345,9 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.click('#mSolo');
   await waitGame(page);
-  const after = await ev(() => { const g = window.game; return { blocks: g.blocks.size, stone: T.count('stone'), apple: T.count('apple'), portal: g.portalActive, built: g.ruinsBuilt.size, vox: g.worldState().vox.length, brick: g.blocks.get('3,1,40') }; });
+  const after = await ev(() => { const g = window.game; return { blocks: g.blocks.size, stone: T.count('stone'), apple: T.count('apple'), portal: g.portalActive, built: g.ruinsBuilt.size, vox: g.worldState().vox.length, brick: g.blocks.get('3,1,40'), pickW: g.inv.slots.find((s) => s?.id === 'iron_pick')?.w }; });
   check('save + reload keeps world and backpack', after.blocks === before.blocks && after.stone === 7 && after.apple === 3 && after.portal && after.built === before.built && after.vox === before.vox && after.brick === 'bricks', JSON.stringify({ before, after }));
+  check('save + reload keeps tool wear', after.pickW === 33, JSON.stringify(after));
   check('intro not shown after reload', await ev(() => document.getElementById('intro').style.display !== 'grid'));
 
   // ------------------------------------------------------------ picture

@@ -1,6 +1,6 @@
 // Změny světa, které si hráči posílají (celý protokol: AGENTS.md, oddíl Protocol).
 // Operace (ops): ['m', mapa, klíč, hodnota] bloky, ['s', množina, klíč], ['r', stavba], ['v', x, y, z, id] podzemí,
-// ['c', x, z, r] posekaná tráva, ['p'] probuzená svatyně, ['g', gid, id, n, pos, vel, delay] předmět na zemi, ['gx', gid, n].
+// ['c', x, z, r] posekaná tráva, ['p'] probuzená svatyně, ['g', gid, id, n, pos, vel, delay, w?] předmět na zemi (w = opotřebení nástroje), ['gx', gid, n].
 // Malé mapy (kv): táboráky, truhly, sporáky, pole… se porovnávají jako JSON a posílají se změněné klíče (vyhrává poslední změna).
 import { ITEMS } from '../data/index.js';
 import { emit } from '../events.js';
@@ -30,7 +30,7 @@ export function applyOp(o) {
       case 'v': setVox(o[1], o[2], o[3], o[4]); break;
       case 'c': emit('grassCut', o[1], o[2], o[3]); break; // posekaná tráva je jen obrázek (prohlížeč)
       case 'p': setPortalActive(true); break;
-      case 'g': if (ITEMS[o[2]] && !groundItems.some((g) => g.gid === o[1])) spawnGroundItem(o[2], o[3], new Vec3(...o[4]), new Vec3(...o[5]), o[6], o[1]); break;
+      case 'g': if (ITEMS[o[2]] && !groundItems.some((g) => g.gid === o[1])) spawnGroundItem(o[2], o[3], new Vec3(...o[4]), new Vec3(...o[5]), o[6], o[1], Number(o[7]) || 0); break;
       case 'gx': { const it = groundItems.find((g) => g.gid === o[1]); if (it) { it.n = o[2]; it.req = 0; } break; }
     }
   });
