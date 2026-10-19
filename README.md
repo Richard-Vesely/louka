@@ -5,6 +5,55 @@ Přežij, sbírej, stav a objevuj: lesy a biomy, podzemí s rudami, zvířata a 
 pec, elektřina, auto, letadlo, počítač s hrami a portál do Markovy dimenze. Všechno, co hra umí, je v
 [docs/FEATURES.md](docs/FEATURES.md).
 
+## Tahák pro kroužek
+
+- **Hrát:** https://richard-vesely.github.io/rise/ (heslo kroužku ti řekne Richard, PIN si vymyslíš)
+- **Úkoly:** [Issues](https://github.com/Richard-Vesely/rise/issues), štítek `dobrý první úkol`. Napiš do úkolu „beru si to“.
+- **Domluva:** chat kroužku https://chat.ardoremy.cz, kanál **říše** (jen na pozvánku)
+
+**Poprvé** (potřebuješ [Node.js](https://nodejs.org) 20+ a [Git](https://git-scm.com); nebo bez instalace:
+na GitHubu **Code → Codespaces → Create codespace**):
+
+```bash
+git clone https://github.com/Richard-Vesely/rise
+cd rise
+npm install
+```
+
+**Pokaždé, když začínáš novou věc:**
+
+```bash
+git switch main
+git pull                   # stáhne, co mezitím přidali ostatní
+npm install                # kdyby přibylo něco nového
+git switch -c moje-vec     # nová větev, pojmenuj ji podle toho, co děláš
+npm run dev                # hra: otevři http://localhost:5173 a klikni Hrát sám
+```
+
+**Co napsat AI pomocníkovi na začátku:**
+
+> Přečti si AGENTS.md a docs/FEATURES.md. Chci do hry přidat … . Udělej co nejmenší změnu, vysvětli mi ji česky
+> a řekni mi, jak to vyzkouším.
+
+**Než to pošleš, zkontroluj:**
+
+1. Vyzkoušej to ve hře (**Hrát sám**).
+2. Spusť `npm test` a `npm run build`. Nic nesmí svítit červeně.
+3. Napiš AI pomocníkovi:
+   > Zkontroluj moji změnu podle AGENTS.md: je co nejmenší, texty ve hře jsou česky, je zapsaná v docs/FEATURES.md
+   > a projde `npm test` i `npm run build`? Co je potřeba opravit, mi vysvětli česky.
+
+**Pošli to:**
+
+```bash
+git add .
+git commit -m "Přidán …"
+git push -u origin moje-vec
+```
+
+Na GitHubu klikni **Compare & pull request** a napiš, co jsi přidal(a), jak to vyzkoušet a kdo na tom pracoval.
+Počkej, až bude automatická kontrola zelená ✅ a Richard změnu schválí. Podrobný návod: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Jak hrát
 
 Otevři hru, napiš své jméno a vyber:
