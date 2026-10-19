@@ -10,11 +10,11 @@ export const MATQ = { maps: QUALITY !== 'low', normal: QUALITY === 'high' ? 1 : 
 
 /**
  * Rodiny materiálů. rough = drsnost (0 zrcadlo, 1 mat), metal = kov (0/1), bump = hloubka reliéfu,
- * edge = jak moc ztmavit hranu bloku (aby byl vidět obrys), cav = síla zastínění spár.
+ * edge = jak moc ztmavit hranu bloku (aby byl vidět obrys), cav = síla zastínění spár, env = síla odlesku oblohy.
  */
 export const PBR = {
   stone: { rough: 0.85, metal: 0, bump: 1.6, edge: 0.2, cav: 3 },
-  polished: { rough: 0.32, metal: 0, bump: 0.7, edge: 0.14, cav: 2 },
+  polished: { rough: 0.32, metal: 0, bump: 0.7, edge: 0.14, cav: 2, env: 1.3 },
   wood: { rough: 0.7, metal: 0, bump: 1.4, edge: 0.18, cav: 3 },
   brick: { rough: 0.8, metal: 0, bump: 2.6, edge: 0.18, cav: 4 },
   soil: { rough: 0.95, metal: 0, bump: 1.2, edge: 0.16, cav: 2 },
@@ -22,9 +22,9 @@ export const PBR = {
   snow: { rough: 0.75, metal: 0, bump: 0.6, edge: 0.1, cav: 1 },
   ceramic: { rough: 0.55, metal: 0, bump: 1.8, edge: 0.16, cav: 3 },
   concrete: { rough: 0.85, metal: 0, bump: 0.6, edge: 0.16, cav: 1.5 },
-  metal: { rough: 0.35, metal: 1, bump: 1.4, edge: 0.12, cav: 3 },
-  glass: { rough: 0.05, metal: 0, bump: 0, edge: 0, cav: 0 },
-  obsidian: { rough: 0.15, metal: 0, bump: 1.0, edge: 0.12, cav: 2 },
+  metal: { rough: 0.35, metal: 1, bump: 1.4, edge: 0.12, cav: 3, env: 1.9 },
+  glass: { rough: 0.05, metal: 0, bump: 0, edge: 0, cav: 0, env: 1.8 },
+  obsidian: { rough: 0.15, metal: 0, bump: 1.0, edge: 0.12, cav: 2, env: 1.4 },
   organic: { rough: 0.6, metal: 0, bump: 1.0, edge: 0.14, cav: 2 },
   neon: { rough: 0.25, metal: 0, bump: 0.8, edge: 0, cav: 2 },
 };
@@ -81,7 +81,10 @@ function patchShader(mat, p) {
   mat.customProgramCacheKey = () => `blk|${edge > 0}|${glass}`;
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uEdge = { value: edge };
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uEdge;');
+    sh.uniforms.uEnvBoost = { value: p.env || 1 };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uEdge, uEnvBoost;')
+      // odlesk okolí (obloha): kov, sklo a leštěný kámen ho mají silnější (scene.environmentIntensity platí pro všechny stejně)
+      .replace('#include <lights_fragment_maps>', '#include <lights_fragment_maps>\n#ifdef USE_ENVMAP\n  radiance *= uEnvBoost;\n#endif');
     if (edge > 0) sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
 #ifdef USE_MAP
 { vec2 ed = abs(fract(vMapUv) - 0.5); diffuseColor.rgb *= 1.0 - uEdge * smoothstep(0.44, 0.5, max(ed.x, ed.y)); }
@@ -107,9 +110,7 @@ export function setupBlockMat(mat, key) {
     mat.blending = THREE.CustomBlending;
     mat.blendSrc = THREE.OneFactor;
     mat.blendDst = THREE.OneMinusSrcAlphaFactor;
-    mat.envMapIntensity = 1.6;
   }
-  if (p.fam === 'metal') mat.envMapIntensity = 1.25;
   patchShader(mat, p);
   return mat;
 }

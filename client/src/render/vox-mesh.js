@@ -86,10 +86,11 @@ reflectedLight.directDiffuse *= mix(1.0, vOrm.r, 0.6);`)
     spk = step(0.72, h) * pow(max(sin(uTime * (1.2 + h * 2.0) + h * 60.0 + dot(vd, vec3(17.0, 23.0, 11.0))), 0.0), 18.0);
   }
   float pulse = 1.0 + 0.12 * sin(uTime * 1.4 + vWPos.x * 0.7 + vWPos.z * 0.9);
-  totalEmissiveRadiance += vAlb.rgb * vGlow * 0.55 * pulse; // odraz světla svítících rud na okolní stěny
   totalEmissiveRadiance += vAlb.rgb * vOrm.a * uVGlow * pulse + spk * mix(vec3(1.0), vAlb.rgb, 0.4) * (vOrm.a > 0.02 ? 1.4 : 0.45);
 }
-#include <emissivemap_fragment>`);
+#include <emissivemap_fragment>
+// odraz světla svítících rud na okolní stěny (až po zesílení záře: je to světlo, ne svítící povrch)
+totalEmissiveRadiance += vAlb.rgb * vGlow * 0.55 * (1.0 + 0.12 * sin(uTime * 1.4 + vWPos.x * 0.7 + vWPos.z * 0.9));`);
   };
   return mat;
 }
