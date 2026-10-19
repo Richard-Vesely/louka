@@ -26,6 +26,7 @@ let srv = await startServer();
 const browser = await launch();
 const A = await openPage(browser, srv.url, { label: 'Ája: ' });
 const B = await openPage(browser, srv.url, { label: 'Bára: ' });
+if (process.env.THROTTLE) for (const p of [A, B]) await (await p.context().newCDPSession(p)).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.THROTTLE) });
 // Hlavní menu -> "Hrát na serveru" -> (server chce heslo) stránka Připojit se s adresou -> heslo -> Připojit
 async function joinByButton(page, name, pass) {
   await page.waitForSelector('#mServer:not([hidden])', { timeout: 10000 });
@@ -94,6 +95,8 @@ try {
   check('no console errors (Cyril)', C.errors.length === 0, C.errors.slice(0, 3).join(' | '));
 } catch (e) {
   check('test ran without exception', false, e.stack || e);
+  for (const [n, p] of [['Ája', A], ['Bára', B]]) console.log(n, 'menu message:', await p.evaluate(() => document.getElementById('menuMsg')?.textContent).catch(() => '?'));
+  console.log('server log:', srv.log().split(String.fromCharCode(10)).slice(-15).join(' | '));
 }
 const ignore = (t) => /WebSocket|ERR_CONNECTION|Failed to load resource/.test(t);
 check('no console errors (Ája)', A.errors.filter((e) => !ignore(e)).length === 0, A.errors.slice(0, 3).join(' | '));
