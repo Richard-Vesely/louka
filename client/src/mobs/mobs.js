@@ -3,15 +3,18 @@ import '../player/interaction.js'; // pořadí spouštění: nejdřív předchoz
 import * as THREE from 'three';
 import { on } from '../../../shared/events.js';
 import { NET } from '../../../shared/net/net.js';
-import { hurtMob, mobs } from '../../../shared/sim/mobs.js';
+import { DEATH_TIME, hurtMob, mobs } from '../../../shared/sim/mobs.js';
+import { MOB_INVULN } from '../../../shared/tools.js';
 import { nearLight } from '../../../shared/world/collision.js';
 import { shrineDist } from '../../../shared/world/terrain.js';
 import { Sound } from '../audio/sound.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { addItem } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { damagePlayer } from '../player/survival.js';
 import { lumpy } from '../render/forest.js';
 import { TIER_MAT, goldMat } from '../render/held-item.js';
+import { emitChips, emitStars } from '../render/chips.js';
 import { debris, sparks } from '../render/particles.js';
 import { scene } from '../render/renderer.js';
 import { rockTex } from '../render/textures.js';
@@ -159,6 +162,7 @@ function buildMob(type) {
   }
   if (type === 'golem') g.scale.setScalar(1.1);
   const mats = [];
+  g.traverse((o) => { if (o.isMesh && o.material.userData.shared) o.material = o.material.clone(); }); // zčervenání při zásahu nesmí obarvit meč v ruce
   g.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial && !mats.includes(o.material)) mats.push(o.material); });
   return { group: g, body, legs, mats, arms, bodyY: body.position.y };
 }
@@ -189,11 +193,7 @@ export function syncMobViews() {
 export function animateMobs(dt) {
   for (const m of mobs) {
     const V = viewOf(m);
-    if (m.dead) {
-      V.group.scale.setScalar(Math.max(0.01, 1 - m.deathT * 2.5));
-      V.group.rotation.z += dt * 6;
-      continue;
-    }
+    if (m.dead) { animateDeath(V, m); continue; }
     const sp = Math.hypot(m.vel.x, m.vel.z);
     m.phase += dt * (sp * 2.2 + (m.type === 'crawler' ? 2 : 0));
     let hop = 0;
@@ -214,37 +214,84 @@ export function animateMobs(dt) {
       V.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
       V.body.position.y = V.bodyY + Math.abs(swing) * 0.03;
     }
-    V.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
+    V.group.position.set(m.pos.x, m.pos.y + hop + hitHop(m, dt), m.pos.z);
     V.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
     V.group.rotation.y = m.ry;
-    for (const mat of V.mats) if (!mat.userData.glow) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
+    paintFlash(V, m.flash);
+  }
+}
+// Zásah: tvor zčervená (jako v Minecraftu). Svítící části (oči, krystaly) zůstanou.
+const FLASH_RED = new THREE.Color(0.9, 0.06, 0.04);
+export function paintFlash(V, f) {
+  if (V.lastFlash === f) return;
+  V.lastFlash = f;
+  for (const mat of V.mats) {
+    if (mat.userData.glow) continue;
+    const base = (mat.userData.baseColor ??= mat.color.clone()); // bílá ovce musí zčervenat, ne jen zesvětlat
+    mat.color.copy(base).lerp(FLASH_RED, f * 0.7);
+    mat.emissive.setRGB(f * 0.45, f * 0.02, 0);
+  }
+}
+// Po zásahu tvor krátce poskočí (odhození vypadá jako rána, ne jako posun)
+export function hitHop(m, dt) {
+  if (!(m.hitHop > 0)) return 0;
+  m.hitHop = Math.max(0, m.hitHop - dt);
+  return Math.sin((1 - m.hitHop / 0.28) * Math.PI) * 0.28;
+}
+// Smrt: tvor se převrátí na bok, zčervená a rozplyne se v obláčku kouře
+export function animateDeath(V, m) {
+  const k = Math.min(1, m.deathT / 0.35);
+  V.baseScale ??= V.group.scale.x;
+  V.group.rotation.z = (m.nid % 2 ? 1 : -1) * k * k * (Math.PI / 2);
+  const fade = Math.max(0, Math.min(1, (DEATH_TIME - m.deathT) / 0.2));
+  V.group.scale.setScalar(Math.max(0.01, fade) * V.baseScale);
+  V.shadow.visible = fade > 0.5;
+  paintFlash(V, 0.55);
+  if (!m.puffed && m.deathT > DEATH_TIME - 0.22) {
+    m.puffed = true;
+    const at = [m.pos.x, m.pos.y + m.def.cy * 0.6, m.pos.z];
+    debris.emit(...at, [0.8, 0.8, 0.82], 26, 1.4, 1.4);
+    if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') sparks.emit(...at, m.type === 'golem' ? [0.4, 0.9, 1] : [0.6, 0.25, 1], 20, 2, 1.5);
+    toolSound('poof');
   }
 }
 
 // ---------- útok hráče u této obrazovky; připojený hráč posílá ránu hostiteli
-export function hitMob(m, dmg, yaw = player.yaw) {
+// kb = síla odhození, fx = { crit, charge } jen pro efekty. Vrací false, když byl tvor ještě nezranitelný.
+let localFx = null;
+export function hitMob(m, dmg, yaw = player.yaw, kb = 1, fx = {}) {
   if (NET.client) { // útok jde hostiteli, tady jen odezva
-    NET.req(['hit', m.nid, dmg, player.yaw]);
+    const now = performance.now() / 1000;
+    if (m.dead || now - (m.hitAt || -9) < MOB_INVULN) return false;
+    m.hitAt = now;
+    NET.req(['hit', m.nid, dmg, yaw, kb]);
     m.flash = 1;
-    sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : [1, 0.25, 0.2], 18, 3.5, 1.5);
-    Sound.hit();
-    player.shake = 0.1;
-    return;
+    hitFx(m, dmg, true, fx);
+    return true;
   }
-  hurtMob(m, dmg, yaw);
+  localFx = fx;
+  try { return hurtMob(m, dmg, yaw, kb); } finally { localFx = null; }
+}
+const HIT_COL = { crawler: [[0.45, 0.15, 0.7], [0.2, 0.05, 0.3]], golem: [[0.45, 0.95, 1], [0.7, 0.75, 0.8]], markoman: [[0.55, 0.06, 0.06], [0.7, 0.72, 0.76]] };
+// Odezva zásahu: jiskry, kapky (kostičky), u kritického zásahu hvězdičky, zvuk a poskočení
+function hitFx(m, dmg, local, fx) {
+  const at = [m.pos.x, m.pos.y + m.def.cy, m.pos.z];
+  sparks.emit(...at, m.type === 'crawler' ? [0.7, 0.25, 1.0] : m.type === 'golem' ? [0.4, 0.9, 1] : [1, 0.3, 0.2], 8 + Math.min(16, Math.round(dmg * 1.5)), 3.5, 1.5);
+  emitChips(at, HIT_COL[m.type] || [[0.6, 0.05, 0.05], [0.35, 0.02, 0.03]], Math.min(14, 3 + Math.round(dmg)), { speed: 1.8, up: 2, size: [0.03, 0.06], life: [0.3, 0.8], spread: m.def.radius * 0.6 });
+  m.hitHop = 0.28;
+  if (fx?.crit) { emitStars(at, [1, 0.92, 0.55], 16, 3.5); toolSound('crit'); }
+  if (local) toolSound((fx?.charge ?? 1) < 0.5 ? 'weak' : 'hit', fx?.charge ?? 1); else Sound.hit();
 }
 export const playerSafe = () => shrineDist(player.pos.x, player.pos.z) < 11 || nearLight(player.pos.x, player.pos.z, 5);
 
 // ---------- co se děje s tvory (události z pravidel): jiskry, zvuky, kořist, zranění
-on('mobHit', (m, local) => {
-  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : m.type === 'golem' ? [0.4, 0.9, 1] : [1, 0.25, 0.2], 18, 3.5, 1.5);
-  Sound.hit();
-  if (local) player.shake = 0.1;
+on('mobHit', (m, local, dmg = 1) => {
+  hitFx(m, dmg, local, local ? localFx : null);
   if (m.type === 'sheep') Sound.baa();
   if (m.type === 'boar' || m.type === 'wolf') Sound.grunt();
 });
 on('mobKilled', (m) => {
-  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 50, 5, 2);
+  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 30, 4, 2);
   if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') Sound.kill();
 });
 on('chestLoot', () => { if (invOpen && ui.mode === 'chest') renderInventory(); });

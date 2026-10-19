@@ -1,19 +1,21 @@
 // Okno inventáře: výroba, kniha receptů, truhla, táborák.
 import '../player/inventory.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
-import { ARMOR_SETS, ARMOR_SLOTS, ARMOR_SLOT_NAMES, COOKING, COOK_TIME, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, smeltResult } from '../../../shared/data/index.js';
+import { ARMOR_SETS, ARMOR_SLOTS, ARMOR_SLOT_NAMES, COOKING, COOK_TIME, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, TOOL_SPEED, smeltResult } from '../../../shared/data/index.js';
 import { insertStack } from '../../../shared/inventory.js';
+import { ATTACK_SPEED, durFrac, durLeft, isLow, isWorn, maxDur, part, repairMatName, repairResult } from '../../../shared/tools.js';
 import { NET } from '../../../shared/net/net.js';
 import { others } from '../../../shared/net/room.js';
 import { powerOf } from '../../../shared/sim/power.js';
 import { blocks, chestOf, fireOf, furnaceOf, stoveOf, vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { MP } from '../game/boot.js';
 import { SAVE_KEY } from '../game/prefs.js';
 import { save } from '../game/save-load.js';
 import { fillFurnace, renderFurnace } from '../machines/furnace.js';
 import { kitchenMissing, renderKitchen, startCooking } from '../machines/kitchen.js';
 import { renderPowerUI } from '../machines/power.js';
-import { addItem, countItem, findRecipe, hasFor, insertInto, inv, recipeNeeds, removeItem } from '../player/inventory.js';
+import { addItem, addStack, countItem, findRecipe, hasFor, insertInto, inv, recipeNeeds, removeItem } from '../player/inventory.js';
 import { creative, input, lockPointer, setCreative, setResetting, unlockPointer } from '../player/player.js';
 import { ICONS } from '../render/icons.js';
 import { enterVehicle, renderCarUI } from '../vehicles/car.js';
@@ -35,17 +37,31 @@ export const fullSet = () => { const s0 = armor[0] && ITEMS[armor[0].id].armor.s
 const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots, furnace: () => furnaceOf(ui.fireKey).slots, power: () => powerOf(ui.fireKey).slots || [], car: () => vehicles.get(ui.fireKey)?.slots || [], kitchen: () => stoveOf(ui.fireKey).slots })[c]();
 
 export const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
+// Proužek odolnosti pod ikonou opotřebovaného nástroje: zelená → žlutá → oranžová → červená.
+export function durBar(s) {
+  if (!isWorn(s)) return '';
+  const f = durFrac(s);
+  return `<i class="dur"><i style="width:${Math.max(4, f * 100).toFixed(1)}%;background:hsl(${Math.round(f * 120)},95%,52%)"></i></i>`;
+}
 export function slotHTML(s, i, cls = '', c = 'inv') {
   if (!s) return `<div class="slot ${cls}" data-c="${c}" data-i="${i}"></div>`;
-  return `<div class="slot ${cls}" data-c="${c}" data-i="${i}" data-item="${s.id}">${iconImg(s.id)}${s.n > 1 ? `<b>${s.n}</b>` : ''}</div>`;
+  return `<div class="slot ${cls}" data-c="${c}" data-i="${i}" data-item="${s.id}">${iconImg(s.id)}${s.n > 1 ? `<b>${s.n}</b>` : ''}${durBar(s)}</div>`;
 }
 export function renderHotbar() {
-  $('hotbar').innerHTML = inv.slots.slice(0, 9).map((s, i) => slotHTML(s, i, i === inv.sel ? 'active' : '')).join('');
+  // pod 10 % odolnosti políčko v liště pulzuje červeně
+  $('hotbar').innerHTML = inv.slots.slice(0, 9).map((s, i) => slotHTML(s, i, (i === inv.sel ? 'active' : '') + (isLow(s) ? ' low' : ''))).join('');
 }
 
 let onlyCraftable = false;
 // Složité součástky (adv) jdou vyrobit jen v dílně
-const currentResult = () => { if (ui.mode === 'fire' || ui.mode === 'furnace') return null; const r = findRecipe(ui.craft, ui.size); return r && r.adv && ui.mode !== 'adv' ? null : r; };
+// Když mřížka nesedí na recept, zkusí se oprava (dva stejné nástroje nebo nástroj + surovina, shared/tools.js).
+const currentResult = () => {
+  if (ui.mode === 'fire' || ui.mode === 'furnace') return null;
+  const r = findRecipe(ui.craft, ui.size);
+  if (r) return r.adv && ui.mode !== 'adv' ? null : r;
+  return repairResult(ui.craft);
+};
+const resultStack = (r) => (r.repair ? { id: r.out, n: 1, ...(r.w > 0 ? { w: r.w } : {}) } : { id: r.out, n: r.n });
 export function renderCraftArea() {
   const area = $('craftArea');
   if (ui.mode === 'kitchen') return renderKitchen(area);
@@ -86,9 +102,9 @@ export function renderCraftArea() {
     <div class="craft-ui">${armorCol}
       <div class="cgrid" style="grid-template-columns: repeat(${n}, 40px)">${cells}</div>
       <span class="carrow">➜</span>
-      <div class="slot out" data-out="1" ${r ? `data-item="${r.out}"` : ''}>${r ? iconImg(r.out) + (r.n > 1 ? `<b>${r.n}</b>` : '') : ''}</div>
+      <div class="slot out${r?.repair ? ' repair' : ''}" data-out="1" ${r ? `data-item="${r.out}"` : ''}>${r ? iconImg(r.out) + (r.n > 1 ? `<b>${r.n}</b>` : '') + (r.repair ? durBar(resultStack(r)) : '') : ''}</div>
     </div>
-    <div class="mc-note">${ui.mode === 'adv' ? 'Mřížka 3×3 – všechny recepty včetně složitých součástek.' : ui.mode === 'bench' ? 'Mřížka 3×3. Složité součástky (motory, obvody…) vyrobíš v dílně.' : 'Větší recepty vyrobíš u pracovního stolu.'}</div>`;
+    <div class="mc-note">${r?.repair ? `<span class="repair-note">🔧 Oprava: ${ITEMS[r.out].name} bude mít odolnost ${durLeft(resultStack(r))} / ${maxDur(r.out)}</span>` : ui.mode === 'adv' ? 'Mřížka 3×3 – všechny recepty včetně složitých součástek.' : ui.mode === 'bench' ? 'Mřížka 3×3. Složité součástky (motory, obvody…) vyrobíš v dílně.' : 'Větší recepty vyrobíš u pracovního stolu.'}</div>`;
 }
 // Záložky kategorií receptů nad knihou
 function renderCatTabs(show) {
@@ -161,13 +177,34 @@ export function renderInventory() {
 
 // Tooltip s názvem a popisem předmětu (jako v Minecraftu).
 const tooltip = $('tooltip');
+const TIER_N = ['', 'Dřevo', 'Kámen', 'Železo', 'Krystal', 'Markorit'];
+const MINES = { pick: 'kámen a rudy', axe: 'dřevo a stromy', shovel: 'hlínu, písek a sníh' };
+const PICK_REACH = ['', 'kámen a uhlí', '+ železo, měď a křemen', '+ krystal a zlato', '+ obsidián a markorit', 'vše'];
+const num = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
+// Políčko pod myší (kvůli opotřebení v popisku)
+function stackAt(el) {
+  if (el.dataset.out) { const r = currentResult(); return r ? resultStack(r) : null; }
+  if (el.dataset.c && el.dataset.c !== 'cursor' && el.dataset.i !== undefined) { try { return container(el.dataset.c)[+el.dataset.i] || null; } catch { return null; } }
+  return null;
+}
 function itemInfo(id, el) {
   const d = ITEMS[id];
   const lines = [];
-  const TIER_N = ['', 'Dřevo', 'Kámen', 'Železo', 'Krystal', 'Markorit'];
-  if (d.tool) lines.push(`${TIER_N[d.tier]} · poškození ${d.dmg}`);
+  const s = el && stackAt(el);
+  if (d.tool) {
+    lines.push(`Materiál: ${TIER_N[d.tier]}`);
+    lines.push(`<span class="tt-atk">Při držení v ruce: ${num(d.dmg)} útok · ${num(ATTACK_SPEED[d.tool])} úderů/s</span>`);
+    if (MINES[d.tool]) lines.push(`Těží ${MINES[d.tool]} ${TOOL_SPEED[d.tier]}× rychleji`);
+    if (d.tool === 'pick') lines.push(`Vytěží: ${PICK_REACH[d.tier]}`);
+    if (d.tool === 'sword') lines.push('Nabij úder (proužek pod zaměřovačem), ve skoku kritický zásah ×1,5');
+  }
   if (d.armor && d.armor.set) lines.push(`Sada ${ARMOR_SETS[d.armor.set].name}á · ochrana +${d.armor.pts}`, `Bonus za celou sadu: ${ARMOR_SETS[d.armor.set].bonus}`);
   else if (d.armor) lines.push(`${TIER_N[d.tier]} · ochrana +${d.armor.pts} (${ARMOR_SLOT_NAMES[d.armor.slot]})`);
+  if (maxDur(id)) {
+    const left = s?.id === id ? durLeft(s) : maxDur(id), low = left <= maxDur(id) * 0.1;
+    lines.push(`<span class="tt-dur${low ? ' low' : ''}">Odolnost ${left} / ${maxDur(id)}</span>`);
+    if (s?.id === id && isWorn(s)) lines.push(`Oprava: 2 stejné kusy nebo kus + ${repairMatName(id)} v mřížce výroby`);
+  }
   if (d.fly) lines.push(`Po snězení ${d.fly} s létání`);
   if (d.utensil) lines.push(id === 'hoe' ? 'Pravé tl. na trávu/hlínu = zorat pole' : 'Kuchyňské nádobí (pro sporák)');
   if (d.plant) lines.push('Zasaď na ornou půdu (pravé tl.)');
@@ -207,7 +244,7 @@ export function slotClick(c, i, button, shift) {
   if ((c === 'fire' && i === 1) || c === 'kitchen' || (c === 'furnace' && i === 2) || (c === 'power' && i >= 1)) { // výstup táboráku, pece a sporáku se jen vybírá
     if (c === 'kitchen') i = 0;
     if (!s) return;
-    if (shift) { arr[i] = null; const left = insertInto(s, 0, 36); if (left) arr[i] = { id: s.id, n: left }; }
+    if (shift) { arr[i] = null; const left = insertInto(s, 0, 36); if (left) arr[i] = part(s, left); }
     else if (!inv.cursor) { inv.cursor = s; arr[i] = null; }
     else if (inv.cursor.id === s.id) { const k = Math.min(ITEMS[s.id].stack - inv.cursor.n, s.n); inv.cursor.n += k; if (!(s.n -= k)) arr[i] = null; }
     return refreshUI();
@@ -227,7 +264,7 @@ export function slotClick(c, i, button, shift) {
       if (!sl[0] && (s.id === 'car_battery' || s.id === 'car_battery_empty')) { sl[0] = s; left = 0; }
       else {
         for (let j = 1; j < sl.length && left; j++) if (sl[j]?.id === s.id) { const k = Math.min(ITEMS[s.id].stack - sl[j].n, left); sl[j].n += k; left -= k; }
-        for (let j = 1; j < sl.length && left; j++) if (!sl[j]) { sl[j] = { id: s.id, n: left }; left = 0; }
+        for (let j = 1; j < sl.length && left; j++) if (!sl[j]) { sl[j] = part(s, left); left = 0; }
       }
     } else if (ui.mode === 'power' && powerOf(ui.fireKey).slots) { // palivo do generátoru, surovina do el. pece, vybitá baterie do nabíječky
       const st = powerOf(ui.fireKey), t = blocks.get(ui.fireKey);
@@ -243,23 +280,23 @@ export function slotClick(c, i, button, shift) {
       if (!f.slots[0]) { f.slots[0] = s; left = 0; }
       else if (f.slots[0].id === s.id) { const k = Math.min(ITEMS[s.id].stack - f.slots[0].n, s.n); f.slots[0].n += k; left = s.n - k; }
     } else left = i < 9 ? insertInto(s, 9, 36) : insertInto(s, 0, 9);
-    if (left) arr[i] = { id: s.id, n: left };
+    if (left) arr[i] = part(s, left);
   } else if (button === 2) {
     if (inv.cursor) {
-      if (!s) arr[i] = { id: inv.cursor.id, n: 1 };
+      if (!s) arr[i] = part(inv.cursor, 1);
       else if (s.id === inv.cursor.id && s.n < ITEMS[s.id].stack) s.n++;
       else return;
       if (--inv.cursor.n <= 0) inv.cursor = null;
     } else if (s) {
       const half = Math.ceil(s.n / 2);
-      inv.cursor = { id: s.id, n: half };
+      inv.cursor = part(s, half);
       if (!(s.n -= half)) arr[i] = null;
     }
   } else if (!inv.cursor) {
     if (s) { inv.cursor = s; arr[i] = null; }
   } else if (!s) {
     arr[i] = inv.cursor; inv.cursor = null;
-  } else if (s.id === inv.cursor.id) {
+  } else if (s.id === inv.cursor.id && ITEMS[s.id].stack > 1) {
     const k = Math.min(ITEMS[s.id].stack - s.n, inv.cursor.n);
     s.n += k;
     if ((inv.cursor.n -= k) <= 0) inv.cursor = null;
@@ -277,21 +314,21 @@ export function takeResult(shift) {
   if (!r) return;
   let made = 0;
   do {
-    if (shift) { if (insertInto({ id: r.out, n: r.n }, 0, 36)) break; }
-    else if (!inv.cursor) inv.cursor = { id: r.out, n: r.n };
-    else if (inv.cursor.id === r.out && inv.cursor.n + r.n <= ITEMS[r.out].stack) inv.cursor.n += r.n;
+    if (shift) { if (insertInto(resultStack(r), 0, 36)) break; }
+    else if (!inv.cursor) inv.cursor = resultStack(r);
+    else if (!r.repair && inv.cursor.id === r.out && inv.cursor.n + r.n <= ITEMS[r.out].stack) inv.cursor.n += r.n;
     else break;
     for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i] && !--ui.craft[i].n) ui.craft[i] = null;
     crafted[r.out] = true;
     made++;
   } while (shift && made < 64 && currentResult() === r);
-  if (made) Sound.craft();
+  if (made) { if (r.repair) toolSound('repair'); else Sound.craft(); }
   refreshUI();
 }
 
 // Kniha receptů: rozloží suroviny do mřížky (jako recipe book v Minecraftu).
 function returnGrid() {
-  for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i]) { addItem(ui.craft[i].id, ui.craft[i].n, true); ui.craft[i] = null; }
+  for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i]) { addStack(ui.craft[i]); ui.craft[i] = null; }
 }
 export function fillRecipe(r, shift) {
   if (r.adv && ui.mode !== 'adv') { toast('Tento recept potřebuje dílnu (pokročilý pracovní stůl)'); return; }
@@ -331,7 +368,7 @@ invEl.addEventListener('mousedown', (e) => {
     const c = inv.cursor;
     const n = btnOf(e) === 2 ? 1 : c.n;
     if ((c.n -= n) <= 0) inv.cursor = null;
-    throwItem(c.id, n);
+    throwItem(c.id, n, c.w);
     return refreshUI();
   }
   const out = e.target.closest('[data-out]');
@@ -378,7 +415,7 @@ export function openInventory(mode = 'inv', fireKey = null) {
 }
 export function closeInventory() {
   returnGrid();
-  if (inv.cursor) { addItem(inv.cursor.id, inv.cursor.n, true); inv.cursor = null; }
+  if (inv.cursor) { addStack(inv.cursor); inv.cursor = null; }
   invOpen = false;
   invEl.style.display = 'none';
   cursorEl.style.display = 'none';
