@@ -69,7 +69,7 @@ Otevři hru, napiš své jméno a vyber:
   - **Připojit se ke kamarádovi kódem** – napiš kód od kamaráda (stačí 4 znaky).
 
 Ovládání: WASD chůze · Shift běh · Mezerník skok · levé tlačítko těžba/útok · pravé položit/použít/jíst ·
-E inventář · G vyhodit · C kreativní režim · H návod · T chat · Esc menu. Na telefonu a tabletu je dotykové ovládání.
+E inventář · Q nebo G vyhodit · prostřední tlačítko = vzít blok do ruky · C kreativní režim · H návod · T chat · Esc menu. Na telefonu a tabletu je dotykové ovládání.
 
 ## Spuštění na počítači
 
