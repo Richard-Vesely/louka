@@ -139,6 +139,68 @@ export function mergeStatic(root, filter = () => true) {
   }
 }
 
+/**
+ * Postava (nebo tvor) se kreslí jako kostra: každý kloub (skupina) je kost a všechny kvádry se stejným materiálem
+ * jsou jeden SkinnedMesh. Místo ~50 kreslení na postavu jich je ~10, animace kloubů funguje dál stejně.
+ * Při prvním volání musí být kořen v klidové poloze (počátek, bez otočení); kostra se uloží do root.userData.skeleton.
+ * Další volání (brnění) použijí stejnou kostru a poznají klidovou polohu z ní.
+ * @param {THREE.Object3D} root
+ * @param {(m: THREE.Mesh) => boolean} [filter]
+ * @returns {THREE.SkinnedMesh[]}
+ */
+export function skinRig(root, filter = () => true) {
+  root.updateMatrixWorld(true);
+  let skeleton = root.userData.skeleton;
+  if (!skeleton) {
+    const bones = [root];
+    root.traverse((o) => { if (o.isGroup && o !== root) bones.push(o); });
+    skeleton = root.userData.skeleton = new THREE.Skeleton(bones); // inverze = klidová poloha teď
+  }
+  const index = new Map(skeleton.bones.map((b, i) => [b, i]));
+  const rootInv = root.matrixWorld.clone().invert();
+  const buckets = new Map();
+  root.traverse((o) => {
+    if (!o.isMesh || o.isSkinnedMesh || o.children.length || !o.visible || !filter(o)) return;
+    let b = o.parent;
+    while (b && !index.has(b)) b = b.parent;
+    if (!b) return;
+    if (!buckets.has(o.material)) buckets.set(o.material, []);
+    buckets.get(o.material).push([o, index.get(b)]);
+  });
+  const out = [], rel = new THREE.Matrix4(), bind = new THREE.Matrix4();
+  for (const [mat, list] of buckets) {
+    const geos = list.map(([m, bi]) => {
+      const bone = skeleton.bones[bi];
+      // poloha dílu vůči jeho kosti → do klidové polohy celé postavy
+      rel.copy(bone.matrixWorld).invert().multiply(m.matrixWorld);
+      bind.copy(skeleton.boneInverses[bi]).invert().multiply(rel);
+      if (bi === 0) bind.copy(rootInv).multiply(m.matrixWorld);
+      const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      g.applyMatrix4(bind);
+      for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv') g.deleteAttribute(k);
+      const n = g.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
+      for (let i = 0; i < n; i++) { si[i * 4] = bi; sw[i * 4] = 1; }
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4));
+      g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+      return g;
+    });
+    const merged = mergeGeometries(geos);
+    for (const g of geos) g.dispose();
+    for (const [m] of list) m.parent.remove(m);
+    if (!merged) continue;
+    const sm = new THREE.SkinnedMesh(merged, mat);
+    sm.userData = { ...list[0][0].userData, merged: true };
+    sm.castShadow = true;
+    merged.computeBoundingSphere();
+    sm.boundingSphere = merged.boundingSphere.clone();
+    sm.boundingSphere.radius += 0.8; // animace (máchnutí, krok) sahá kousek za klidovou polohu
+    root.add(sm);
+    sm.bind(skeleton, new THREE.Matrix4());
+    out.push(sm);
+  }
+  return out;
+}
+
 // ============================================================ měsíční obrys: v noci slabá modrá záře na okrajích
 // (postavy a tvory jsou ve tmě vidět podle obrysu; sílu nastavuje mobs.js podle toho, jak je tma)
 export const RIM = { value: new THREE.Color(0, 0, 0) };
@@ -238,8 +300,8 @@ export function buildCharacter(costume, opts = {}) {
   part(torso, 0.44, 0.16, 0.25, M.fabricDark, 0, 0.06, 0, 0.05);
   part(torso, 0.47, 0.065, 0.28, M.plate, 0, 0.135, 0, 0.02); // opasek
   part(torso, 0.08, 0.045, 0.012, M.glow, 0, 0.135, -0.142, 0.005); // přezka
-  R.chest = part(torso, 0.5, 0.48, 0.27, M.fabric, 0, 0.41, 0, 0.07);
-  R.chest.userData.keep = true; // dýchá
+  R.chest = pivot(torso, 0, 0.41, 0); // hrudník dýchá
+  part(R.chest, 0.5, 0.48, 0.27, M.fabric, 0, 0, 0, 0.07);
   part(torso, 0.4, 0.25, 0.045, M.plate, 0, 0.49, -0.14, 0.02); // hrudní plát
   for (const sx of [-1, 1]) part(torso, 0.022, 0.2, 0.02, M.glow, sx * 0.18, 0.49, -0.163, 0.006);
   const emb = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.13), M.emblem);
@@ -253,8 +315,9 @@ export function buildCharacter(costume, opts = {}) {
   R.helmet = part(head, 0.44, 0.42, 0.44, M.paint, 0, 0.22, 0, 0.1);
   R.visor = part(head, 0.37, 0.19, 0.05, M.visor, 0, 0.22, -0.208, 0.035);
   part(head, 0.07, 0.012, 0.004, M.shine, -0.1, 0.285, -0.234, 0.002).rotation.z = 0.25; // odlesk na hledí
-  R.eyes = [-1, 1].map((sx) => part(head, 0.06, 0.03, 0.006, M.glow, sx * 0.075, 0.215, -0.235, 0.008));
-  for (const e of R.eyes) e.userData.keep = true; // mrkají
+  const eyes = pivot(head, 0, 0.215, -0.235); // oči mrkají
+  for (const sx of [-1, 1]) part(eyes, 0.06, 0.03, 0.006, M.glow, sx * 0.075, 0, 0, 0.008);
+  R.eyes = [eyes];
   for (const sx of [-1, 1]) {
     cylPart(head, 0.065, 0.065, 0.04, M.plate, sx * 0.225, 0.2, 0, 0, Math.PI / 2);
     cylPart(head, 0.035, 0.035, 0.045, M.glow, sx * 0.226, 0.2, 0, 0, Math.PI / 2);
@@ -276,10 +339,8 @@ export function buildCharacter(costume, opts = {}) {
   R.armL = arms[0]; R.armR = arms[1];
   R.hand = arms[1].hand;
   SUIT_EXTRAS[c.s]?.(R, M);
-  for (const k of ['tip', 'halo', 'holo']) if (R.extras[k]) R.extras[k].userData.keep = true;
-  for (const j of R.extras.jets || []) j.userData.keep = true;
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  mergeStatic(g);
+  skinRig(g);
   if (opts.shadow !== false) { R.shadow = blobShadow(0.42); R.shadow.position.y = 0.03; g.add(R.shadow); }
   R.anim = { phase: 0, bodyYaw: 0, sneak: 0, fly: 0, sit: 0, run: 0, swing: -1, swingKind: 'punch', eat: 0, squash: 0, vy: 0, lastY: null, look: 0, lookT: 6 + Math.random() * 6, lookTo: 0, blink: 2 + Math.random() * 3, flash: 0, t: Math.random() * 10, air: 0 };
   return R;
@@ -293,9 +354,8 @@ const SUIT_EXTRAS = {
     part(t, 0.3, 0.12, 0.05, M.paint, 0, 0.5, 0.29, 0.02);
     part(t, 0.24, 0.02, 0.01, M.glow, 0, 0.3, 0.285, 0.005);
     cylPart(t, 0.008, 0.012, 0.42, M.trim, -0.13, 0.78, 0.22, 0, 0.08, 6); // anténa
-    R.extras.tip = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), M.glow);
-    R.extras.tip.position.set(-0.147, 0.99, 0.22);
-    t.add(R.extras.tip);
+    R.extras.tip = pivot(t, -0.147, 0.99, 0.22); // blikající světýlko antény
+    R.extras.tip.add(new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), M.glow));
     part(R.legR.hip, 0.08, 0.13, 0.15, M.plate, 0.12, -0.22, 0, 0.025); // kapsa na stehně
   },
   engineer(R, M) {
@@ -325,7 +385,9 @@ const SUIT_EXTRAS = {
     R.extras.jets = [];
     for (const sx of [-1, 1]) {
       cylPart(t, 0.07, 0.06, 0.36, M.trim, sx * 0.13, 0.4, 0.24, 0, 0, 12);
-      R.extras.jets.push(cylPart(t, 0.05, 0.05, 0.02, M.glow, sx * 0.13, 0.21, 0.24, 0, 0, 12));
+      const jet = pivot(t, sx * 0.13, 0.21, 0.24);
+      cylPart(jet, 0.05, 0.05, 0.02, M.glow, 0, 0, 0, 0, 0, 12);
+      R.extras.jets.push(jet);
       const fin = part(t, 0.16, 0.14, 0.02, M.paint, sx * 0.24, 0.52, 0.22, 0.01);
       fin.rotation.z = sx * -0.5;
     }
@@ -350,10 +412,11 @@ const SUIT_EXTRAS = {
     R.helmet.material = M.coat;
     R.visor.scale.set(1.05, 0.5, 1);
     R.visor.position.y = 0.23;
-    R.extras.holo = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.11), new THREE.MeshBasicMaterial({ color: M.light, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, map: holoTex() }));
-    R.extras.holo.position.set(0.24, 0.3, -0.24);
+    const holo = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.11), new THREE.MeshBasicMaterial({ color: M.light, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, map: holoTex() }));
+    R.extras.holo = pivot(h, 0.24, 0.3, -0.24); // hologram vedle hlavy
     R.extras.holo.rotation.y = 0.5;
-    h.add(R.extras.holo);
+    R.extras.holo.add(holo);
+    R.extras.holoMat = holo.material;
     part(t, 0.53, 0.5, 0.29, M.coat, 0, 0.41, 0.005, 0.07); // plášť přes hrudník
     part(t, 0.4, 0.25, 0.045, M.plate, 0, 0.49, -0.155, 0.02);
     // šosy pláště: vpředu dva, vzadu jeden; houpou se s nohama
@@ -382,17 +445,19 @@ const SUIT_EXTRAS = {
     const t = R.torso, h = R.head;
     const gold = M.trim;
     part(h, 0.46, 0.05, 0.46, gold, 0, 0.36, 0, 0.02);
-    const halo = (R.extras.halo = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.018, 8, 32), new THREE.MeshStandardMaterial({ color: 0xffd890, emissive: 0xffb066, emissiveIntensity: 2.4, roughness: 0.3, metalness: 1 })));
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.018, 8, 32), new THREE.MeshStandardMaterial({ color: 0xffd890, emissive: 0xffb066, emissiveIntensity: 2.4, roughness: 0.3, metalness: 1 }));
     halo.rotation.x = Math.PI / 2;
-    halo.position.set(0, 0.6, 0);
-    h.add(halo);
+    R.extras.halo = pivot(h, 0, 0.6, 0); // svatozář se točí a vznáší
+    R.extras.halo.add(halo);
     for (const sx of [-1, 1]) part(t, 0.03, 0.4, 0.03, gold, sx * 0.24, 0.42, -0.13, 0.01);
     R.extras.jets = [];
     for (const sx of [-1, 1]) {
       const wing = part(t, 0.06, 0.4, 0.22, M.paint, sx * 0.2, 0.5, 0.2, 0.03);
       wing.rotation.z = sx * -0.35;
       cylPart(t, 0.05, 0.035, 0.18, gold, sx * 0.1, 0.34, 0.19, 0, 0, 10);
-      R.extras.jets.push(cylPart(t, 0.033, 0.033, 0.015, M.glow, sx * 0.1, 0.245, 0.19, 0, 0, 10));
+      const jet = pivot(t, sx * 0.1, 0.245, 0.19);
+      cylPart(jet, 0.033, 0.033, 0.015, M.glow, 0, 0, 0, 0, 0, 10);
+      R.extras.jets.push(jet);
     }
   },
 };
@@ -463,8 +528,7 @@ export function setCharacterArmor(R, ids) {
     for (const l of [R.legL, R.legR]) { add(l.hip, legs, 0.2, 0.26, 0.06, 0, -0.17, -0.11, 0.025); add(l.hip, legs, 0.2, 0.2, 0.05, 0, -0.17, 0.11, 0.02); }
   }
   if (boots) for (const l of [R.legL, R.legR]) { add(l.knee, boots, 0.23, 0.17, 0.31, 0, -0.32, -0.03, 0.05); add(l.knee, boots, 0.19, 0.16, 0.05, 0, -0.16, -0.105, 0.02); }
-  mergeStatic(R.group, (m) => m.userData.armor);
-  R.group.traverse((o) => { if (o.isMesh && o.userData.armor) { o.castShadow = true; R.armorParts.push(o); } });
+  R.armorParts = skinRig(R.group, (m) => m.userData.armor);
 }
 
 // ============================================================ animace
@@ -585,11 +649,11 @@ export function animateCharacter(R, s, dt) {
 }
 function animateExtras(R, s, amt, dt) {
   const E = R.extras, A = R.anim, t = A.t;
-  if (E.tip) E.tip.visible = t % 1.6 < 0.8;
+  if (E.tip) E.tip.scale.setScalar(t % 1.6 < 0.8 ? 1 : 0.001);
   if (E.jets) for (const j of E.jets) { j.scale.setScalar(1 + A.fly * 0.6 + Math.sin(t * 40) * 0.05 * A.fly); }
   if (R.M.glow && (E.jets || E.halo)) R.M.glow.emissiveIntensity = 2.2 + A.fly * 2.5;
-  if (E.halo) { E.halo.rotation.z += dt * 0.8; E.halo.position.y = 0.6 + Math.sin(t * 2) * 0.02; }
-  if (E.holo) { E.holo.material.opacity = 0.35 + Math.sin(t * 30) * 0.04 + (Math.random() < 0.02 ? -0.2 : 0); E.holo.position.y = 0.3 + Math.sin(t * 1.7) * 0.01; }
+  if (E.halo) { E.halo.rotation.y += dt * 0.8; E.halo.position.y = 0.6 + Math.sin(t * 2) * 0.02; }
+  if (E.holo) { E.holoMat.opacity = 0.35 + Math.sin(t * 30) * 0.04 + (Math.random() < 0.02 ? -0.2 : 0); E.holo.position.y = 0.3 + Math.sin(t * 1.7) * 0.01; }
   const drag = Math.min(s.speed, 9) * 0.07 + A.fly * 0.7 + Math.max(0, A.vy) * 0.03;
   if (E.cape) E.cape.rotation.x = lerp(E.cape.rotation.x, -(0.06 + drag + Math.sin(t * 3.1) * 0.03 + A.sneak * -0.4), 1 - Math.exp(-dt * 6));
   if (E.strips) E.strips.forEach((p, i) => { p.rotation.x = lerp(p.rotation.x, -(0.05 + drag * (0.8 + i * 0.12) + Math.sin(t * 3 + i * 1.7) * 0.06 - A.sneak * 0.4), 1 - Math.exp(-dt * 7)); });
@@ -625,5 +689,7 @@ export function disposeCharacter(R) {
   const M = R.M || R.userData?.mats;
   if (!M) return;
   for (const m of Object.values(M)) if (m?.isMaterial) m.dispose();
-  (R.group || R).traverse((o) => { if (o.isMesh && o.userData.merged) o.geometry.dispose(); });
+  const root = R.group || R;
+  root.traverse((o) => { if (o.isMesh && o.userData.merged) o.geometry.dispose(); });
+  root.userData.skeleton?.dispose();
 }

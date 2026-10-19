@@ -3,7 +3,7 @@
 // hlava na kloubu (sleduje hráče, pase se), uši, ocas, křídla. Nepřátelé mají svítící oči.
 // Bez vedlejších účinků při načtení (textury se vyrobí až při prvním tvorovi).
 import * as THREE from 'three';
-import { RIM, addRim, animateCharacter, armorMat, blobShadow, buildCharacter, crackTex, mergeStatic, rbox, setCharacterArmor } from '../render/character.js';
+import { RIM, addRim, animateCharacter, armorMat, blobShadow, buildCharacter, crackTex, mergeStatic, rbox, setCharacterArmor, skinRig } from '../render/character.js';
 
 export { RIM };
 
@@ -261,8 +261,8 @@ export function buildMobModel(type) {
       body.add(sp);
     }
   }
+  if (kind === 'blob') mergeStatic(g); else if (!extra.rig) skinRig(g); // jedno kreslení na materiál
   if (type === 'golem') g.scale.setScalar(1.1);
-  mergeStatic(g);
   const shadow = blobShadow(type === 'golem' ? 1.25 : type === 'cow' ? 0.95 : type === 'chicken' ? 0.36 : type === 'markoman' ? 0.48 : 0.72);
   return { group: g, body, head, legs, ears, wings, tail, eyes: K.eyes, flash: K.flash, kind, shadow, bodyY: body.position.y, arms: extra.arms || [], rig: extra.rig, crystal: extra.crystal, big: type === 'golem', headRest: head?.rotation.x || 0 };
 }
