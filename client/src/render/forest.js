@@ -105,11 +105,16 @@ function leafTexture() {
     const v = 185 + r() * 50;
     g.fillStyle = `rgb(${v * 0.92 | 0},${v | 0},${v * 0.8 | 0})`;
     g.beginPath(); g.ellipse(x, y, l, l * 0.42, a, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = 'rgba(60,70,40,0.5)'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(x - Math.cos(a) * l, y - Math.sin(a) * l); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
   }
-  const t = new THREE.CanvasTexture(c);
+  // průhledné pixely dostanou barvu listí (jinak by se okraje lístků v dálce rozmazaly do černa)
+  const img = g.getImageData(0, 0, 128, 128).data;
+  for (let i = 0; i < img.length; i += 4) if (img[i + 3] < 128) { img[i] = 192; img[i + 1] = 210; img[i + 2] = 165; img[i + 3] = 0; } else img[i + 3] = 255;
+  const t = new THREE.DataTexture(img, 128, 128, THREE.RGBAFormat);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+  t.flipY = false;
+  t.needsUpdate = true;
   return t;
 }
 function leafCardGeo(n = 46) {
@@ -149,7 +154,7 @@ const trunks = makeInstanced(new THREE.CylinderGeometry(0.16, 0.28, 1, 9).transl
 const blobs = makeInstanced(crownGeo, windy(new THREE.MeshStandardMaterial({ roughness: 0.8 })), MAX_TREES * 5);
 const cones = makeInstanced(pineTierGeo(), windy(new THREE.MeshStandardMaterial({ roughness: 0.85 })), MAX_TREES * 4);
 const LEAF_N = FX.leafCards ? 2600 : 0;
-const leaves = FX.leafCards ? makeInstanced(leafCardGeo(), windy(new THREE.MeshStandardMaterial({ map: leafTexture(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.75 }), 'leaves'), LEAF_N) : null;
+const leaves = FX.leafCards ? makeInstanced(leafCardGeo(), windy(new THREE.MeshStandardMaterial({ map: leafTexture(), alphaTest: 0.45, alphaToCoverage: FX.msaa > 0, side: THREE.DoubleSide, roughness: 0.75 }), 'leaves'), LEAF_N) : null;
 const rocks = makeInstanced(lumpy(new THREE.IcosahedronGeometry(1, 1), 0.3, 4.2).scale(1, 0.6, 1), new THREE.MeshStandardMaterial({ map: rockTex, roughness: 0.95, flatShading: true }), 1500);
 // Stínové kopie blízkých stromů a balvanů: vrhají stín, ale vidět nejsou (vrstva SHADOW_LAYER, viz render/shadows.js).
 // Celý les do mapy stínů kreslit nejde (tisíce stromů), tak se do ní dávají jen ty v dosahu stínů.

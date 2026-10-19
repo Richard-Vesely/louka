@@ -162,7 +162,7 @@ const MORE = {
     S.place({ x: 46, z: 58, up: 1.7, yaw: 0, time: 0.0 });
     S.lookAt(0, 3, 0); g.player.pitch = 0.02;
     const yaw = g.player.yaw, x = 46 - Math.sin(yaw) * 15, z = 58 - Math.cos(yaw) * 15;
-    g.spawnMob('sheep', x, z); g.spawnMob('crawler', x + 4, z + 2);
+    g.spawnMob('sheep', x, z); g.spawnMob('deer', x + 4, z + 2);
   },
   // bouřka nad krajinou: déšť, mokrá zem, louže
   rain: () => {
@@ -175,6 +175,11 @@ const MORE = {
     const S = SHOT, g = S.g;
     S.place({ x: -120, z: 205, up: 4, yaw: 0, time: 0.27 }); S.lookAt(-60, g.groundHeight(-60, 150) + 2, 150);
     g.setWeather({ fog: 1 }); g.weather.fog = 1;
+  },
+  // pod hladinou rybníka
+  underwater: () => {
+    const S = SHOT, g = S.g, p = g.pondOf(-181.5, -48), lv = g.pondLevel(p);
+    S.place({ x: p.x, z: p.z, y: lv - 1.62 - 0.6, yaw: 0, time: 0.45 }); g.player.pitch = -0.1;
   },
   // Markova dimenze v noci: fialová mlha, polární záře, krystaly
   mark: () => {
@@ -195,10 +200,11 @@ for (const [name, setup] of Object.entries(VIEWS)) {
     if (opt('after')) { const r = await ev(opt('after')); if (r !== undefined) console.log('after:', JSON.stringify(r)); await page.waitForTimeout(300); }
     await page.screenshot({ path: path.join(outDir, `${name}.png`) });
     if (flag('perf')) {
-      // průměrný čas snímku přes skutečnou smyčku hry (requestAnimationFrame), 2 s
+      // čas snímku přes skutečnou smyčku hry (requestAnimationFrame), 3 s; 25. percentil, aby jiné programy
+      // na stejném počítači (krátké výkyvy) měření tolik nerozhazovaly
       perf[name] = await ev(() => new Promise((ok) => {
-        let n = 0; const t0 = performance.now();
-        const f = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(f); else ok(+((performance.now() - t0) / n).toFixed(2)); };
+        const d = []; let last = performance.now(); const t0 = last;
+        const f = () => { const t = performance.now(); d.push(t - last); last = t; if (t - t0 < 3000) requestAnimationFrame(f); else { d.sort((a, b) => a - b); ok(+d[Math.floor(d.length * 0.25)].toFixed(2)); } };
         requestAnimationFrame(f);
       }));
     }

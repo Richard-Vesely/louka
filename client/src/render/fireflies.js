@@ -27,7 +27,7 @@ const fireflies = (() => {
         float y = terrainH(wp) + 0.6 + sin(uTime * 0.7 + aSeed.z * 3.0) * 0.4 + aSeed.z * 0.15;
         vec4 mv = viewMatrix * vec4(wp.x, y, wp.y, 1.0);
         gl_Position = projectionMatrix * mv;
-        float blink = pow(max(sin(uTime * 1.6 * aSeed.w + aSeed.z * 6.28), 0.0), 3.0);
+        float blink = 0.25 + 0.75 * pow(0.5 + 0.5 * sin(uTime * 1.6 * aSeed.w + aSeed.z * 6.28), 2.0); // jemně pulzují
         vA = blink * uNight * (1.0 - smoothstep(20.0, 30.0, length(wp - uCam.xz)));
         gl_PointSize = clamp(70.0 / -mv.z, 1.5, 22.0);
       }`,

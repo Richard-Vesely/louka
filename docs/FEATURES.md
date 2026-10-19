@@ -38,7 +38,7 @@ When you add or change a feature, update this file in the same pull request.
   (the same code next time). Max 6 players. **Připojit se ke kamarádovi kódem**: type the friend's code (just the 4
   characters is enough).
 - After leaving a multiplayer game the menu shows why (e.g. *Spojení se přerušilo. Zkus se připojit znovu.*).
-- **Nastavení**: graphics quality (auto/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity.
+- **Nastavení**: graphics quality (auto by graphics card/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity.
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
 
@@ -64,24 +64,60 @@ When you add or change a feature, update this file in the same pull request.
   with a spawner), desert pyramid, jungle temple, igloo, cherry pavilion, savanna hut, mushroom house, obsidian altar.
   The compass shows the nearest unexplored one.
 
-- **Graphics look** (trial, three looks to choose from with the URL parameter `?look=a|b|c`, default `c`):
-  - **a** *Stylizovaný* (Hytale-like): saturated warm colours, purple-tinted shadows, soft shadows, puffy clouds, turquoise water.
-  - **b** *Realistické sci-fi*: filmic AgX, sharp contrasty shadows, sun shafts through trees, cool grade, film grain,
-    strong neon, deep reflective water.
-  - **c** *Jasná budoucnost* (mix): realistic light on clean shapes, lush nature, blue sky, cyan/magenta neon.
-  - **Grafika: střední / vysoká** draws through a post-processing chain (`postprocessing` + `n8ao`): HDR, sun/moon
-    **shadows** (map follows the player, 20–30 updates per second; trees cast shadows through invisible near copies),
-    **height fog** with sun glow (valleys hazy, hills clear), **bloom** on lights, lava, crystals and neon,
-    tone mapping + colour grade per look, **clouds**, **normal maps** on blocks and cave walls; *vysoká* adds
-    ambient occlusion (N8AO, half resolution) and, in looks b/c, **sun shafts** raymarched through the shadow map.
-    **Dynamic resolution** drops to 60 % when a frame takes over ~18 ms and comes back when there is headroom.
-  - All qualities: **torches, campfires and lamps light the ground and grass** around them, **tree crowns sway in the
-    wind**, **ponds** have waves, sky reflection, depth colour and shore foam (low: simple water),
-    **powered cables** carry glowing pulses (speed = how much the network uses).
-  - **Grafika: nízká** stays as cheap as before (no composer, no shadows, ACES like the old look); CI renders with it.
-  - Screenshots for comparing looks: `node tests/playtest/shots.mjs dist <out> --look c [--quality high] [--perf]`
-    (8 fixed views at 1600×900; `--perf` writes ms per frame).
-*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh`, `sky`, `daylight`; looks `look.js`, post-processing `post.js`, shadows `shadows.js`, clouds `clouds.js`, water `water.js`, light shader bits `light-glsl.js`), shrine and portal `client/src/world/shrine.js`.
+- **Graphics look „Jasná budoucnost“** (`client/src/render/look.js`): realistic light on clean, softly stylised shapes;
+  lush nature; only technology glows in saturated colours. Fixed light colours: cyan = electricity and tech, warm
+  white/amber = fire, magenta/violet = Mark dimension, green = OK status lights. Nothing in the playable area is pure
+  black (nights and caves are dark but readable). All look numbers can be tuned live in the console (`game.LK`).
+  - **Grafika Automaticky** picks the tier from the graphics card (`client/src/game/gpu.js`): separate card → *vysoká*,
+    integrated (Intel, AMD Radeon Graphics, Apple) → *střední*, software WebGL (CI) or touch device → *nízká*.
+    The Settings window shows what Automaticky chose.
+  - **Day and night**: golden hour with long warm shadows, a **sunset** with an orange-to-pink horizon and violet sky
+    (about 17:00–19:30), stars only after dusk, a moon that lights the land in cool blue and casts shadows, fireflies
+    that pulse gently. Sky light fills shadows (about a third of the sun) so shadows are never black.
+  - **Weather** (`shared/sim/weather.js` decides it from the day number and time, so every player sees the same sky;
+    nothing is sent or saved): rain with streaks and splashes, wet darker ground and **puddles** that reflect the sky
+    and ripple, grey overcast sky and thicker air, **thunderstorms** with lightning bolts, a flash and thunder delayed by
+    distance, and **foggy mornings** in valleys. Day 1 of a new world is always clear. Messages: *Začíná pršet*,
+    *Blíží se bouřka – schovej se!*, *Přestalo pršet*. Rain noise and drops are synthesised (`render/weather.js`).
+    Console: `game.setWeather({ rain: 1, storm: 1 })` (this browser only), `game.setWeather(null)` back to the rules.
+  - **Fire light** (torches, campfires, lanterns) is warm white (~3000 K) and flickers 2–3× a second; green grass stays
+    green under it. Campfires and torches give off **embers and thin smoke** that the wind carries. Electric lamps light
+    cool white. Glowing mushrooms light cyan, spawners violet.
+  - **Wind**: one shared wind (`U.wind`) bends grass, sways tree crowns and reeds, slants rain and carries smoke; gusts
+    roll across the land as waves and get stronger in rain and storms.
+  - **Trees**: smooth crowns, **leaf clusters** around crowns near the player (střední/vysoká), light through the crown
+    edge against the sun, pines and spruces in drooping branch tiers, bark relief and darker trunk feet.
+    **Grass** has yellow-green patches and ~5 % small yellow, white and violet flowers.
+  - **Ponds**: turquoise at the shore, deep teal in the middle, reflect more sky at grazing angles, small sun
+    **sparkles** instead of one glare spot, broken foam only where ripples meet the shore, an uneven edge, **reeds,
+    cattails and stones** along the real shoreline and a band of dark wet soil. Rain ripples the surface.
+    **Under water** the view turns short and blue-green.
+  - **Caves**: cool blue-grey cave air against warm torch light, every block edge is darkened so blocks always read,
+    **crystal and markorite ore light the stone around them**, dust drifts in torchlight, and the eyes adapt
+    (brighter after a moment underground).
+  - **Mark dimension**: darker violet sky, violet fog, a large cyan-and-magenta **aurora**, nights tinted violet instead
+    of blue, and slow floating motes of light. The tundra gets a green aurora at night.
+  - **Light-shard beams** are a landmark: brighter by day so they stay visible against the sky.
+  - **Powered cables** show their metal (copper, gold) and carry **cyan pulses**; faster pulses = more power used.
+  - **Grafika: střední / vysoká** draw through a post-processing chain (`client/src/render/post.js`, `postprocessing`
+    + `n8ao`): HDR; sun/moon **shadows** (`shadows.js`: one map that follows the player, 20–30 updates per second; near
+    trees cast shadows through invisible copies); **height fog coloured by the sky** in the view direction (bluer away
+    from the sun, warmer toward it) plus a distant lighter mountain ridge; **bloom** on lights, lava, crystals and neon;
+    AgX tone mapping with hue protection (no orange-to-red shift), cool shadows and warm highlights, moonlit blue
+    nights; **eye adaptation** (up to +0.8 EV at night, +1.2 EV in caves, over ~1.5 s); **clouds** lit by the sun with
+    pink undersides at sunset; **normal maps** on blocks and cave walls.
+    - *vysoká*: MSAA 2×, sun **shafts** (16 steps, only when looking toward the sun), 2048 px shadows and **ambient
+      occlusion** (N8AO, half resolution) on a separate graphics card; 1024 px shadows and no AO on integrated graphics.
+    - *střední* (the club laptops): 1024 px shadows, no AO or shafts, FXAA instead of MSAA.
+    - **Dynamic resolution** drops to 60–70 % when a frame takes over ~18 ms and comes back when there is headroom.
+      With a window open (backpack, computer, guide) the world behind it renders at half resolution without AO.
+  - **Grafika: nízká** stays as cheap as before (no composer, no shadows, ACES); it still gets the warm-white fire light,
+    wind, weather, dusk sky, simple water, reeds, embers, cave edges and ore light. CI renders with it.
+  - Screenshots for comparing graphics: `node tests/playtest/shots.mjs dist <out> [--quality low|medium|high|auto]
+    [--perf] [--views all]` (8 fixed views at 1600×900, `--views all` adds golden hour, night, rain, dawn fog and the
+    Mark dimension; `--perf` writes ms per frame).
+
+*Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh`, `sky`, `daylight`; looks `look.js`, post-processing `post.js`, shadows `shadows.js`, clouds `clouds.js`, water `water.js`, light shader bits `light-glsl.js`, weather `weather.js`, embers/smoke/dust `ambient-fx.js`), shrine and portal `client/src/world/shrine.js`.
 
 ## 3. Player
 - **Survival**: health ❤️, hunger 🍗 (drops faster when running), armor 🛡. Starving hurts; full stomach heals.

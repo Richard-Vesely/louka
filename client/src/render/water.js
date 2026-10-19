@@ -121,7 +121,7 @@ function decorMaterials() {
   reedGeo.setIndex([...a.index.array, ...Array.from(b.index.array, (i) => i + 4)]);
   for (const k of ['position', 'normal', 'uv']) reedGeo.setAttribute(k, new THREE.Float32BufferAttribute([...a.attributes[k].array, ...b.attributes[k].array], a.attributes[k].itemSize));
   for (let i = 0; i < reedGeo.attributes.normal.count; i++) reedGeo.attributes.normal.setXYZ(i, 0, 1, 0); // osvětlené jako tráva (shora)
-  reedMat = new THREE.MeshStandardMaterial({ map: reedTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 });
+  reedMat = new THREE.MeshStandardMaterial({ map: reedTexture(), alphaTest: 0.5, alphaToCoverage: FX.msaa > 0, side: THREE.DoubleSide, roughness: 0.8 });
   reedMat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = U.time; sh.uniforms.uWind = U.wind;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform vec4 uWind;').replace('#include <begin_vertex>', `#include <begin_vertex>

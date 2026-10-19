@@ -30,9 +30,9 @@ import { grassLayers, regrowGrass } from '../render/grass.js';
 import { ground } from '../render/ground.js';
 import { updateHeldModel, updateSwing } from '../render/held-item.js';
 import { debris, sparks } from '../render/particles.js';
-import { initClouds, updateClouds } from '../render/clouds.js';
+import { initClouds, initRidge, updateClouds, updateRidge } from '../render/clouds.js';
 import { post, renderFrame } from '../render/post.js';
-import { U, camera, renderer, scene } from '../render/renderer.js';
+import { FOG, U, camera, renderer, scene } from '../render/renderer.js';
 import { initShadows, updateShadows } from '../render/shadows.js';
 import { updateWater } from '../render/water.js';
 import { initWeather, updateWeather } from '../render/weather.js';
@@ -67,6 +67,7 @@ updateDay(0);
 updateEnvironment();
 initShadows();
 initClouds();
+initRidge();
 initWeather();
 initAmbientFx();
 renderHotbar();
@@ -137,6 +138,7 @@ export function tick(realDt) {
   ground.position.set(Math.round(camera.position.x / 4) * 4, 0, Math.round(camera.position.z / 4) * 4);
   stars.position.copy(camera.position);
   updateClouds();
+  updateRidge(FOG.color, underground);
   // odlesky oblohy (drahé, ~10 ms) jen když se znatelně posunul čas dne, nejpozději po 12 s
   if ((envTimer += realDt) > 3 && (Math.abs(dayTime - envDay) > 0.012 || envTimer > 12)) { envTimer = 0; envDay = dayTime; updateEnvironment(); }
   cullFar(realDt);

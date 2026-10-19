@@ -25,8 +25,9 @@ const cableMats = {
   gold: new THREE.MeshStandardMaterial({ color: 0xf2c440, metalness: 0.8, roughness: 0.3 }),
 };
 // Futuristické kabely (vzhled s LK.neon): kudy teče proud, běží po kabelu svítící pulzy (rychlost podle odběru sítě).
-// aPow = 0 bez proudu, jinak 0,3–1 podle toho, kolik síť právě odebírá.
-const NEON = { copper: 0x2ae8ff, gold: 0xff4ad8 };
+// aPow = 0 bez proudu, jinak 0,3–1 podle toho, kolik síť právě odebírá. Jádro kabelu ukazuje kov (měď, zlato),
+// pulzy jsou vždy azurové (= elektřina); purpurová patří jen Markově dimenzi.
+const NEON = { copper: 0x38e8ff, gold: 0x38e8ff };
 if (LK.neon) for (const [name, m] of Object.entries(cableMats)) {
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = UNI.time;
@@ -48,7 +49,7 @@ varying vec3 vCW;`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         if (vPow > 0.0) {
           float run = fract((vCW.x + vCW.y + vCW.z) * 1.5 - uTime * (0.8 + 2.4 * vPow));
-          totalEmissiveRadiance += uNeon * vPow * (0.25 + 2.2 * smoothstep(0.75, 1.0, run));
+          totalEmissiveRadiance += uNeon * vPow * (0.04 + 2.2 * smoothstep(0.8, 1.0, run));
         }`);
   };
 }

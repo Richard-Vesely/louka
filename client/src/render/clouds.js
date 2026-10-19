@@ -64,3 +64,43 @@ export function updateClouds() {
   dome.position.copy(camera.position);
   CU.uCover.value = LK.clouds.cover; CU.uSoft.value = LK.clouds.soft; CU.uBright.value = LK.clouds.bright;
 }
+
+// Vzdálené pásmo hor na obzoru (střední a vysoká): světlejší modravá silueta za krajinou dodá hloubku.
+// Nezapisuje hloubku, takže ji post-processing zahalí oparem jako oblohu; barva jde z barvy mlhy.
+let ridge = null;
+export function initRidge() {
+  if (!FX.ridge || ridge) return;
+  const N = 256, R = 2600, pos = [], idx = [];
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const h = 60 + 70 * Math.abs(Math.sin(a * 3 + 1.3)) * (0.6 + 0.4 * Math.sin(a * 7.1)) + 25 * Math.sin(a * 17.3) * Math.sin(a * 5.2) + 12 * Math.sin(a * 41.0);
+    pos.push(Math.cos(a) * R, -40, Math.sin(a) * R, Math.cos(a) * R, h, Math.sin(a) * R);
+    if (i < N) idx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 2, i * 2 + 1, i * 2 + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uCol: RU.col },
+    side: THREE.DoubleSide, depthWrite: false, fog: false,
+    vertexShader: /* glsl */`
+      varying float vH;
+      void main() { vH = position.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */`
+      uniform vec3 uCol;
+      varying float vH;
+      void main() { gl_FragColor = vec4(uCol * (0.92 + 0.12 * smoothstep(-40.0, 150.0, vH)), 1.0); }`,
+  });
+  ridge = new THREE.Mesh(g, mat);
+  ridge.frustumCulled = false;
+  ridge.renderOrder = -1;
+  ridge.userData.sh = 1;
+  scene.add(ridge);
+}
+const RU = { col: { value: new THREE.Color() } };
+export function updateRidge(fogColor, under = 0) {
+  if (!ridge) return;
+  ridge.position.set(camera.position.x, 0, camera.position.z);
+  ridge.visible = under < 0.5;
+  RU.col.value.copy(fogColor).multiply(new THREE.Color(0.78, 0.84, 0.95));
+}
