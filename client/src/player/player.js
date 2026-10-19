@@ -6,8 +6,10 @@ import { NET } from '../../../shared/net/net.js';
 import { clamp } from '../../../shared/util.js';
 import { EYE, GRAVITY, JUMP, PH, PW, RUN, WALK } from '../../../shared/world/constants.js';
 import { bkey, blockMeta, blocks, vehicles } from '../../../shared/world/state.js';
+import { waterAt } from '../../../shared/world/nature.js';
 import { shrineOf, terrainH } from '../../../shared/world/terrain.js';
 import { V, VMIN, getVox, groundHeight, solidVox, topY } from '../../../shared/world/voxels.js';
+import { materialAt } from '../audio/materials.js';
 import { Sound } from '../audio/sound.js';
 import { MP } from '../game/boot.js';
 import { game } from '../game/debug.js';
@@ -216,7 +218,7 @@ export function updatePlayer(dt) {
 
   // Pojistka: hráč uvízlý uvnitř bloků vyskočí nahoru.
   if (collidesBlocks(p)) { const g0 = groundHeight(p.x, p.z); p.y = isFinite(g0) && g0 > p.y ? g0 : p.y + 1; v.y = 0; }
-  const wasGround = player.onGround;
+  const wasGround = player.onGround, fallV = v.y;
   let landed = false;
   // Povrch platí jen pro hráče u povrchu – v jeskyni pod ním chodí po blocích.
   const surface = (prevY) => {
@@ -260,7 +262,14 @@ export function updatePlayer(dt) {
   const moving = Math.hypot(v.x, v.z);
   if (player.onGround) player.bob += dt * moving * 1.8;
   const sign = Math.sign(Math.sin(player.bob));
-  if (sign !== lastStepSign && moving > 1 && player.onGround) Sound.step();
+  // Zvuky pohybu: kroky podle materiálu pod nohama, dopad po pádu, šplouchnutí a plavání ve vodě.
+  const wet = waterAt(p.x, p.y + 0.05, p.z) !== null, deep = wet && waterAt(p.x, p.y + 1, p.z) !== null;
+  if (wet && !player.wasWet && (fallV < -4 || moving > 3)) Sound.splash(Math.min(1.4, 0.6 + Math.max(-fallV, moving) / 12));
+  player.wasWet = wet;
+  if (landed && !wasGround && fallV < -5.5 && !flying) Sound.land(materialAt(p.x, p.y, p.z), -fallV);
+  else if (sign !== lastStepSign && moving > 1 && (player.onGround || deep)) {
+    if (deep) Sound.swim(); else Sound.footstep(materialAt(p.x, p.y, p.z), player.sprinting);
+  }
   lastStepSign = sign;
   player.sprinting = sprint && moving > 1;
   const bobY = Math.sin(player.bob) * 0.035 * Math.min(1, moving / WALK);

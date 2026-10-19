@@ -67,6 +67,12 @@ img.sm { image-rendering: auto !important; } /* 3D ikony bloků a strojů jsou h
 
 #toast { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); padding: 8px 22px; font: 700 20px 'Cinzel', serif; color: #fff4d6; text-shadow: 0 2px 6px #000; background: radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%); opacity: 0; transition: opacity 0.5s; pointer-events: none; white-space: nowrap; }
 #toast.show { opacity: 1; }
+/* Hraje hudba: název skladby se na chvíli objeví pod hodinami */
+#nowPlaying { position: fixed; top: 58px; left: 18px; padding: 5px 12px 5px 10px; border-radius: 999px; font: italic 600 13px system-ui, sans-serif; letter-spacing: 0.02em;
+  color: var(--cyan); background: rgba(10, 18, 30, 0.72); backdrop-filter: blur(6px); border: 1px solid rgba(138, 244, 255, 0.35); box-shadow: 0 0 14px rgba(138, 244, 255, 0.15);
+  text-shadow: 0 0 8px rgba(138, 244, 255, 0.6); pointer-events: none; opacity: 0; }
+#nowPlaying.show { animation: nowPlaying 6s ease forwards; }
+@keyframes nowPlaying { 0% { opacity: 0; transform: translateX(-8px); } 12%, 75% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 
 #intro { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; animation: intro 8s ease forwards; background: radial-gradient(ellipse at center, rgba(0,0,0,0.45), transparent 70%); }
 #intro h1 { margin: 0; font: 700 clamp(44px, 9vw, 84px) 'Cinzel', serif; letter-spacing: 0.25em; text-shadow: 0 4px 30px rgba(0,0,0,0.7); }
@@ -229,6 +235,9 @@ body.mp #effects { top: 92px; }
 .seg .mc-btn { flex: 1; padding: 6px 8px; font-size: 14px; }
 .mc-btn.on { background: #3d6b3a; }
 .set-row input[type=range] { width: 100%; accent-color: #e8c66a; }
+/* Hlasitost, Zvuky, Hudba vedle sebe (na úzké obrazovce pod sebou) */
+.set-sound { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 14px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+@media (max-width: 480px) { .set-sound { grid-template-columns: 1fr; } }
 .menu-box { max-height: calc(100vh - 32px); overflow: auto; }
 
 /* ---------- dotykové ovládání ---------- */
