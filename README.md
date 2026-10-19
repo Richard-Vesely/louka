@@ -1,4 +1,4 @@
-# Říše (Louka)
+# Říše
 
 Survival hra v prohlížeči, kterou vymyslel a postavil Marek a kterou teď rozvíjíme spolu na AI kroužku.
 Přežij, sbírej, stav a objevuj: lesy a biomy, podzemí s rudami, zvířata a noční stínožrouti, vaření, pole,
@@ -9,13 +9,13 @@ pec, elektřina, auto, letadlo, počítač s hrami a portál do Markovy dimenze.
 
 Otevři hru, napiš své jméno a vyber:
 
-- **Hra pro jednoho** – svět se ukládá v tvém prohlížeči.
-- **Hlavní svět**, **Kreativní svět** – světy serveru kroužku, každý má svoje velké tlačítko. Poprvé hra chce
-  **heslo kroužku**, pak si ho pamatuje.
-- **Další možnosti ▸**
-  - **Vytvořit server na svém počítači** – tvůj prohlížeč je server. Dostaneš kód (např. `LOUKA-7K2F`), pošli ho
-    kamarádům. Nech hru otevřenou, dokud ostatní hrají.
-  - **Připojit se kódem** – napiš kód od kamaráda (stačí 4 znaky).
+- **Hlavní svět**, **Kreativní svět** – světy kroužku, každý má svoje velké tlačítko. Poprvé hra chce
+  **heslo kroužku** a tvůj **PIN** (4 číslice, vymyslíš si ho). S jménem a PINem máš svůj batoh i na jiném počítači.
+- **Hrát sám** – svět se ukládá v tvém prohlížeči.
+- **Další možnosti**
+  - **Vytvořit hru na svém počítači** – dostaneš kód (např. `LOUKA-7K2F`), pošli ho kamarádům. Nech hru otevřenou,
+    dokud ostatní hrají.
+  - **Připojit se ke kamarádovi kódem** – napiš kód od kamaráda (stačí 4 znaky).
 
 Ovládání: WASD chůze · Shift běh · Mezerník skok · levé tlačítko těžba/útok · pravé položit/použít/jíst ·
 E inventář · G vyhodit · C kreativní režim · H návod · T chat · Esc menu. Na telefonu a tabletu je dotykové ovládání.

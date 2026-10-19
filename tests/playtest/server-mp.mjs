@@ -29,15 +29,20 @@ const browser = await launch();
 const A = await openPage(browser, srv.url, { label: 'Ája: ' });
 const B = await openPage(browser, srv.url, { label: 'Bára: ' });
 if (process.env.THROTTLE) for (const p of [A, B]) await (await p.context().newCDPSession(p)).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.THROTTLE) });
-// Hlavní menu -> tlačítko světa -> (server chce heslo) Heslo kroužku -> Připojit
-async function joinWorld(page, name, pass) {
+// Hlavní menu -> tlačítko světa -> (server chce heslo) Heslo kroužku -> Dál -> (poprvé) jméno + PIN -> Hrát
+async function joinWorld(page, name, pass, pin = '1234') {
   await page.waitForSelector('#mWorlds button[data-world]', { timeout: 15000 });
   await page.fill('#mName', name);
   await page.click('#mWorlds button[data-world]');
-  if (pass == null) return;
-  await page.waitForSelector('#pgPass:not([hidden])', { timeout: 5000 });
-  await page.fill('#mPass', pass);
-  await page.click('#mPassGo');
+  if (pass != null) {
+    await page.waitForSelector('#pgPass:not([hidden])', { timeout: 5000 });
+    await page.fill('#mPass', pass);
+    await page.click('#mPassGo');
+  }
+  if (pin == null) return;
+  await page.waitForSelector('#pgProfile:not([hidden])', { timeout: 5000 });
+  await page.fill('#mPin', pin);
+  await page.click('#mProfileGo');
 }
 
 try {

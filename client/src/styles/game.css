@@ -167,12 +167,35 @@ body.touch #vehHud { bottom: 92px; font-size: 13px; }
 .menu-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; }
 .menu-row .mc-btn { flex: 1; }
 .world-list { display: flex; flex-direction: column; gap: 8px; }
-.world-btn { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; text-align: left; }
-.world-btn small { font-size: 13px; color: #c8c8d0; white-space: nowrap; }
-.world-btn.world-off, .world-btn.world-wait { justify-content: center; font-size: 15px; }
+.menu-who { padding: 4px 0 2px; font-size: 15px; color: #c9c9d2; text-align: center; }
+.menu-who[hidden] { display: none; }
+.menu-who b { color: #f3ead2; }
+.menu-link { font: inherit; color: var(--gold); background: none; border: 0; padding: 6px 4px; text-decoration: underline; cursor: pointer; }
+.menu-links { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 4px; font-size: 15px; color: #8a8a94; }
+/* tlačítko světa / Hrát sám: velké jméno, pod ním jeden krátký řádek, co tě čeká */
+.world-btn, .play-btn { display: flex; flex-direction: column; align-items: stretch; gap: 3px; text-align: left; }
+.world-btn .wb-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.world-btn b, .play-btn b { font-size: 20px; font-weight: 600; }
+.world-btn small, .play-btn small { font-size: 13px; line-height: 1.3; color: #c8c8d0; }
+.world-btn .wb-top small { white-space: nowrap; }
+.world-btn.on { outline: 2px solid var(--gold); outline-offset: 1px; }
+.world-btn.world-off, .world-btn.world-wait { align-items: center; text-align: center; font-size: 15px; }
 /* dotyk: velká tlačítka v menu se snadno trefí prstem */
 .menu-box .mc-btn.big { min-height: 46px; }
-.menu-box .menu-row .mc-btn { min-height: 38px; }
+.menu-box .world-btn, .menu-box .play-btn { min-height: 64px; padding: 10px 14px; }
+.menu-box .menu-row .mc-btn { min-height: 42px; }
+/* telefon na šířku: málo výšky, menší nadpis */
+@media (max-height: 520px) {
+  #menu { padding: 8px 16px; }
+  .menu-box { max-height: calc(100vh - 16px); padding-top: 6px; padding-bottom: 4px; }
+  .menu-box h1 { font-size: 30px; margin: 0 0 4px; }
+  .menu-box h2 { display: none; }
+  .menu-page { gap: 6px; }
+  .menu-label { margin-bottom: 0; }
+  .menu-label input { padding: 5px 9px; }
+  .menu-box .world-btn, .menu-box .play-btn { min-height: 48px; padding: 5px 12px; }
+  .menu-links { margin-top: 0; }
+}
 .menu-msg { margin: 0 0 12px; padding: 8px 10px; text-align: left; font-size: 14px; line-height: 1.4; color: #ffd9cf; background: #4a2326;
   box-shadow: inset 2px 2px 0 #2a1214, inset -2px -2px 0 #7a3a3e; }
 .menu-busy { padding: 18px 4px; text-align: center; font-size: 16px; color: #e8e2d0; }

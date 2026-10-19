@@ -8,8 +8,12 @@ import { OLD_SAVE_KEY, SAVE_KEY } from './prefs.js';
 // ============================================================ uložená hra
 export let save = null;
 try { save = JSON.parse(localStorage.getItem(SAVE_KEY) ?? (OLD_SAVE_KEY && localStorage.getItem(OLD_SAVE_KEY))); } catch {}
+// Server kroužku s profily hráčů: batoh, pozice a zdraví drží server (welcome.me, u profilu a světa), ne prohlížeč.
+// Když server pro tenhle profil a svět ještě nic nemá a prohlížeč má staré uložení, použije se jednou to (a pošle se na server).
+export const PROFILE = NET.client && !!BOOT.welcome && 'me' in BOOT.welcome;
+export const MIGRATED = PROFILE && !BOOT.welcome.me && !!save;
 if (NET.client) { // svět dodá hostitel, z vlastního uložení se vezme jen batoh, pozice a stav hráče
-  const me = save || {}, w = BOOT.welcome;
+  const me = (PROFILE && BOOT.welcome.me) || save || {}, w = BOOT.welcome;
   save = { ...w.world, inv: me.inv, pos: me.pos || w.spawn, yaw: me.yaw, hp: me.hp, hunger: me.hunger, crafted: me.crafted, placedAny: me.placedAny, armor: me.armor, flyT: me.flyT, creative: !!me.creative && !!w.perm, flying: !!me.flying && !!w.perm };
 }
 loadWorld(save); // svět (bloky, truhly, stroje…) do shared/world/state.js

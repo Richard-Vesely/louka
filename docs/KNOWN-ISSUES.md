@@ -19,13 +19,28 @@ changed. Pick one, open an issue, fix it in a small PR (ask Richard for anything
 - **Chat is free text** (kept from Marek's version; Richard decides whether it stays).
 
 ## Node server
-- No admin tools yet: no kick/ban, no way to give creative to one player (only for everyone: `ALLOW_CREATIVE=1` or a `:creative` world).
-- Several worlds: the backpack is kept per world only in the player's browser, so someone who edits `localStorage` could carry
-  creative items into the survival world (same trust model as above). There is no way to travel between worlds in the
+- Admin tools are only the player list and PIN reset (`/admin`, `node server/admin.js`): no kick/ban, no way to give creative
+  to one player (only for everyone: `ALLOW_CREATIVE=1` or a `:creative` world), no renaming or deleting a profile
+  (edit `players.json` with the server stopped).
+- **Still client-trusted with profiles:** the backpack is now *stored* on the server per player and world, but its content
+  still comes from the player's browser (`['me', …]` every 10 s). The server checks only the shape and size (≤ 64 KB,
+  36 + 4 slots, known item ids, numbers in range), not where the items came from: a modified browser could still give
+  itself items, or bring creative items into the survival world by editing the message. Position, health and world
+  edits are trusted as before.
+- The server keeps the state the browser sent last: what happened in the last ≤ 10 s before a crash or a lost connection
+  can be lost (a normal *Odejít* or closing the tab sends it at once). A world is written to disk every 30 s, so a server
+  crash can lose up to 30 s of backpack changes too.
+- Logging in again in the same world (another computer or tab) closes the older game and loads the backpack from the
+  last saved state, so the last few seconds of the older game can be lost.
+- A 4-digit PIN is easy to guess for someone who has `players.json` (10 000 combinations, even with scrypt); online it is
+  limited to 5 tries per name and address per minute. It protects the backpack from classmates, not from an attacker.
+  A wrong PIN and a taken name give the same message (the server can't tell them apart).
+- Game pages from before profiles (an old cached page or an old Pages build) can't join a server with profiles: they
+  don't send a PIN and see the password prompt again. Reload the page.
+- Profiles are server-wide; the browser host (*Vytvořit hru na svém počítači*) has no profiles and keeps backpacks in
+  the joined players' browsers as before. There is no way to travel between worlds in the
   game: leave (Esc → Odejít) and choose another world. Changing a world's id in `WORLDS` starts an empty world (rename its folder).
 - No rate limiting of messages; the password is the only protection. Use a password on a public server.
-- Each player's backpack lives in their browser (keyed by the server address and world): another device or cleared browser data
-  means an empty backpack. The world itself is on the server.
 - A new player gets the whole world in one message (fine for club-sized worlds).
 - When nobody is online, mobs are removed; machines, crops and the day keep running.
 

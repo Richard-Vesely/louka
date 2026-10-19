@@ -1,11 +1,13 @@
 // Jeden svět serveru ve vlastním vlákně (worker_threads). Pravidla ve shared/ drží stav světa v modulech
 // (bloky, tvorové, čas…), takže každý svět potřebuje vlastní kopii modulů – tu má každé vlákno samo.
 // Hlavní vlákno (server/server.js) drží WebSockety a posílá sem zprávy hráčů tohoto světa; odpovědi jdou zpátky.
-//   z hlavního vlákna: { t: 'join', cid, name } · { t: 'data', cid, raw } · { t: 'gone', cid } · { t: 'save' } · { t: 'stop' }
+// Batohy hráčů (profily: server/profiles.js) se drží tady u světa a ukládají se do world.json (players: { id profilu: me }).
+//   z hlavního vlákna: { t: 'join', cid, name, profile } · { t: 'data', cid, raw } · { t: 'gone', cid } · { t: 'save' } · { t: 'stop' }
 //   do hlavního vlákna: { t: 'ready', loaded } · { t: 'send', cid, raw } · { t: 'close', cid } · { t: 'stats', … } · { t: 'log', text } · { t: 'stopped' }
 import { parentPort, workerData } from 'node:worker_threads';
 import { accept, others } from '../shared/net/room.js';
 import { worldState } from '../shared/world/save.js';
+import { ME_MAX_BYTES, cleanMe } from './me.js';
 import { loadWorldFile, saveWorldFile } from './persist.js';
 import { setupWorld, stepWorld } from './sim.js';
 
@@ -16,19 +18,22 @@ const log = (text) => post({ t: 'log', text });
 const info = { id: W.id, name: W.name, creative: W.creative, first: W.first };
 
 // ---------- svět a místnost
-const world = W.dir ? loadWorldFile(W.dir, log) : null;
+const saved = W.dir ? loadWorldFile(W.dir, log) : null;
+const world = saved?.world ?? null;
+/** @type {Record<string, object>} id profilu -> stav hráče v tomhle světě (batoh, pozice, zdraví…) */
+const players = saved?.players ?? {};
 const stats = () => post({ t: 'stats', players: others.size, ...tickStats(), heapMB: Math.round(process.memoryUsage().heapUsed / 1048576) });
 setupWorld({ world, maxPlayers: W.maxPlayers, allowCreative: W.creative, code: 'server', log, onChange: stats });
 
 // ---------- spojení hráčů: stejné funkce jako spojení PeerJS (shared/net/room.js je používá stejně)
-const conns = new Map(); // cid -> { handlers, setOpen }
+const conns = new Map(); // cid -> { handlers, shut, profile }
 // Rozesílání: stejná zpráva pro víc hráčů se převede na text jen jednou.
 let lastMsg = null, lastRaw = '';
 function sendRaw(cid, msg) {
   if (msg !== lastMsg) { lastMsg = msg; lastRaw = JSON.stringify(msg); queueMicrotask(() => { lastMsg = null; }); }
   post({ t: 'send', cid, raw: lastRaw });
 }
-function join(cid, name) {
+function join(cid, name, profile) {
   const handlers = { data: [], close: [], error: [] };
   let open = true;
   const conn = {
@@ -37,20 +42,29 @@ function join(cid, name) {
     get open() { return open; },
     send(msg) {
       if (!open) return;
-      if (Array.isArray(msg) && msg[0] === 'welcome') msg[1].worldInfo = info; // který svět to je (jméno do menu, klíč uložení)
+      if (Array.isArray(msg) && msg[0] === 'welcome') {
+        msg[1].worldInfo = info; // který svět to je (jméno do menu, klíč uložení)
+        if (profile) msg[1].me = players[profile] ?? null; // batoh a pozice hráče v tomhle světě (null = poprvé)
+      }
       sendRaw(cid, msg);
     },
     on(ev, fn) { handlers[ev]?.push(fn); },
     close() { if (open) { open = false; post({ t: 'close', cid }); } },
   };
-  conns.set(cid, { handlers, shut: () => { open = false; } });
+  conns.set(cid, { handlers, shut: () => { open = false; }, profile });
   accept(conn);
 }
 function onData(cid, raw) {
   const c = conns.get(cid);
   if (!c) return;
+  if (raw.length > ME_MAX_BYTES && raw.startsWith('["me"')) return; // moc velký stav hráče: ani ho nečíst
   let msg;
   try { msg = JSON.parse(raw); } catch { return; }
+  if (Array.isArray(msg) && msg[0] === 'me') { // stav hráče (každých 10 s a při odchodu): jen se uloží, místnost ho nepotřebuje
+    const me = c.profile && cleanMe(msg[1], raw.length);
+    if (me) players[c.profile] = me;
+    return;
+  }
   for (const fn of c.handlers.data) fn(msg);
 }
 function gone(cid) {
@@ -76,12 +90,12 @@ const ticker = setInterval(() => {
   last = now;
 }, 1000 / W.tickHz);
 const statsTimer = setInterval(stats, 1000);
-const save = () => { if (W.dir) saveWorldFile(W.dir, worldState()); };
+const save = () => { if (W.dir) saveWorldFile(W.dir, worldState(), players); };
 const saver = setInterval(() => { try { save(); } catch (e) { log('Uložení selhalo: ' + e.message); } }, W.saveEveryMs);
 
 parentPort.on('message', (m) => {
   switch (m.t) {
-    case 'join': join(m.cid, m.name); break;
+    case 'join': join(m.cid, m.name, m.profile); break;
     case 'data': try { onData(m.cid, m.raw); } catch (e) { log('Chyba ve zprávě hráče: ' + (e.stack || e)); } break;
     case 'gone': try { gone(m.cid); } catch (e) { log('Chyba při odchodu hráče: ' + (e.stack || e)); } break;
     case 'save': try { save(); } catch (e) { log('Uložení selhalo: ' + e.message); } break;

@@ -1,6 +1,6 @@
 # Říše: what the game can do (feature list)
 
-The full list of features in *Říše* (repo *Louka*), as of Marek's version `2778d1b` (17.10.2026), plus the v2 server.
+The full list of features in *Říše* (repo *rise*, formerly *louka*), as of Marek's version `2778d1b` (17.10.2026), plus the v2 server.
 Each section ends with *Kód:* = where it lives in the code (rules in `shared/`, the browser in `client/src/`).
 It is for AI helpers and kids: read it to know what already exists before adding something, and use it as the
 checklist that nothing got lost when the code moves around. Czech names are what players see in the game.
@@ -10,21 +10,34 @@ When you add or change a feature, update this file in the same pull request.
 ---
 
 ## 1. Start and menu
-- **Main menu "ŘÍŠE"**: name field (max 16 chars, remembered), **Hra pro jednoho**, one big button per world of the
-  club server, then **Nastavení** and **Další možnosti ▸**.
-- **Hra pro jednoho**: single player, world saved in the browser.
+- **Main menu "ŘÍŠE"**, made simple for kids, top to bottom: the login line (not logged in: *Tvoje jméno* field;
+  logged in on the club server: *Hraješ jako **Ája** · Změnit hráče*), the **world buttons** of the club server, then
+  **Hrát sám**, then small links **Nastavení · Další možnosti**. No technical words on the main page. Big buttons, works
+  on a phone in portrait and landscape.
 - **World buttons** (e.g. *Hlavní svět*, *Kreativní svět*): the list comes from the club server (`GET /worlds`), so a new
-  world appears by itself; each shows the name, a *kreativní* label and players n/max (full worlds are disabled; counts
-  refresh every 15 s). While loading: *Načítám světy kroužku…*; when the server can't be reached, one disabled line
-  *Server kroužku je nedostupný* (everything else still works). The club server is the page's own server (game served
-  by `npm start`), a `?server=<address>` link, or the build's `VITE_SERVER_URL`; without one there are no world buttons.
-- **Heslo kroužku**: the first click on a world asks for the password once (only if the server has one) and remembers
-  it in the browser per server address (`rise-heslo`). A wrong password: *Špatné heslo. Zkus to znovu.*, the stored one is
-  forgotten and the menu asks again. The last chosen world is highlighted; a `?world=<id>` link highlights and focuses one (Enter joins).
-- **Další možnosti**: **Vytvořit server na svém počítači** (host in the browser): option *Povolit hráčům kreativní režim*;
-  you get a code like `LOUKA-7K2F` (the same code next time). Your tab is the server: keep it open. Max 6 players.
-  **Připojit se kódem**: type the friend's code (just the 4 characters is enough).
-- After leaving a multiplayer game the menu shows why (e.g. *Spojení se serverem se přerušilo.*).
+  world appears by itself. Each button: the big name, players n/max (full worlds are disabled; counts refresh every 15 s)
+  and one line about the world: survival *Přežij a stav spolu s ostatními z kroužku*, creative *Stav bez omezení, všechno
+  máš hned*. While loading: *Načítám světy…*; when the server can't be reached: *Svět teď není dostupný, zkus to za chvíli
+  nebo hraj sám.* (everything else still works). The club server is the page's own server (game served by `npm start`),
+  a `?server=<address>` link, or the build's `VITE_SERVER_URL`; without one there are no world buttons.
+- **Hrát sám** (*Jen ty, svět se uloží v tomhle prohlížeči*): single player, world saved in the browser.
+- **Heslo kroužku (řekne ti ho Richard)**: the first click on a world asks for the club password once (only if the
+  server has one) and remembers it per server address (`rise-heslo`). A wrong password: *Špatné heslo. Zkus to znovu.*,
+  the stored one is forgotten and the menu asks again. The last chosen world is highlighted; a `?world=<id>` link
+  highlights and focuses one (Enter joins).
+- **Player login on the club server** (*Kdo hraje?*): the first time on a device, the name (prefilled) and a **PIN
+  (4 číslice)** the kid makes up: *Zapamatuj si ho, s ním se dostaneš ke svému batohu i na jiném počítači.* A new name
+  creates the player, a known name needs its PIN. Then the browser remembers the login and never asks again;
+  *Změnit hráče* forgets it. Messages: wrong PIN or name taken (*Špatný PIN, nebo jméno „Ája“ už má někdo jiný…*, with
+  the tries left), too many tries (*Moc špatných pokusů. Počkej 1 min…*), a bad name (2–16 characters, not *Hráč*).
+  The **backpack, armor, position and health are kept on the server** per player and world, so they come back on any
+  computer. Logging in somewhere else closes the older game with *Přihlásil ses jinde.* An old backpack saved in this
+  browser before profiles is taken over once.
+- **Další možnosti**: **Vytvořit hru na svém počítači** (*Kamarádi se připojí kódem, který uvidíš. Nech hru
+  otevřenou.*; the host in the browser): option *Povolit kamarádům kreativní režim*; you get a code like `LOUKA-7K2F`
+  (the same code next time). Max 6 players. **Připojit se ke kamarádovi kódem**: type the friend's code (just the 4
+  characters is enough).
+- After leaving a multiplayer game the menu shows why (e.g. *Spojení se přerušilo. Zkus se připojit znovu.*).
 - **Nastavení**: graphics quality (auto/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity.
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
@@ -143,17 +156,21 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 - **Server** (Node.js, `npm start`, v2): always-on world on a VPS or a laptop, saved to disk every 30 s with daily backups,
   serves the game itself; its worlds are buttons in the main menu (when the game comes from the server, from a
   `?server=` link, or from the Pages build's `SERVER_URL`), optional password (asked once), max. 8 players by default.
+- **Player profiles on the server**: nickname + PIN (asked once per device, then a remembered login); the backpack,
+  armor, position and health are saved on the server per player and world (in that world's `world.json`).
+  For Richard: the page `/admin` (password `ADMIN_PASSWORD`; players, last seen, last world, who plays now, *Resetovat
+  PIN*) and `node server/admin.js players | reset-pin <name>`; the server log shows who logs in, joins and leaves.
 - **Several worlds on one server** (`WORLDS`, e.g. *Hlavní svět* + *Kreativní svět*): the main menu shows a button per
-  world (name, *kreativní* label, players n/max, full worlds disabled); the last choice is highlighted and a
+  world (name, one line about the world, players n/max, full worlds disabled); the last choice is highlighted and a
   `?world=<id>` link preselects one. Each world has its own buildings, animals, day, players and chat;
-  creative mode is on or off for everyone in a world. The backpack and position are saved per world. The info box and the
+  creative mode is on or off for everyone in a world. The backpack and position are saved per player and world on the server. The info box and the
   Esc menu show the world name.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
 - **Chat** (T), only to players in the same world.
 - Everyone sees other players (name tag, armor, held item, walking, sitting, eating), their blocks, vehicles,
   animals, day/night. Only one player can have a chest or machine open at a time.
 
-*Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/` (worlds: `server/worlds.js`, `server/world-worker.js`); menu `client/src/menu/menu.js` (world choice: `showWorlds`).
+*Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/` (worlds: `server/worlds.js`, `server/world-worker.js`; profiles: `server/profiles.js`, `server/me.js`; admin: `server/admin-http.js`, `server/admin.js`); menu `client/src/menu/menu.js` (world buttons: `renderWorlds`, login: `askProfile`).
 
 ## 11. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·

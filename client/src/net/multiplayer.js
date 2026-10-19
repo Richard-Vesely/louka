@@ -110,7 +110,7 @@ export function onHostMsg(msg) {
     case 'chat': chatLine(msg[1], msg[2]); break;
     case 'join': sysLine(`${msg[1]} se připojil`); break;
     case 'leave': sysLine(`${msg[1]} odešel`); break;
-    case 'kick': NET.kicked = true; leaveGame('Hostitel tě vyhodil ze hry.'); break;
+    case 'kick': NET.kicked = true; leaveGame(typeof msg[1] === 'string' ? msg[1].slice(0, 200) : 'Hostitel tě vyhodil ze hry.'); break; // server: ['kick', 'Přihlásil ses jinde.']
   }
 }
 // Tvorové na klientovi: loutky, které plynule následují pozice od hostitele.

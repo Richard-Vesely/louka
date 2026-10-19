@@ -1,5 +1,6 @@
-// Ukládání světa serveru na disk: DATA_DIR/world.json každých 30 s a při vypnutí serveru.
-// Jednou denně se udělá záloha do DATA_DIR/backups/world-RRRR-MM-DD.json (drží se posledních 7).
+// Ukládání na disk: svět serveru (DATA_DIR/<svět>/world.json, každých 30 s a při vypnutí) a profily hráčů
+// (DATA_DIR/players.json). Zápis je bezpečný (dočasný soubor + přejmenování) a jednou denně se udělá záloha
+// (backups/world-RRRR-MM-DD.json u každého světa, DATA_DIR/backups/players-RRRR-MM-DD.json); drží se posledních 7.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -10,7 +11,7 @@ const VERSION = 2;
  * Načte uložený svět, nebo null (první spuštění). Starý soubor z verze 1 (jiná hra) se odloží stranou.
  * @param {string} dir složka s daty
  * @param {(msg: string) => void} [log]
- * @returns {object | null} stav světa ve tvaru worldState()
+ * @returns {{ world: object, players: Record<string, object> } | null} stav světa (worldState()) a batohy hráčů (id profilu -> me)
  */
 export function loadWorldFile(dir, log = () => {}) {
   const file = path.join(dir, 'world.json');
@@ -22,30 +23,43 @@ export function loadWorldFile(dir, log = () => {}) {
     log(`Soubor světa je ze starší verze hry, odložen jako ${path.basename(old)}; začíná nový svět.`);
     return null;
   }
-  return data.world;
+  const players = data.players && typeof data.players === 'object' && !Array.isArray(data.players) ? data.players : {};
+  return { world: data.world, players };
 }
 
 /**
- * Uloží svět bezpečně: nejdřív do dočasného souboru, pak přejmenuje (když server spadne uprostřed zápisu,
- * starý soubor zůstane celý). Jednou denně záloha.
+ * Uloží svět a batohy hráčů v něm. Jednou denně záloha.
  * @param {string} dir složka s daty
  * @param {object} world stav světa (worldState())
+ * @param {Record<string, object>} [players] id profilu -> stav hráče (batoh, pozice…)
  */
-export function saveWorldFile(dir, world) {
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, 'world.json'), tmp = file + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify({ version: VERSION, savedAt: new Date().toISOString(), world }));
-  fs.renameSync(tmp, file);
-  dailyBackup(dir, file);
+export function saveWorldFile(dir, world, players = {}) {
+  writeJSON(path.join(dir, 'world.json'), { version: VERSION, savedAt: new Date().toISOString(), world, players }, 'world');
 }
 
-// Jednou za den zkopíruje world.json do backups/world-RRRR-MM-DD.json a smaže zálohy starší než 7 posledních.
-function dailyBackup(dir, file) {
-  const backups = path.join(dir, 'backups');
+/**
+ * Zapíše JSON bezpečně: nejdřív do dočasného souboru, pak přejmenuje (když server spadne uprostřed zápisu,
+ * starý soubor zůstane celý). Jednou denně zkopíruje soubor do backups/<prefix>-RRRR-MM-DD.json vedle něj.
+ * @param {string} file
+ * @param {unknown} data
+ * @param {string} prefix začátek jména zálohy ('world', 'players')
+ */
+export function writeJSON(file, data, prefix) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data));
+  fs.renameSync(tmp, file);
+  dailyBackup(file, prefix);
+}
+
+// Jednou za den zkopíruje soubor do backups/<prefix>-RRRR-MM-DD.json a smaže zálohy starší než 7 posledních.
+function dailyBackup(file, prefix) {
+  const backups = path.join(path.dirname(file), 'backups');
   fs.mkdirSync(backups, { recursive: true });
-  const today = path.join(backups, `world-${new Date().toISOString().slice(0, 10)}.json`);
+  const today = path.join(backups, `${prefix}-${new Date().toISOString().slice(0, 10)}.json`);
   if (fs.existsSync(today)) return;
   fs.copyFileSync(file, today);
-  const old = fs.readdirSync(backups).filter((f) => /^world-\d{4}-\d\d-\d\d\.json$/.test(f)).sort();
+  const re = new RegExp(`^${prefix}-\d{4}-\d\d-\d\d\.json$`);
+  const old = fs.readdirSync(backups).filter((f) => re.test(f)).sort();
   for (const f of old.slice(0, Math.max(0, old.length - KEEP_BACKUPS))) fs.unlinkSync(path.join(backups, f));
 }
