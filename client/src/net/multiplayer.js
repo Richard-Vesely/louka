@@ -11,7 +11,6 @@ import { MOBS, mobs, removeMob, spawnMob } from '../../../shared/sim/mobs.js';
 import { wrapAngle } from '../../../shared/util.js';
 import { KV_MAPS, blocks } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
-import { uiSound } from '../audio/ui-sound.js';
 import { BOOT } from '../game/boot.js';
 import { viewOf } from '../mobs/mobs.js';
 import { receiveGift } from '../pc/papers-world.js';
@@ -92,10 +91,10 @@ export function onHostMsg(msg) {
     }
     case 'gift': receiveGift(String(msg[1]), String(msg[2] || 'Hráč')); break;
     case 'mobs': setDay(msg[1], msg[2]); syncPuppets(msg[3]); break;
-    case 'give': { const left = addItem(msg[1], msg[2]); if (left > 0) spawnGroundItem(msg[1], left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3); else uiSound.pickup(); break; }
+    case 'give': { const left = addItem(msg[1], msg[2]); if (left > 0) spawnGroundItem(msg[1], left, player.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), new THREE.Vector3(), 3); else Sound.pop(); break; }
     case 'swap': {
       if (heldStack()?.id === msg[1]) swapHeld(msg[2]); else if (countItem(msg[1])) { removeItem(msg[1], 1); addItem(msg[2], 1, true); }
-      Sound.rustle(); toast('Podojil jsi krávu');
+      Sound.pour(); toast('Podojil jsi krávu');
       break;
     }
     case 'dmg': damagePlayer(msg[1], msg[2], msg[3]); break;

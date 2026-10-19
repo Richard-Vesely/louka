@@ -164,7 +164,7 @@ export function updateDining(dt) {
     if (D.t > 0.55) { takeBite(); if (dining) { dining.phase = 'chew'; dining.t = 0; } }
   } else if (D.phase === 'chew') { // žvýkání – další sousto až po spolknutí
     for (const k of Object.keys(DT)) setPose(DT[k], REST[k], Math.min(1, dt * 6));
-    if ((D.munch = (D.munch || 0) - dt) <= 0) { D.munch = 0.28; Sound.burst({ dur: 0.07, f0: 1600 + Math.random() * 500, f1: 700, q: 2, vol: 0.16 }); }
+    if ((D.munch = (D.munch || 0) - dt) <= 0) { D.munch = 0.28; Sound.bite(D.id); }
     if (D.t > CHEW_TIME) { D.phase = 'idle'; D.t = 0; }
   }
   // kruh kolem křížku: průběh krájení / namotávání / žvýkání

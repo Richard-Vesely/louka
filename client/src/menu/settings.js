@@ -1,4 +1,5 @@
-// Okno Nastavení (grafika, ovládání, tlačítka, citlivost) – používá ho hlavní menu i hra (window.RiseSettings).
+// Okno Nastavení (grafika, ovládání, tlačítka, citlivost, hlasitost) – používá ho hlavní menu i hra (window.RiseSettings).
+import { VOL_LABELS, readVolumes } from '../audio/volume.js';
 const KEY = 'rise-nastaveni';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
 const store = (p) => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} dispatchEvent(new Event('rise-prefs')); };
@@ -22,7 +23,8 @@ function open(opts = {}) {
       <div class="set-row"><div class="set-label">Ovládání <small>(automaticky: ${autoC})</small></div>${seg('controls')}</div>
       <div class="set-row"><div class="set-label">Velikost dotykových tlačítek <b>${Math.round((p.btnScale || 1) * 100)} %</b></div><input type="range" min="60" max="150" step="5" value="${Math.round((p.btnScale || 1) * 100)}" data-r="btnScale"></div>
       <div class="set-row"><div class="set-label">Citlivost otáčení <b>${Math.round((p.sens || 1) * 100)} %</b></div><input type="range" min="40" max="250" step="10" value="${Math.round((p.sens || 1) * 100)}" data-r="sens"></div>
-      <p class="mc-note">${opts.inGame ? 'Grafika a typ ovládání se projeví po restartu hry' + (opts.restart ? '.' : ' (při příštím spuštění).') : 'Grafika a ovládání se použijí při spuštění hry.'} Velikost tlačítek a citlivost platí hned.</p>
+      <div class="set-sound">${VOL_LABELS.map(([k, t]) => { const v = Math.round(readVolumes(p)[k] * 100); return `<div class="set-row"><div class="set-label">${t} <b>${v} %</b></div><input type="range" min="0" max="100" step="5" value="${v}" data-r="${k}"></div>`; }).join('')}</div>
+      <p class="mc-note">${opts.inGame ? 'Grafika a typ ovládání se projeví po restartu hry' + (opts.restart ? '.' : ' (při příštím spuštění).') : 'Grafika a ovládání se použijí při spuštění hry.'} Velikost tlačítek, citlivost a hlasitost platí hned.</p>
       <div class="menu-row">${opts.restart ? '<button class="mc-btn" data-restart>Použít a restartovat</button>' : ''}<button class="mc-btn" data-close>Zavřít</button></div>
     </div>`;
   };

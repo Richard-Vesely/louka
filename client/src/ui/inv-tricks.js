@@ -71,7 +71,7 @@ export function gather(c, i, id) {
   if (['inv', 'bench', 'adv'].includes(ui.mode)) arrays.unshift(ui.craft);
   if (ui.mode === 'chest') arrays.push(chestOf(ui.fireKey));
   const got = gatherInto(inv.cursor, arrays);
-  if (got) uiSound.gather(); else uiSound.click();
+  if (got) uiSound.gather();
   ui.ghost = null;
   refreshUI();
   return got;
@@ -114,7 +114,7 @@ function endDrag() {
   const cells = drag.cells;
   drag.cells = [];
   if (drag.middle || !inv.cursor || !cells.length) return refreshUI();
-  if (cells.length === 1) return slotClick(cells[0][0], cells[0][1], drag.button, false);
+  if (cells.length === 1) { uiSound.put(); return slotClick(cells[0][0], cells[0][1], drag.button, false); } // ťuknutí (bez tažení) se ozve tady
   spreadCursor(cells, drag.button);
 }
 // Náhled při tažení: políčka svítí a ukazují, kolik v nich bude; kurzor ukazuje, co zbude.
@@ -136,7 +136,7 @@ function paintDrag() {
 function middleDown(c, i) {
   if (!creative) return;
   const s = container(c)[i];
-  if (!inv.cursor && s) { inv.cursor = { id: s.id, n: maxOf(s.id) }; uiSound.click(); return refreshUI(); }
+  if (!inv.cursor && s) { inv.cursor = { id: s.id, n: maxOf(s.id) }; return refreshUI(); }
   if (inv.cursor && SPREAD_OK(c, i)) { // kreativní tažení prostředním: plný stack do každého prázdného políčka
     Object.assign(drag, { on: true, button: 1, cells: [], middle: true });
     fillFull(c, i);
@@ -171,7 +171,6 @@ export function pickBlock(t = target) {
     inv.slots[h] = { id, n: maxOf(id) };
     inv.sel = h;
   }
-  uiSound.select();
   renderHotbar();
   return true;
 }
@@ -282,16 +281,14 @@ export function installInvTricks() {
   document.body.classList.add(`gfx-${QUALITY}`); // nízká grafika: okna bez rozmazaného pozadí
   invEl.addEventListener('mouseover', (e) => {
     const el = e.target.closest?.('.slot[data-c][data-i]');
-    const fresh = el !== hoverEl;
     hoverEl = el && el.dataset.c !== 'cursor' ? el : null;
-    if (hoverEl && fresh && !drag.on) uiSound.hover();
     const rc = e.target.closest?.('[data-r]');
     if (rc) setPreview(RECIPES[+rc.dataset.r]);
     else if (!e.target.closest?.('#recipes')) setPreview(null);
     if (!hoverEl) return;
     const c = hoverEl.dataset.c, i = +hoverEl.dataset.i;
     if (drag.on && drag.middle && (e.buttons & 4) && SPREAD_OK(c, i)) fillFull(c, i);
-    else if (drag.on && (e.buttons & (drag.button === 2 ? 2 : 1)) && !inDrag(c, i) && SPREAD_OK(c, i)) { drag.cells.push([c, i]); uiSound.hover(); paintDrag(); }
+    else if (drag.on && (e.buttons & (drag.button === 2 ? 2 : 1)) && !inDrag(c, i) && SPREAD_OK(c, i)) { drag.cells.push([c, i]); paintDrag(); }
     else if (shiftDrag && (e.buttons & 1) && e.shiftKey && !shiftDrag.has(`${c}:${i}`) && container(c)[i]) { shiftDrag.add(`${c}:${i}`); slotClick(c, i, 0, true); }
   });
   invEl.addEventListener('mouseleave', () => { hoverEl = null; });

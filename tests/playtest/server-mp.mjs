@@ -96,6 +96,23 @@ try {
   check('chat works through the server', await until(A, () => document.getElementById('feed').textContent.includes('Ahoj Ájo')));
   await shot(B, `${out}.png`);
 
+  // sound: Bára hears Ája build and walk (from where Ája is) and the server's animals
+  const heard = await B.evaluate(() => {
+    const g = window.game, S = g.Sound;
+    S.init();
+    const T0 = window.T; T0.tp(12, 46, g.groundHeight(12, 46));
+    window.__heard = { place: 0, step: 0, mob: 0 };
+    for (const [fn, k] of [['blockPlace', 'place'], ['footstep', 'step'], ['mobVoice', 'mob']]) { const orig = S[fn]; S[fn] = function (...a) { window.__heard[k]++; return orig.apply(this, a); }; }
+    return !!S.ctx;
+  });
+  await A.evaluate(() => { const g = window.game; window.T.tp(14, 48, g.groundHeight(14, 48)); g.player.yaw = 0; });
+  await sleep(500);
+  await A.evaluate(() => { window.game.blocks.set('16,3,46', 'planks'); window.game.keys.add('KeyW'); });
+  await sleep(1500);
+  await A.evaluate(() => window.game.keys.delete('KeyW'));
+  await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); } });
+  check('sound: a joined player hears others build and walk, and the animals', heard && await until(B, () => window.__heard.place > 0 && window.__heard.step > 0 && window.__heard.mob > 0, null, 8000), await B.evaluate(() => JSON.stringify(window.__heard)));
+
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
   await sleep(1500);
   await stop(srv);

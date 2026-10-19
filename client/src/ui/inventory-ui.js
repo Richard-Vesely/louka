@@ -225,14 +225,14 @@ export function quickMove(c, i, s) {
 // Klik na políčko: vzít / položit / prohodit / sloučit, pravé = půlka nebo po jednom, Shift = rychlý přesun.
 export function slotClick(c, i, button, shift) {
   const arr = container(c);
-  const s = arr[i], had = inv.cursor;
+  const s = arr[i];
   if ((c === 'fire' && i === 1) || c === 'kitchen' || (c === 'furnace' && i === 2) || (c === 'power' && i >= 1)) { // výstup táboráku, pece a sporáku se jen vybírá
     if (c === 'kitchen') i = 0;
     if (!s) return;
     if (shift) { arr[i] = null; const left = insertInto(s, 0, 36); if (left) arr[i] = { ...s, n: left }; }
     else if (!inv.cursor) { inv.cursor = s; arr[i] = null; }
     else if (inv.cursor.id === s.id) { const k = Math.min(ITEMS[s.id].stack - inv.cursor.n, s.n); inv.cursor.n += k; if (!(s.n -= k)) arr[i] = null; }
-    uiSound.click();
+    if (shift) uiSound.click(); // obyčejné vzetí ozvučí audio/ui-sounds.js
     return refreshUI();
   }
   const deny = (text) => { uiSound.deny(); if (text) toast(text); };
@@ -267,7 +267,6 @@ export function slotClick(c, i, button, shift) {
     arr[i] = inv.cursor; inv.cursor = s;
   }
   if (c === 'craft') ui.ghost = null;
-  if (!shift) { if (inv.cursor && inv.cursor !== had) uiSound.click(); else if (had) uiSound.put(); }
   refreshUI();
 }
 export function refreshUI() { renderInventory(); renderHotbar(); }
@@ -386,14 +385,12 @@ export function openInventory(mode = 'inv', fireKey = null) {
   input.lmb = input.rmb = false;
   unlockPointer();
   invEl.style.display = 'grid';
-  uiSound.open();
   renderInventory();
 }
 export function closeInventory() {
   returnGrid();
   if (inv.cursor) { const c = inv.cursor; inv.cursor = null; giveOrDrop(c.id, c.n); }
   invOpen = false;
-  uiSound.close();
   invEl.style.display = 'none';
   cursorEl.style.display = 'none';
   tooltip.style.display = 'none';
