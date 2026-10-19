@@ -40,7 +40,7 @@ When you add or change a feature, update this file in the same pull request.
 - After leaving a multiplayer game the menu shows why (e.g. *Spojení se přerušilo. Zkus se připojit znovu.*).
 - **Nastavení**: graphics quality (auto/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity,
   and the sound sliders **Hlasitost** (80 %), **Zvuky** (100 %) and **Hudba** (60 %); they apply at once (a short click plays at the new volume).
-- **Můj oblek** (link in the main menu, **O** or *Oblek (O)* in the backpack in the game): pick a futuristic suit
+- **Můj oblek** (link in the main menu, **O** or the *Oblek* button under the armor slots in the backpack): pick a futuristic suit
   with a live 3D preview on a holographic stand (drag to turn it; the model walks and swings to show off). Suits:
   *Průzkumník* (backpack with a blinking antenna), *Inženýr* (headlamp, glowing power cell, tool belt), *Pilot* (big
   visor, jet pack), *Strážce* (heavy shoulder plates, a cape that flutters), *Vědec* (lab coat whose flaps swing,

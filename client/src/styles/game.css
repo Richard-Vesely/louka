@@ -116,6 +116,7 @@ canvas { display: block; }
 .mc-btn[disabled] { opacity: 0.5; cursor: default; }
 #dineHint { position: fixed; left: 50%; top: 104px; transform: translateX(-50%); display: none; padding: 6px 14px; background: rgba(16, 2, 16, 0.8); border: 2px solid #25084f; font: 15px 'Pixelify Sans', monospace; color: #fff; text-align: center; text-shadow: 2px 2px 0 #3a3a3a; pointer-events: none; }
 .armor-col { display: flex; flex-direction: column; gap: 2px; margin-right: 26px; }
+.armor-col .cos-open { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
 .armor-pts { margin-top: 4px; text-align: center; font-size: 14px; color: #cfe3ff; text-shadow: 2px 2px 0 #18181b; }
 .cgrid { display: grid; gap: 2px; }
 .carrow { font-size: 30px; color: #8a8a94; text-shadow: 2px 2px 0 #1a1a1e; }

@@ -73,7 +73,8 @@ export function openCostume() {
   unlockPointer();
   window.RiseCostume?.open({ name: NET.name, onClose: () => lockPointer() });
 }
-$('costumeBtn').addEventListener('click', openCostume);
+// tlačítko Oblek je pod brněním v batohu (ui/inventory-ui.js překresluje okno, proto delegace)
+$('inventory').addEventListener('click', (e) => { if (e.target.closest('#costumeBtn')) openCostume(); });
 $('modeBtn').textContent = `Režim: ${creative ? 'Kreativní' : 'Přežití'}`;
 export function setCreative(on) {
   if (on && !NET.perm) { toast('Kreativní režim zakázal hostitel'); return; }
