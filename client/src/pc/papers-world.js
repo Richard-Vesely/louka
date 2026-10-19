@@ -3,13 +3,13 @@ import './printer.js'; // pořadí spouštění: nejdřív předchozí modul (vi
 import * as THREE from 'three';
 import { BLOCKS, ITEMS } from '../../../shared/data/index.js';
 import { NET } from '../../../shared/net/net.js';
+import { others, sendTo } from '../../../shared/net/room.js';
 import { spawnGroundItem } from '../../../shared/sim/ground-items.js';
 import { clamp } from '../../../shared/util.js';
 import { REACH } from '../../../shared/world/constants.js';
 import { bkey, paperSpots, papers } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { MP } from '../game/boot.js';
-import { others, sendTo } from '../net/multiplayer.js';
 import { target } from '../player/interaction.js';
 import { addItem, consumeSelected, heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';

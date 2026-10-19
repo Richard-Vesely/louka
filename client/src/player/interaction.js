@@ -3,6 +3,7 @@ import './targeting.js'; // pořadí spouštění: nejdřív předchozí modul (
 import * as THREE from 'three';
 import { BLOCKS, CROPS, ITEMS, TOOL_SPEED } from '../../../shared/data/index.js';
 import { NET } from '../../../shared/net/net.js';
+import { others } from '../../../shared/net/room.js';
 import { randInt } from '../../../shared/util.js';
 import { nearPond } from '../../../shared/world/nature.js';
 import { bkey, blockMeta, blocks, chairRot, chests, crops, fires, furnaces, pcDisks, power, removed, ruinsOpened, spawners, stoves, tableItems, vehicles } from '../../../shared/world/state.js';
@@ -14,7 +15,6 @@ import { MP } from '../game/boot.js';
 import { harvestCrop } from '../machines/kitchen.js';
 import { toggleSwitch } from '../machines/power.js';
 import { hitMob } from '../mobs/mobs.js';
-import { others } from '../net/multiplayer.js';
 import { openPC } from '../pc/computer.js';
 import { dropSpotsAt, takeSpot, useDocs, withPaper } from '../pc/papers-world.js';
 import { rebuildBlocks } from '../render/blocks.js';

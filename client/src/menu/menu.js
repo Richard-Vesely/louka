@@ -79,10 +79,12 @@ $m('mHostGo').addEventListener('click', async () => {
   attempt();
 });
 
-// Klient: připojí se k hostiteli a čeká na uvítání s celým světem.
+// Klient: připojí se k hostiteli (kód = PeerJS) nebo k serveru (adresa = WebSocket) a čeká na uvítání s celým světem.
 async function startJoin() {
-  const code = normCode($m('mCode').value);
-  if (!/^LOUKA-[A-Z0-9]{4}$/.test(code)) { fail('Zadej kód serveru ve tvaru LOUKA-7K2F.', 'pgJoin'); return; }
+  const typed = $m('mCode').value.trim();
+  if (isAddress(typed)) { joinServer(typed, $m('mPass').value); return; }
+  const code = normCode(typed);
+  if (!/^LOUKA-[A-Z0-9]{4}$/.test(code)) { fail('Zadej kód serveru ve tvaru LOUKA-7K2F nebo adresu serveru.', 'pgJoin'); return; }
   if (!(await needPeer())) return;
   const peer = new Peer();
   let done = false;
@@ -108,5 +110,61 @@ async function startJoin() {
   });
 }
 $m('mJoinGo').addEventListener('click', startJoin);
+
+// ---------- server v Node.js (npm start): připojení přes WebSocket na adresu, volitelně s heslem
+const SERVER_KEY = 'rise-server-adresa';
+const isAddress = (s) => /[.:/]/.test(s) || /^localhost$/i.test(s);
+// "hry.example.cz" -> wss://hry.example.cz/ws, "http://192.168.1.5:8787" -> ws://192.168.1.5:8787/ws
+function wsUrl(s) {
+  s = s.trim().replace(/\/+$/, '');
+  if (!/^[a-z]+:\/\//i.test(s)) s = (location.protocol === 'https:' ? 'wss://' : 'ws://') + s;
+  const u = new URL(s.replace(/^http/i, 'ws'));
+  if (u.pathname === '/' || u.pathname === '') u.pathname = '/ws';
+  return u.href;
+}
+function joinServer(addr, pass) {
+  let url, ws;
+  try { url = wsUrl(addr); ws = new WebSocket(url); } catch { fail('Neplatná adresa serveru.', 'pgJoin'); return; }
+  let done = false;
+  const end = (text) => { if (done) return; done = true; clearTimeout(timer); try { ws.close(); } catch {} fail(text, 'pgJoin'); };
+  busy(`Připojuji se k serveru ${addr}…`, () => { done = true; clearTimeout(timer); ws.close(); });
+  const timer = setTimeout(() => end('Server neodpovídá. Zkontroluj adresu a jestli server běží.'), 15000);
+  // Spojení se stejnými funkcemi jako spojení PeerJS (hra ho používá stejně).
+  const conn = { get open() { return ws.readyState === 1; }, send(m) { if (ws.readyState === 1) ws.send(JSON.stringify(m)); }, on() {}, close() { ws.close(); } };
+  const queue = [];
+  ws.onopen = () => ws.send(JSON.stringify(['hello', { name: myName(), pass }]));
+  ws.onerror = () => end('Nepodařilo se spojit se serverem. Zkontroluj adresu a jestli server běží.');
+  ws.onclose = () => { if (window.__netOnClose) window.__netOnClose(); else end('Server spojení ukončil.'); };
+  ws.onmessage = (e) => {
+    let d;
+    try { d = JSON.parse(e.data); } catch { return; }
+    if (window.__netOnData) { window.__netOnData(d); return; }
+    if (done) { queue.push(d); return; }
+    if (d?.[0] === 'denied') { $m('mPassRow').hidden = false; end(pass ? 'Špatné heslo.' : 'Server chce heslo – napiš ho a připoj se znovu.'); return; }
+    if (d?.[0] === 'full') { end('Server je plný.'); return; }
+    if (d?.[0] === 'welcome') { done = true; clearTimeout(timer); ls.set(SERVER_KEY, addr); finish({ mode: 'client', peer: null, conn, code: url, welcome: d[1], queue }); }
+  };
+}
+// Známý server: hra načtená přímo ze serveru, odkaz s ?server=adresa, nebo adresa serveru kroužku při sestavení (VITE_SERVER_URL).
+const params = new URLSearchParams(location.search);
+let known = null;
+function knowServer(addr, needPass) {
+  known = { addr, needPass };
+  $m('mServer').hidden = false;
+  $m('mCode').value = addr;
+  if (needPass) $m('mPassRow').hidden = false;
+}
+$m('mServer').addEventListener('click', () => {
+  if (!known) return;
+  $m('mCode').value = known.addr;
+  if (known.needPass && !$m('mPass').value) { msg(''); show('pgJoin'); setTimeout(() => $m('mPass').focus(), 0); return; }
+  joinServer(known.addr, $m('mPass').value);
+});
+const fromLink = params.get('server') || import.meta.env.VITE_SERVER_URL || '';
+if (fromLink) knowServer(fromLink, false);
+else if (ls.get(SERVER_KEY)) $m('mCode').value = ls.get(SERVER_KEY);
+// Hru poslal přímo server (npm start): vloží do stránky značku <meta name="louka-server"> (server/static.js).
+const here = document.querySelector('meta[name="louka-server"]');
+if (here) { let info = {}; try { info = JSON.parse(here.content); } catch {} knowServer(location.host + location.pathname.replace(/[^/]*$/, '') + 'ws', info.password); }
 // Po restartu kvůli nastavení grafiky pokračuje hra pro jednoho rovnou, bez menu.
 try { if (sessionStorage.getItem('rise-autostart') === 'sp') { sessionStorage.removeItem('rise-autostart'); finish({ mode: 'sp' }); } } catch {}

@@ -3,6 +3,7 @@ import '../player/inventory.js'; // pořadí spouštění: nejdřív předchozí
 import { ARMOR_SETS, ARMOR_SLOTS, ARMOR_SLOT_NAMES, COOKING, COOK_TIME, FUEL, FURNACE_ONLY, ITEMS, KITCHEN, RECIPES, RECIPE_CATS, smeltResult } from '../../../shared/data/index.js';
 import { insertStack } from '../../../shared/inventory.js';
 import { NET } from '../../../shared/net/net.js';
+import { others } from '../../../shared/net/room.js';
 import { powerOf } from '../../../shared/sim/power.js';
 import { blocks, chestOf, fireOf, furnaceOf, stoveOf, vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
@@ -12,7 +13,6 @@ import { save } from '../game/save-load.js';
 import { fillFurnace, renderFurnace } from '../machines/furnace.js';
 import { kitchenMissing, renderKitchen, startCooking } from '../machines/kitchen.js';
 import { renderPowerUI } from '../machines/power.js';
-import { others } from '../net/multiplayer.js';
 import { addItem, countItem, findRecipe, hasFor, insertInto, inv, recipeNeeds, removeItem } from '../player/inventory.js';
 import { creative, input, lockPointer, setCreative, setResetting, unlockPointer } from '../player/player.js';
 import { ICONS } from '../render/icons.js';

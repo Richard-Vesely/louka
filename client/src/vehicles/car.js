@@ -2,6 +2,7 @@
 import '../world/fishing.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { NET } from '../../../shared/net/net.js';
+import { others } from '../../../shared/net/room.js';
 import { mobs } from '../../../shared/sim/mobs.js';
 import { clamp, randInt, wrapAngle } from '../../../shared/util.js';
 import { solidAny, voxFloor } from '../../../shared/world/collision.js';
@@ -15,7 +16,6 @@ import { MP } from '../game/boot.js';
 import { gameTime } from '../game/loop.js';
 import { TOUCH } from '../game/prefs.js';
 import { hitMob } from '../mobs/mobs.js';
-import { others } from '../net/multiplayer.js';
 import { clearTarget, groundRing, outline, preview, target } from '../player/interaction.js';
 import { collidesBlocks, input, keys, player } from '../player/player.js';
 import { tmpV } from '../render/daylight.js';

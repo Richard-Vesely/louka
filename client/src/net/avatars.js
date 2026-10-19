@@ -3,6 +3,7 @@ import './multiplayer.js'; // pořadí spouštění: nejdřív předchozí modul
 import * as THREE from 'three';
 import { ITEMS } from '../../../shared/data/index.js';
 import { r2 } from '../../../shared/net/net.js';
+import { others } from '../../../shared/net/room.js';
 import { clamp, wrapAngle } from '../../../shared/util.js';
 import { vehicles } from '../../../shared/world/state.js';
 import { dining } from '../dining/dining.js';
@@ -16,7 +17,6 @@ import { ICONS } from '../render/icons.js';
 import { scene } from '../render/renderer.js';
 import { armor, fullSet, invOpen, ui } from '../ui/inventory-ui.js';
 import { hornN } from '../vehicles/car.js';
-import { others } from './multiplayer.js';
 
 // ---------- postavičky ostatních hráčů
 function nameTag(name) {
@@ -97,12 +97,15 @@ function setAvatarHeld(A, id) {
   else { m = iconVoxels(id, 0.026); m.rotation.set(-Math.PI / 2, Math.PI / 2, 0); m.position.set(0, -0.02, -0.18); }
   A.hand.add(m);
 }
+const shown = new Map(); // hráč -> postavička ve scéně
 export function updateAvatars(dt) {
+  for (const [P, A] of shown) if (others.get(P.pid) !== P) { scene.remove(A.group); shown.delete(P); } // hráč odešel
   const k = 1 - Math.exp(-dt * 12);
   for (const P of others.values()) {
     const q = P.pose;
     if (!q) continue;
-    const A = (P.avatar ||= makeAvatar(P.name));
+    if (!P.avatar) shown.set(P, (P.avatar = makeAvatar(P.name)));
+    const A = P.avatar;
     A.group.visible = q.alive !== false && !q.veh; // v autě není postavička vidět (sedí uvnitř)
     const tx = q.x, ty = q.y - (q.sit ? 0.42 : 0), tz = q.z;
     if (!A.init || Math.hypot(A.group.position.x - tx, A.group.position.z - tz) > 12) { A.group.position.set(tx, ty, tz); A.yaw = q.yaw; A.init = true; }

@@ -1,11 +1,12 @@
 // Chat, menu Esc se seznamem hráčů, informační okénko.
 import './avatars.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { NET } from '../../../shared/net/net.js';
+import { broadcast, kick, others, setPerm } from '../../../shared/net/room.js';
 import { BOOT } from '../game/boot.js';
 import { saveGame } from '../game/save.js';
 import { lockPointer, unlockPointer } from '../player/player.js';
 import { $ } from '../ui/dom.js';
-import { MAX_PLAYERS, broadcast, esc, kick, others, setPerm, toHost } from './multiplayer.js';
+import { esc, toHost } from './multiplayer.js';
 
 // ---------- chat, oznámení, Esc menu, informační okénko
 export function chatLine(name, text) {
@@ -71,7 +72,7 @@ export function renderPause() {
     <div class="mc-title">Hra pro více hráčů</div>
     <div class="pause-code">${NET.host ? 'Kód serveru:' : 'Server:'} <b>${esc(NET.code)}</b>${NET.host ? '<button class="mc-btn" data-copy>Zkopírovat</button>' : ''}</div>
     ${NET.host ? `<label class="mc-toggle"><input type="checkbox" id="pAllow" ${NET.allowAll ? 'checked' : ''}> Povolit hráčům kreativní režim (všem)</label>` : `<div class="mc-note">Kreativní režim: ${NET.perm ? 'povolen (klávesa C)' : 'zakázal hostitel'}</div>`}
-    <div class="mc-title">Hráči (${count}/${MAX_PLAYERS})</div>
+    <div class="mc-title">Hráči (${count}/${NET.maxPlayers})</div>
     <div class="plist"><div class="prow"><span class="pname">${esc(NET.name)} <small>(ty${NET.host ? ', hostitel' : ''})</small></span></div>${[...others.values()].map(row).join('')}</div>
     <div class="menu-row"><button class="mc-btn" data-resume>Pokračovat</button><button class="mc-btn" data-leave>Odejít</button></div>
   </div>`;
@@ -94,7 +95,7 @@ export const netBox = document.createElement('div');
 netBox.id = 'netbox';
 document.body.append(netBox);
 export function renderNetBox() {
-  const html = `🌐 ${NET.host ? 'Server' : 'Připojeno'} <b>${esc(NET.code)}</b> · ${others.size + 1}/${MAX_PLAYERS} hráčů${NET.host ? ' <button class="mc-btn" data-copy>Zkopírovat kód</button>' : ''}`;
+  const html = `🌐 ${NET.host ? 'Server' : 'Připojeno'} <b>${esc(NET.code)}</b> · ${others.size + 1}/${NET.maxPlayers} hráčů${NET.host ? ' <button class="mc-btn" data-copy>Zkopírovat kód</button>' : ''}`;
   if (netBox.innerHTML !== html) netBox.innerHTML = html;
 }
 netBox.addEventListener('click', (e) => { const b = e.target.closest('[data-copy]'); if (b) copyCode(b); });

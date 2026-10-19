@@ -1,19 +1,18 @@
 // Hra pro více hráčů: hostitel a klient (zprávy, změny světa, tvorové).
 import '../game/loop.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
-import { ITEMS } from '../../../shared/data/index.js';
-import { NET, isBusy, uiBusy } from '../../../shared/net/net.js';
+import { on } from '../../../shared/events.js';
+import { NET } from '../../../shared/net/net.js';
+import { applyKV, applyOp } from '../../../shared/net/ops.js';
+import { others } from '../../../shared/net/room.js';
 import { setDay } from '../../../shared/sim/day.js';
-import { groundItems, spawnGroundItem } from '../../../shared/sim/ground-items.js';
+import { spawnGroundItem } from '../../../shared/sim/ground-items.js';
 import { MOBS, mobs, removeMob, spawnMob } from '../../../shared/sim/mobs.js';
-import { markPowerDirty, queuePrint } from '../../../shared/sim/power.js';
-import { clamp, wrapAngle } from '../../../shared/util.js';
-import { worldState } from '../../../shared/world/save.js';
-import { KV_MAPS, blockMeta, blocks, removed, ruinsBuilt, ruinsOpened, setPortalActive, vehicles } from '../../../shared/world/state.js';
-import { getVox, setVox } from '../../../shared/world/voxels.js';
+import { wrapAngle } from '../../../shared/util.js';
+import { KV_MAPS, blocks } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { BOOT } from '../game/boot.js';
-import { hitMob, viewOf } from '../mobs/mobs.js';
+import { viewOf } from '../mobs/mobs.js';
 import { receiveGift } from '../pc/papers-world.js';
 import { refreshSpecial } from '../player/eating.js';
 import { swapHeld } from '../player/interaction.js';
@@ -25,173 +24,43 @@ import { cutGrass } from '../render/grass.js';
 import { scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { invOpen, renderInventory, ui } from '../ui/inventory-ui.js';
-import { BUILDERS, buildStructure } from '../world/structures.js';
 import { chatLine, leaveGame, renderPause, sysLine } from './mp-ui.js';
 
-// ============================================================ hra pro více hráčů (PeerJS, hostitel = server)
-// Hostitel drží svět: klienti mu posílají změny (bloky, stromy, podzemí…), on je provede a rozešle ostatním.
-// Tvory simuluje jen hostitel. Malé mapy (táboráky, truhly, sporáky, pole…) se porovnávají a posílají změněné klíče.
-export const MAX_PLAYERS = 6;
-export const others = new Map(); // ostatní hráči: pid -> { pid, name, pose, perm, conn?, avatar? }
+// ============================================================ hra pro více hráčů (hostitel = server)
+// Hostitel drží svět: klienti mu posílají změny (bloky, stromy, podzemí…), on je provede a rozešle ostatním
+// (shared/net/room.js, změny světa: shared/net/ops.js). Tady je strana připojeného hráče a obrázky ke změnám.
 const puppets = new Map(); // klient: tvorové podle hostitele (nid -> tvor)
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-Object.assign(NET, { code: BOOT.code, pid: NET.host ? 'host' : BOOT.welcome?.pid, allowAll: !!BOOT.settings?.creative, kvLast: {}, pend: new Map(), poseT: 0, mobT: 0, kvT: 0, boxT: 0 });
+Object.assign(NET, { code: BOOT.code, pid: NET.host ? 'host' : BOOT.welcome?.pid, allowAll: !!BOOT.settings?.creative, maxPlayers: BOOT.welcome?.max || 6 });
 
 // ---------- zprávy
-export function sendTo(pid, msg) { const c = others.get(pid)?.conn; if (c?.open) c.send(msg); }
-export function broadcast(msg, except) { for (const [pid, P] of others) if (pid !== except && P.conn?.open) P.conn.send(msg); }
 export function toHost(msg) { if (BOOT.conn?.open) BOOT.conn.send(msg); }
 
-// Přehraje cizí změnu světa (bez dalšího rozesílání).
-function applyOp(o) {
-  NET.quiet(() => {
-    switch (o[0]) {
-      case 'm': {
-        const [, name, k, v] = o;
-        if (name === 'blockMeta') { if (v === null) blockMeta.delete(k); else blockMeta.set(k, v); NET.dirtyBlocks = true; return; }
-        if (name !== 'blocks') return;
-        const sp = specials.get(k);
-        if (sp && blocks.get(k) !== v) { scene.remove(sp.obj); specials.delete(k); }
-        if (v === null) { blocks.delete(k); if (player.sitting === k) player.sitting = null; } else blocks.set(k, v);
-        NET.dirtyBlocks = true;
-        break;
-      }
-      case 's': ({ removed, ruinsOpened })[o[1]]?.add(o[2]); if (o[1] === 'removed') NET.dirtyForest = true; break;
-      case 'r': if (o[1]?.key && !ruinsBuilt.has(o[1].key) && BUILDERS[o[1].type]) buildStructure(o[1]); break;
-      case 'v': setVox(o[1], o[2], o[3], o[4]); break;
-      case 'c': cutGrass(o[1], o[2], o[3]); break;
-      case 'p': setPortalActive(true); break;
-      case 'g': if (ITEMS[o[2]] && !groundItems.some((g) => g.gid === o[1])) spawnGroundItem(o[2], o[3], new THREE.Vector3(...o[4]), new THREE.Vector3(...o[5]), o[6], o[1]); break;
-      case 'gx': { const it = groundItems.find((g) => g.gid === o[1]); if (it) { it.n = o[2]; it.req = 0; } break; }
-    }
-  });
-}
-// Malé mapy: změněné klíče od posledního odeslání
-export function kvDiff() {
-  const ch = [];
-  for (const [m, map] of Object.entries(KV_MAPS)) {
-    const L = (NET.kvLast[m] ||= new Map());
-    const once = m === 'papers'; // vytištěné papíry se nemění: stačí poslat nové
-    for (const [k, v] of map) { if (once && L.has(k)) continue; const j = JSON.stringify(v); if (L.get(k) !== j) { L.set(k, j); ch.push([m, k, v]); } }
-    for (const k of [...L.keys()]) if (!map.has(k)) { L.delete(k); ch.push([m, k, null]); }
-  }
-  return ch;
-}
-function applyKV(m, k, v) {
-  const map = KV_MAPS[m];
-  if (!map) return;
-  const old = map.get(k);
-  if (v === null) map.delete(k); else map.set(k, v);
-  const visual = m === 'crops' ? old?.stage !== v?.stage : (m === 'tableItems' || m === 'chairRot') && JSON.stringify(old) !== JSON.stringify(v);
-  if (visual && blocks.has(k)) refreshSpecial(k);
-  if (m === 'power') markPowerDirty(); // vypínač mohl změnit tvar sítě
-  if (invOpen && ui.fireKey === k) renderInventory();
-}
-
-// ---------- hostitel
-export function hostAccept(conn) {
-  const setup = () => {
-    if (others.size >= MAX_PLAYERS - 1) { conn.send(['full']); setTimeout(() => conn.close(), 500); return; }
-    let name = String(conn.metadata?.name || 'Hráč').slice(0, 16), n = 2;
-    const base = name;
-    while (name === NET.name || [...others.values()].some((P) => P.name === name)) name = `${base} ${n++}`;
-    const P = { pid: conn.peer, name, conn, pose: null, perm: NET.allowAll };
-    others.set(P.pid, P);
-    conn.on('data', (d) => { try { onClientMsg(P, d); } catch (e) { console.error(e); } });
-    conn.on('close', () => dropPlayer(P.pid));
-    conn.on('error', () => dropPlayer(P.pid));
-    conn.send(['welcome', { pid: P.pid, name, perm: P.perm, world: worldState(), spawn: [player.pos.x + 1.5, player.pos.y + 0.5, player.pos.z + 1.5] }]);
-    broadcast(['join', name], P.pid);
-    sysLine(`${name} se připojil`);
-    renderPause();
-  };
-  if (conn.open) setup(); else conn.on('open', setup);
-}
-function dropPlayer(pid) {
-  const P = others.get(pid);
-  if (!P) return;
-  for (const v of vehicles.values()) if (v.driver === pid) { v.driver = null; v.spd = 0; v.engine = false; } // auto odcházejícího hráče zůstane stát
-  others.delete(pid);
-  if (P.avatar) scene.remove(P.avatar.group);
-  if (NET.host) broadcast(['leave', P.name]);
-  sysLine(`${P.name} odešel`);
-  renderPause();
-}
-function onClientMsg(P, msg) {
-  if (!Array.isArray(msg)) return;
-  switch (msg[0]) {
-    case 'ops': {
-      const [, cr, ops] = msg;
-      if (cr && !P.perm) { // kreativní změny od hráče bez povolení hostitel ignoruje a vrátí mu skutečný stav
-        const fix = ops.filter((o) => (o[0] === 'm' && o[1] === 'blocks') || o[0] === 'v')
-          .map((o) => (o[0] === 'm' ? ['m', 'blocks', o[2], blocks.get(o[2]) ?? null] : ['v', o[1], o[2], o[3], getVox(o[1], o[2], o[3])]));
-        if (fix.length) sendTo(P.pid, ['ops', fix]);
-        sendTo(P.pid, ['perm', false]);
-        return;
-      }
-      for (const o of ops) if (o[0] !== 'gx') applyOp(o);
-      broadcast(['ops', ops.filter((o) => o[0] !== 'gx')], P.pid);
-      break;
-    }
-    case 'kv': for (const [m, k, v] of msg[1]) applyKV(m, k, v); break;
-    case 'pose': {
-      const q = msg[1];
-      if (!P.pose) renderPause();
-      P.pose = q;
-      if (typeof q.ui === 'string') {
-        if (!isBusy(q.ui)) NET.kvT = 0; // hráč právě otevřel truhlu / stroj: hned mu poslat aktuální stav
-        uiBusy.set(q.ui, performance.now() + 1200);
-      }
-      // létání nebo kreativní režim bez povolení: hostitel ho hráči znovu vypne
-      if (!P.perm && (q.cr || (q.fly && !q.flyT)) && (P.permNag = (P.permNag || 0) - 1) < 0) { P.permNag = 12; sendTo(P.pid, ['perm', false]); }
-      break;
-    }
-    case 'pk': { // žádost o sebrání předmětu ze země
-      const it = groundItems.find((g) => g.gid === msg[1]);
-      if (!it || it.n <= 0) return;
-      sendTo(P.pid, ['give', it.id, it.n]);
-      it.n = 0;
-      NET.op(['gx', it.gid, 0]);
-      break;
-    }
-    case 'hit': {
-      const m = mobs.find((x) => x.nid === msg[1] && !x.dead);
-      if (!m) return;
-      NET.killer = P.pid;
-      try { hitMob(m, clamp(Number(msg[2]) || 1, 0, 20), Number(msg[3]) || 0); } finally { NET.killer = null; }
-      break;
-    }
-    case 'mu': { // slepice (vejce) a kráva (mléko)
-      const m = mobs.find((x) => x.nid === msg[1] && !x.dead);
-      if (!m) return;
-      if (m.type === 'chicken') { if (m.eggs > 0) { sendTo(P.pid, ['give', 'egg', m.eggs]); m.eggs = 0; } else sendTo(P.pid, ['toast', 'Slepice ještě nesnesla vejce']); }
-      else if (m.type === 'cow') { if (m.milkT > 0) sendTo(P.pid, ['toast', 'Kráva potřebuje chvíli odpočinout']); else { m.milkT = 40; sendTo(P.pid, ['swap', 'bucket', 'milk_bucket']); } }
-      break;
-    }
-    case 'print': queuePrint(String(msg[1]), msg[2], Number(msg[3])); break; // tisk z počítače hráče
-    case 'giveTo': { // hráč předává dokument jinému hráči
-      const id = String(msg[2]);
-      if (!id.startsWith('doc_')) return;
-      if (msg[1] === 'host') receiveGift(id, P.name); else if (others.has(msg[1])) sendTo(msg[1], ['gift', id, P.name]);
-      break;
-    }
-    case 'chat': { const text = String(msg[1] || '').slice(0, 200).trim(); if (!text) return; chatLine(P.name, text); broadcast(['chat', P.name, text], P.pid); break; }
-  }
-}
-export function setPerm(P, on) {
-  P.perm = on;
-  sendTo(P.pid, ['perm', on]);
-  renderPause();
-}
-export function kick(pid) {
-  const P = others.get(pid);
-  if (!P) return;
-  sendTo(pid, ['kick']);
-  setTimeout(() => P.conn.close(), 300);
-  dropPlayer(pid);
-}
+// ---------- obrázky ke změnám světa od ostatních (pravidla v shared/net/ops.js)
+on('blockOp', (k, v) => {
+  const sp = specials.get(k);
+  if (sp && blocks.get(k) !== v) { scene.remove(sp.obj); specials.delete(k); }
+  if (v === null && player.sitting === k) player.sitting = null;
+});
+on('grassCut', (x, z, r) => cutGrass(x, z, r));
+on('refreshSpecial', (k) => refreshSpecial(k));
+on('kv', (m, k) => { if (invOpen && ui.fireKey === k) renderInventory(); });
 
 // ---------- klient
+// Změny malých map od hostitele, které přišly hned po vlastní změně (do 1,5 s). Když ji mezitím nikdo z nás nezměnil
+// znovu, platí to, co poslal hostitel – jinak by se změna jiného hráče ztratila (např. věci vložené do nové truhly).
+const laterKV = new Map();
+export function applyLaterKV() {
+  const now = performance.now();
+  for (const [key, [m, k, v]] of laterKV) {
+    if ((NET.pend.get(key) || 0) > now) continue;
+    laterKV.delete(key);
+    const L = (NET.kvLast[m] ||= new Map());
+    if (JSON.stringify(KV_MAPS[m]?.get(k) ?? null) !== (L.get(k) ?? 'null')) continue; // mezitím jsi to změnil znovu ty
+    applyKV(m, k, v);
+    if (v === null) L.delete(k); else L.set(k, JSON.stringify(v));
+  }
+}
 export function onHostMsg(msg) {
   if (!Array.isArray(msg)) return;
   switch (msg[0]) {
@@ -199,7 +68,9 @@ export function onHostMsg(msg) {
     case 'kv': {
       const now = performance.now();
       for (const [m, k, v] of msg[1]) {
-        if ((NET.pend.get(m + '|' + k) || 0) > now) continue; // tady jsi právě něco změnil sám
+        // tady jsi právě něco změnil sám: hodnotu od hostitele použij, až tvoje změna dojde (applyLaterKV)
+        if ((NET.pend.get(m + '|' + k) || 0) > now) { laterKV.set(m + '|' + k, [m, k, v]); continue; }
+        laterKV.delete(m + '|' + k);
         applyKV(m, k, v);
         const L = (NET.kvLast[m] ||= new Map());
         if (v === null) L.delete(k); else L.set(k, JSON.stringify(v));
@@ -215,7 +86,7 @@ export function onHostMsg(msg) {
         if (!P) { others.set(pid, (P = { pid, name })); renderPause(); }
         P.name = name; P.pose = pose; P.perm = perm;
       }
-      for (const pid of [...others.keys()]) if (!seen.has(pid)) { const P = others.get(pid); if (P.avatar) scene.remove(P.avatar.group); others.delete(pid); renderPause(); }
+      for (const pid of [...others.keys()]) if (!seen.has(pid)) { others.delete(pid); renderPause(); } // postavička zmizí sama (avatars.js)
       break;
     }
     case 'gift': receiveGift(String(msg[1]), String(msg[2] || 'Hráč')); break;

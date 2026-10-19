@@ -10,9 +10,10 @@
     "preview": "vite preview",
     "start": "node server/index.js",
     "test": "node --test \"tests/unit/*.test.mjs\"",
-    "playtest": "node tests/playtest/playtest.mjs",
+    "playtest": "node tests/playtest/playtest.mjs dist",
     "test:peer": "node tests/playtest/peer.mjs",
-    "test:server": "node tests/playtest/server-mp.mjs"
+    "test:server": "node tests/playtest/server-mp.mjs",
+    "test:all": "npm test && npm run build && npm run playtest && npm run test:server && npm run test:peer"
   },
   "engines": {
     "node": ">=20.19"

@@ -164,3 +164,21 @@ clients' machines; trap kill without chest gives loot to the host or loses it; i
   Three.js and PeerJS now come from npm (bundled by Vite), no CDN for code. Data tables checked identical to legacy.
   Tests: `npm run build`, `npm test` (5 unit), `node tests/playtest/playtest.mjs` (36/36), `node tests/playtest/peer.mjs` (18/18),
   also against `npm run dev`. Screenshot matches legacy. Next: phase 2 (world state + simulations into `shared/`).
+- 19.10.2026, phases 2 and 3 done (core):
+  - Rules layer in `shared/` (imports in Node, no DOM/Three): world state `shared/world/state.js` + `save.js` (loadWorld/
+    worldState, same save shape and localStorage keys), voxels + `setVox`, collision + light index, trees/rocks/colliders
+    (`nature.js`), structures + builders, day clock, ground items, mobs AI/spawns/spawners, machines (fires, furnaces,
+    stoves, crops), power + printer, ops/kv (`shared/net/ops.js`), the host logic `shared/net/room.js`. Rules report to the
+    browser through `shared/events.js` (sparks, sounds, redraws). The browser keeps models, animation, UI, player.
+  - Browser host ("Vytvořit server") = Room in the page + PeerJS; the host player is participant 'host'.
+  - Node server `server/` (`npm start`): Room + 20 Hz world loop + WebSocket (`['hello', {name, pass}]` first) + static
+    `dist/` + `/health` + saving `DATA_DIR/world.json` every 30 s / on shutdown + daily backups (7 kept). Env: PORT,
+    ROOM_PASSWORD, DATA_DIR, STATIC_DIR, MAX_PLAYERS, ALLOW_CREATIVE, SAVE_SECONDS.
+  - Join by address: "Připojit se" accepts a code (PeerJS) or an address (WebSocket), password field; `?server=` link,
+    `VITE_SERVER_URL` at build time, and a page served by the server shows "Hrát na serveru".
+  - Fixes needed for the server (listed in docs/KNOWN-ISSUES.md): structure guards spawn only on the host (no ghost
+    Markomen on clients); a client no longer drops another player's chest/machine change that arrives right after its own.
+  - Tests (all green): `npm test` (7: data, terrain, shared imports, server over WebSocket incl. restart),
+    `npm run build`, `node tests/playtest/playtest.mjs dist` 36/36, `node tests/playtest/peer.mjs dist` 18/18,
+    `node tests/playtest/server-mp.mjs` 22/22 (server + 2 browsers, password, edits, mobs, pickup, chat, restart).
+  - Next: phase 4 (CI, deploy, docs, message for the kids).

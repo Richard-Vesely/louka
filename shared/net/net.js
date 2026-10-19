@@ -19,6 +19,8 @@ export const NET = {
   localLoot: null, // (m, id, n) => void
   hurtLocal: null, // (dmg, dx, dz) => void
   dirtyBlocks: false, dirtyForest: false,
+  // multiplayer: kód / adresa serveru, id tohoto hráče, kreativní režim pro všechny, max. hráčů, časovače zpráv
+  code: '', pid: null, allowAll: false, maxPlayers: 6, kvLast: {}, pend: new Map(), poseT: 0, mobT: 0, kvT: 0, boxT: 0,
 };
 
 // Okna strojů a truhel otevřená hráči v multiplayeru: hostitel je mezitím nesimuluje (klíč -> do kdy), aby se změny nepřepsaly a předměty nezdvojily

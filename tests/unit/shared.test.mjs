@@ -54,3 +54,16 @@ test('underground voxels and structures are deterministic', () => {
   const count = (t) => near.filter((s) => s.type === t).length;
   assert.deepEqual([count('camp'), count('dungeon'), count('tower'), count('temple'), count('hut'), count('mushhouse')], [42, 38, 18, 8, 4, 5]);
 });
+
+test('every module in shared/ imports in Node (no DOM, no Three.js)', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const root = path.resolve('shared');
+  const files = [];
+  const walk = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name.endsWith('.js')) files.push(p); } };
+  walk(root);
+  assert.ok(files.length >= 20);
+  for (const f of files) await import(pathToFileURL(f).href);
+  assert.equal(typeof globalThis.document, 'undefined');
+});

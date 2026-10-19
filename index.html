@@ -125,6 +125,7 @@
         <button class="mc-btn big" id="mSolo">Hra pro jednoho</button>
         <button class="mc-btn big" id="mHost">Vytvořit server</button>
         <button class="mc-btn big" id="mJoin">Připojit se</button>
+        <button class="mc-btn big" id="mServer" hidden>Hrát na serveru</button>
         <button class="mc-btn" id="mSettings">Nastavení</button>
       </div>
       <div class="menu-page" id="pgHost" hidden>
@@ -135,7 +136,8 @@
       </div>
       <div class="menu-page" id="pgJoin" hidden>
         <div class="mc-title">Připojit se k serveru</div>
-        <label class="menu-label">Kód serveru<input id="mCode" maxlength="14" placeholder="LOUKA-7K2F" autocomplete="off" spellcheck="false"></label>
+        <label class="menu-label">Kód nebo adresa serveru<input id="mCode" maxlength="200" placeholder="LOUKA-7K2F" autocomplete="off" spellcheck="false"></label>
+        <label class="menu-label" id="mPassRow" hidden>Heslo serveru<input id="mPass" type="password" maxlength="64" autocomplete="off"></label>
         <div class="menu-row"><button class="mc-btn" data-back>Zpět</button><button class="mc-btn" id="mJoinGo">Připojit</button></div>
       </div>
       <div class="menu-page" id="pgBusy" hidden>
