@@ -183,6 +183,11 @@ addEventListener('mousemove', (e) => {
   tooltip.style.top = Math.max(6, Math.min(innerHeight - h - 6, e.clientY - 30)) + 'px';
   cursorEl.style.left = e.clientX + 'px';
   cursorEl.style.top = e.clientY + 'px';
+  // po položení předmětu (nebo překreslení okna) ukaž tooltip políčka pod myší znovu
+  if (invOpen && !inv.cursor && tooltip.style.display !== 'block') {
+    const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-item]');
+    if (el && !el.closest('#hotbar') && !el.closest('#cursorItem')) showTooltip(el);
+  }
 });
 $('onlyCraftable').addEventListener('change', (e) => { onlyCraftable = e.target.checked; renderInventory(); });
 
