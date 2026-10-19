@@ -10,10 +10,12 @@ pec, elektřina, auto, letadlo, počítač s hrami a portál do Markovy dimenze.
 Otevři hru, napiš své jméno a vyber:
 
 - **Hra pro jednoho** – svět se ukládá v tvém prohlížeči.
-- **Vytvořit server** – tvůj prohlížeč je server. Dostaneš kód (např. `LOUKA-7K2F`), pošli ho kamarádům.
-  Nech hru otevřenou, dokud ostatní hrají.
-- **Připojit se** – napiš kód od kamaráda (stačí 4 znaky), nebo **adresu serveru kroužku** (a heslo, když ho server chce).
-- **Hrát na serveru** – toto tlačítko se ukáže, když hru otevřeš přímo ze serveru kroužku (nebo z odkazu s adresou).
+- **Hlavní svět**, **Kreativní svět** – světy serveru kroužku, každý má svoje velké tlačítko. Poprvé hra chce
+  **heslo kroužku**, pak si ho pamatuje.
+- **Další možnosti ▸**
+  - **Vytvořit server na svém počítači** – tvůj prohlížeč je server. Dostaneš kód (např. `LOUKA-7K2F`), pošli ho
+    kamarádům. Nech hru otevřenou, dokud ostatní hrají.
+  - **Připojit se kódem** – napiš kód od kamaráda (stačí 4 znaky).
 
 Ovládání: WASD chůze · Shift běh · Mezerník skok · levé tlačítko těžba/útok · pravé položit/použít/jíst ·
 E inventář · G vyhodit · C kreativní režim · H návod · T chat · Esc menu. Na telefonu a tabletu je dotykové ovládání.

@@ -18,8 +18,8 @@ The Node server (B, C) can hold **several worlds** at once, e.g. a survival worl
 
 ## A. Browser host (no setup)
 
-1. Open the game (Pages, a server, or `npm run dev`), type a name, **Vytvořit server** → **Spustit**.
-2. Send the code (e.g. `LOUKA-7K2F`) to the others. They choose **Připojit se** and type the 4 characters.
+1. Open the game (Pages, a server, or `npm run dev`), type a name, **Další možnosti → Vytvořit server na svém počítači** → **Spustit**.
+2. Send the code (e.g. `LOUKA-7K2F`) to the others. They choose **Další možnosti → Připojit se kódem** and type the 4 characters.
 3. Keep the tab open. The world is saved in this browser and the same code is used next time.
 
 How it works: PeerJS uses the public broker `0.peerjs.com` only to introduce the browsers, then the game data flows
@@ -42,7 +42,7 @@ npm start                       # http://localhost:8787
 With a password (PowerShell): `$env:ROOM_PASSWORD = 'heslo'; npm start` (bash: `ROOM_PASSWORD=heslo npm start`).
 
 - Players on the **same Wi-Fi** open `http://<laptop IP>:8787` (e.g. `http://192.168.1.20:8787`; the IP is in
-  `ipconfig` / `ip addr`). The menu then shows **Hrát na serveru**. Windows asks once whether Node may use the network: allow
+  `ipconfig` / `ip addr`). The main menu then shows a button per world. Windows asks once whether Node may use the network: allow
   *private networks*.
 - Players elsewhere need a tunnel. Example with Cloudflare (free, no router setup; install it yourself first:
   `winget install --id Cloudflare.cloudflared`): `cloudflared tunnel --url http://localhost:8787` prints
@@ -116,7 +116,7 @@ curl https://hry.example.cz/health          # {"ok":true,"louka":2,"players":0,.
 systemctl status louka
 journalctl -u louka -f                      # live log: who joins/leaves, errors
 ```
-Players open `https://hry.example.cz`, type a name, **Hrát na serveru**, then the password (and the world, when there are several).
+Players open `https://hry.example.cz`, type a name, click a world button, then the password (asked only the first time).
 
 ### 3. Settings (`/etc/louka.env`, then `systemctl restart louka`)
 | Variable | Default | Meaning |
@@ -150,9 +150,8 @@ Every world has its own folder `/opt/louka/server/data/<id>/` (e.g. `svet/`, `kr
 
 ### 6. Several worlds (`WORLDS`)
 One server (one address, one password, one process) can run several worlds. Each world has its own buildings, animals,
-day, players and chat, its own folder with backups, and creative mode on or off for everyone in it. After
-**Hrát na serveru** (and the password) the menu shows the worlds as buttons with the player count; the last choice is
-remembered, and a link `https://hry.example.cz/?world=kreativ` preselects a world.
+day, players and chat, its own folder with backups, and creative mode on or off for everyone in it. The main
+menu shows the worlds as buttons with the player count (from `GET /worlds`); the last choice is highlighted, and a link `https://hry.example.cz/?world=kreativ` preselects a world.
 
 Add or change worlds in `/etc/louka.env`, then restart:
 ```bash
@@ -177,7 +176,7 @@ curl -s http://127.0.0.1:8787/worlds        # [{"id":"svet","name":"Hlavní svě
 ## Point the Pages game at the server
 
 The Pages build reads the repository variable **`SERVER_URL`** (GitHub → Settings → Secrets and variables → Actions →
-Variables), e.g. `hry.example.cz`. The menu then shows **Hrát na serveru** for that address.
+Variables), e.g. `hry.example.cz`. The main menu then shows the worlds of that server as buttons (`/worlds` allows other origins, so this works from Pages).
 Any link can also choose a server: `https://richard-vesely.github.io/louka/?server=hry.example.cz`.
 Pages is HTTPS, so the server must have HTTPS too (Caddy does that on the VPS).
 In Settings → Pages, the source must be **GitHub Actions**.

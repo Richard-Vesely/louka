@@ -1,11 +1,11 @@
-// Multiplayer test "Vytvořit server": one browser hosts via PeerJS (public broker), a second one joins with the code.
+// Multiplayer test "Další možnosti → Vytvořit server na svém počítači": one browser hosts via PeerJS (public broker), a second one joins with the code.
 // Needs internet (PeerJS broker 0.peerjs.com + WebRTC between the two local browsers).
-// Usage: node tests/playtest/peer.mjs [dir-or-url]   (default client/dist)
+// Usage: node tests/playtest/peer.mjs [dir-or-url]   (default dist)
 import path from 'node:path';
 import fs from 'node:fs';
 import { launch, serveDir, checker, openPage, waitGame, sleep } from './lib.mjs';
 
-const target = process.argv[2] || 'client/dist';
+const target = process.argv[2] || 'dist';
 const out = process.argv[3] || 'playtest-peer';
 const { check, results, failed } = checker('peer: ');
 let server = null, url = target;
@@ -18,6 +18,7 @@ const until = async (page, fn, arg, timeout = 15000) => { try { await page.waitF
 
 try {
   await A.fill('#mName', 'Hostitel');
+  await A.click('#mMore'); // Další možnosti -> Vytvořit server na svém počítači
   await A.click('#mHost');
   await A.check('#mCreative');
   await A.click('#mHostGo');
@@ -27,6 +28,7 @@ try {
   check('host saves the code for next time', await A.evaluate((c) => { window.game.saveGame(); return JSON.parse(localStorage.getItem('rise-server-v1') || '{}').code === c; }, code));
 
   await B.fill('#mName', 'Klient');
+  await B.click('#mMore'); // Další možnosti -> Připojit se kódem
   await B.click('#mJoin');
   await B.fill('#mCode', code.slice(6)); // just the 4 characters is enough
   await B.click('#mJoinGo');

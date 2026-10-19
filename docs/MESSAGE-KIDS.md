@@ -11,9 +11,10 @@ Markova **Říše** má novou verzi. Hraje se úplně stejně, ale uvnitř je ro
 přidávat věci vy (s pomocí AI). A máme **stálý server**, kde svět zůstane, i když všichni odejdou.
 
 **Jak hrát**
-- Otevři **https://<adresa serveru>**, napiš své jméno, klikni **Hrát na serveru** a zadej heslo **<heslo>**.
-- Hrát spolu jde i bez serveru: jeden klikne **Vytvořit server** a pošle ostatním kód (např. `LOUKA-7K2F`),
-  ostatní dají **Připojit se** a napíšou ty 4 znaky.
+- Otevři **https://<adresa serveru>**, napiš své jméno, klikni na svět (**Hlavní svět** nebo **Kreativní svět**)
+  a poprvé zadej heslo **<heslo>**.
+- Hrát spolu jde i bez serveru: jeden dá **Další možnosti → Vytvořit server na svém počítači** a pošle ostatním kód
+  (např. `LOUKA-7K2F`), ostatní dají **Další možnosti → Připojit se kódem** a napíšou ty 4 znaky.
 - **Hra pro jednoho** ukládá svět jen ve tvém prohlížeči.
 
 **Jak do hry přidat něco svého**

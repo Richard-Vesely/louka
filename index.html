@@ -123,28 +123,33 @@
       <div class="menu-page" id="pgMain">
         <label class="menu-label">Tvoje jméno<input id="mName" maxlength="16" placeholder="Hráč" autocomplete="off" spellcheck="false"></label>
         <button class="mc-btn big" id="mSolo">Hra pro jednoho</button>
-        <button class="mc-btn big" id="mHost">Vytvořit server</button>
-        <button class="mc-btn big" id="mJoin">Připojit se</button>
-        <button class="mc-btn big" id="mServer" hidden>Hrát na serveru</button>
-        <button class="mc-btn" id="mSettings">Nastavení</button>
+        <div class="world-list" id="mWorlds" hidden></div>
+        <div class="menu-row"><button class="mc-btn" id="mSettings">Nastavení</button><button class="mc-btn" id="mMore">Další možnosti ▸</button></div>
+      </div>
+      <div class="menu-page" id="pgMore" hidden>
+        <div class="mc-title">Další možnosti</div>
+        <button class="mc-btn big" id="mHost">Vytvořit server na svém počítači</button>
+        <button class="mc-btn big" id="mJoin">Připojit se kódem</button>
+        <p class="mc-note">Server na svém počítači běží v tvém prohlížeči. Kamarádi se k němu připojí kódem (např. LOUKA-7K2F), který jim pošleš.</p>
+        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button></div>
       </div>
       <div class="menu-page" id="pgHost" hidden>
-        <div class="mc-title">Nastavení serveru</div>
+        <div class="mc-title">Server na svém počítači</div>
         <label class="mc-toggle"><input type="checkbox" id="mCreative"> Povolit hráčům kreativní režim</label>
         <p class="mc-note">Server poběží v tvém prohlížeči – nech hru otevřenou, dokud ostatní hrají. Po spuštění dostaneš kód, který pošleš kamarádům (max. 6 hráčů). Svět serveru se ukládá zvlášť, tvoje hra pro jednoho zůstane beze změny.</p>
-        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button><button class="mc-btn" id="mHostGo">Spustit</button></div>
+        <div class="menu-row"><button class="mc-btn" data-back="pgMore">Zpět</button><button class="mc-btn" id="mHostGo">Spustit</button></div>
       </div>
       <div class="menu-page" id="pgJoin" hidden>
-        <div class="mc-title">Připojit se k serveru</div>
-        <label class="menu-label">Kód nebo adresa serveru<input id="mCode" maxlength="200" placeholder="LOUKA-7K2F" autocomplete="off" spellcheck="false"></label>
-        <label class="menu-label" id="mPassRow" hidden>Heslo serveru<input id="mPass" type="password" maxlength="64" autocomplete="off"></label>
-        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button><button class="mc-btn" id="mJoinGo">Připojit</button></div>
+        <div class="mc-title">Připojit se kódem</div>
+        <label class="menu-label">Kód serveru<input id="mCode" maxlength="12" placeholder="LOUKA-7K2F" autocomplete="off" spellcheck="false"></label>
+        <p class="mc-note">Kód ti pošle kamarád, který vytvořil server na svém počítači. Stačí napsat 4 znaky na konci.</p>
+        <div class="menu-row"><button class="mc-btn" data-back="pgMore">Zpět</button><button class="mc-btn" id="mJoinGo">Připojit</button></div>
       </div>
-      <div class="menu-page" id="pgWorlds" hidden>
-        <div class="mc-title">Vyber svět</div>
-        <div class="world-list" id="mWorlds"></div>
-        <p class="mc-note">Každý svět má vlastní stavby, hráče i chat. Batoh si každý svět pamatuje zvlášť.</p>
-        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button></div>
+      <div class="menu-page" id="pgPass" hidden>
+        <div class="mc-title">Server kroužku</div>
+        <label class="menu-label">Heslo kroužku<input id="mPass" type="password" maxlength="64" autocomplete="off"></label>
+        <p class="mc-note">Heslo ti řekne lektor. Napíšeš ho jen jednou, tento prohlížeč si ho zapamatuje.</p>
+        <div class="menu-row"><button class="mc-btn" data-back>Zpět</button><button class="mc-btn" id="mPassGo">Připojit</button></div>
       </div>
       <div class="menu-page" id="pgBusy" hidden>
         <div class="menu-busy" id="busyText">Připojuji…</div>

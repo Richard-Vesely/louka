@@ -1,5 +1,6 @@
-// Multiplayer test with the Node.js server: the server serves the built game (dist/), two browsers join by address
-// with a password, play together, then the server restarts and the world is still there.
+// Multiplayer test with the Node.js server: the server serves the built game (dist/), the main menu lists its world,
+// two browsers join it with the password (a wrong one asks again), play together, then the server restarts
+// (now without a password: no prompt) and the world is still there.
 // Usage: npm run build && node tests/playtest/server-mp.mjs
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -10,8 +11,8 @@ import { launch, checker, openPage, waitGame, shot, sleep } from './lib.mjs';
 const out = process.argv[2] || 'playtest-server';
 const { check, results, failed } = checker('server: ');
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'louka-mp-'));
-function startServer() {
-  const child = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT: '0', DATA_DIR: dataDir, ROOM_PASSWORD: 'kroužek', SAVE_SECONDS: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
+function startServer(pass = 'kroužek') {
+  const child = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT: '0', DATA_DIR: dataDir, ROOM_PASSWORD: pass, SAVE_SECONDS: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = '';
   return new Promise((ok, fail) => {
     const t = setTimeout(() => fail(new Error('server did not start: ' + log)), 20000);
@@ -28,26 +29,26 @@ const browser = await launch();
 const A = await openPage(browser, srv.url, { label: 'Ája: ' });
 const B = await openPage(browser, srv.url, { label: 'Bára: ' });
 if (process.env.THROTTLE) for (const p of [A, B]) await (await p.context().newCDPSession(p)).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.THROTTLE) });
-// Hlavní menu -> "Hrát na serveru" -> (server chce heslo) stránka Připojit se s adresou -> heslo -> Připojit
-async function joinByButton(page, name, pass) {
-  await page.waitForSelector('#mServer:not([hidden])', { timeout: 10000 });
+// Hlavní menu -> tlačítko světa -> (server chce heslo) Heslo kroužku -> Připojit
+async function joinWorld(page, name, pass) {
+  await page.waitForSelector('#mWorlds button[data-world]', { timeout: 15000 });
   await page.fill('#mName', name);
-  await page.click('#mServer');
-  await page.waitForSelector('#pgJoin:not([hidden])', { timeout: 5000 });
+  await page.click('#mWorlds button[data-world]');
+  if (pass == null) return;
+  await page.waitForSelector('#pgPass:not([hidden])', { timeout: 5000 });
   await page.fill('#mPass', pass);
-  await page.click('#mJoinGo');
+  await page.click('#mPassGo');
 }
 
 try {
-  check('menu offers "Hrát na serveru" when the game comes from the server', await until(A, () => !document.getElementById('mServer').hidden && !document.getElementById('mPassRow').hidden));
-  check('join page has the server address filled in', (await A.inputValue('#mCode')).endsWith('/ws'), await A.inputValue('#mCode'));
-  await joinByButton(A, 'Ája', 'spatne');
-  check('wrong password gives a Czech message', await until(A, () => document.getElementById('menuMsg').textContent === 'Špatné heslo.'), await A.textContent('#menuMsg'));
+  check('main menu lists the server world as a button (from /worlds)', await until(A, () => { const b = document.querySelectorAll('#mWorlds button[data-world]'); return b.length === 1 && /Hlavní svět/.test(b[0].textContent) && /0\/8 hráčů/.test(b[0].textContent); }), await A.textContent('#mWorlds'));
+  await joinWorld(A, 'Ája', 'spatne');
+  check('wrong password gives a Czech message and asks again', await until(A, () => document.getElementById('menuMsg').textContent === 'Špatné heslo. Zkus to znovu.' && !document.getElementById('pgPass').hidden && document.getElementById('mPass').value === ''), await A.textContent('#menuMsg'));
   await A.fill('#mPass', 'kroužek');
-  await A.click('#mJoinGo');
+  await A.press('#mPass', 'Enter');
   await waitGame(A, 60000);
   check('Ája joins the server', await A.evaluate(() => window.game.NET.client === true && window.game.NET.name === 'Ája'));
-  await joinByButton(B, 'Bára', 'kroužek');
+  await joinWorld(B, 'Bára', 'kroužek');
   await waitGame(B, 60000);
   check('Bára joins the server', await B.evaluate(() => window.game.NET.client === true));
   check('both see each other', await until(A, () => [...window.game.others.values()].some((P) => P.name === 'Bára' && P.pose)) && await until(B, () => [...window.game.others.values()].some((P) => P.name === 'Ája' && P.pose)));
@@ -88,10 +89,11 @@ try {
   await sleep(1500);
   await stop(srv);
   check('players notice the server is gone', await until(A, () => document.getElementById('menu') !== null || window.game === undefined, null, 15000) || true);
-  srv = await startServer();
+  srv = await startServer('');
   const C = await openPage(browser, srv.url, { label: 'Cyril: ' });
-  await joinByButton(C, 'Cyril', 'kroužek');
+  await joinWorld(C, 'Cyril', null);
   await waitGame(C, 60000);
+  check('a server without a password joins without asking', await C.evaluate(() => window.game.NET.client === true));
   check('after a restart the world is still there (block, chest, digging)', await C.evaluate(() => window.game.blocks.get('4,2,30') === 'bricks' && window.game.chests.get('6,2,30')?.[0]?.id === 'apple' && window.game.getVox(5, -6, 30) === 0));
   check('no console errors (Cyril)', C.errors.length === 0, C.errors.slice(0, 3).join(' | '));
 } catch (e) {

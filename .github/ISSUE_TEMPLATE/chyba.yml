@@ -30,8 +30,8 @@ body:
       label: Jak jsi hrál(a)?
       options:
         - Hra pro jednoho
-        - Vytvořit server (kód LOUKA-…)
-        - Připojení k serveru kroužku (adresa)
+        - Vytvořit server na svém počítači (kód LOUKA-…)
+        - Server kroužku (Hlavní svět, Kreativní svět…)
         - Nevím
   - type: textarea
     id: obrazek

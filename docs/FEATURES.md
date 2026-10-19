@@ -10,11 +10,21 @@ When you add or change a feature, update this file in the same pull request.
 ---
 
 ## 1. Start and menu
-- **Main menu "ŘÍŠE"**: name field (max 16 chars, remembered), **Hra pro jednoho**, **Vytvořit server**, **Připojit se**, **Nastavení**.
+- **Main menu "ŘÍŠE"**: name field (max 16 chars, remembered), **Hra pro jednoho**, one big button per world of the
+  club server, then **Nastavení** and **Další možnosti ▸**.
 - **Hra pro jednoho**: single player, world saved in the browser.
-- **Vytvořit server** (host in the browser): option *Povolit hráčům kreativní režim*; you get a code like `LOUKA-7K2F`
-  (the same code next time). Your tab is the server: keep it open. Max 6 players.
-- **Připojit se**: type the code (just the 4 characters is enough).
+- **World buttons** (e.g. *Hlavní svět*, *Kreativní svět*): the list comes from the club server (`GET /worlds`), so a new
+  world appears by itself; each shows the name, a *kreativní* label and players n/max (full worlds are disabled; counts
+  refresh every 15 s). While loading: *Načítám světy kroužku…*; when the server can't be reached, one disabled line
+  *Server kroužku je nedostupný* (everything else still works). The club server is the page's own server (game served
+  by `npm start`), a `?server=<address>` link, or the build's `VITE_SERVER_URL`; without one there are no world buttons.
+- **Heslo kroužku**: the first click on a world asks for the password once (only if the server has one) and remembers
+  it in the browser per server address (`rise-heslo`). A wrong password: *Špatné heslo. Zkus to znovu.*, the stored one is
+  forgotten and the menu asks again. The last chosen world is highlighted; a `?world=<id>` link highlights and focuses one (Enter joins).
+- **Další možnosti**: **Vytvořit server na svém počítači** (host in the browser): option *Povolit hráčům kreativní režim*;
+  you get a code like `LOUKA-7K2F` (the same code next time). Your tab is the server: keep it open. Max 6 players.
+  **Připojit se kódem**: type the friend's code (just the 4 characters is enough).
+- After leaving a multiplayer game the menu shows why (e.g. *Spojení se serverem se přerušilo.*).
 - **Nastavení**: graphics quality (auto/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity.
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
@@ -131,13 +141,13 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 ## 10. Multiplayer
 - Host in the browser via code, max 6 players, the host's tab is the server, world saved in the host's browser.
 - **Server** (Node.js, `npm start`, v2): always-on world on a VPS or a laptop, saved to disk every 30 s with daily backups,
-  serves the game itself; players join by address (**Připojit se** accepts a code or an address, **Hrát na serveru** when
-  the game comes from the server or a `?server=` link), optional password, max. 8 players by default.
-- **Several worlds on one server** (`WORLDS`, e.g. *Hlavní svět* + *Kreativní svět*): after the password the menu shows
-  **Vyber svět** with a button per world (name, *kreativní* label, players n/max, full worlds disabled); the last choice
-  is remembered and a `?world=<id>` link preselects one. Each world has its own buildings, animals, day, players and chat;
+  serves the game itself; its worlds are buttons in the main menu (when the game comes from the server, from a
+  `?server=` link, or from the Pages build's `SERVER_URL`), optional password (asked once), max. 8 players by default.
+- **Several worlds on one server** (`WORLDS`, e.g. *Hlavní svět* + *Kreativní svět*): the main menu shows a button per
+  world (name, *kreativní* label, players n/max, full worlds disabled); the last choice is highlighted and a
+  `?world=<id>` link preselects one. Each world has its own buildings, animals, day, players and chat;
   creative mode is on or off for everyone in a world. The backpack and position are saved per world. The info box and the
-  Esc menu show the world name. A server with one world skips the choice.
+  Esc menu show the world name.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
 - **Chat** (T), only to players in the same world.
 - Everyone sees other players (name tag, armor, held item, walking, sitting, eating), their blocks, vehicles,
