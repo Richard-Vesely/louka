@@ -11,21 +11,57 @@ import { buildComputerModel, drawPCScreen } from '../pc/computer.js';
 import { buildPrinterModel, printerDev } from '../pc/printer.js';
 import { specials } from '../render/blocks.js';
 import { dummy } from '../render/forest.js';
-import { scene } from '../render/renderer.js';
+import { U as UNI, camera, scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { iconImg, slotHTML, ui } from '../ui/inventory-ui.js';
+import { TECH, addHolo, addStatus, addStrip, builder, drawHolo, glowMat, mergeStatic, setStatus, techMats, updateHolo } from './machine-models.js';
 
 // ============================================================ elektrická síť
 // Pravidla sítě (výroba, spotřeba, baterie, vypínač, tiskárna) jsou v shared/sim/power.js; tady jsou modely a okno zařízení.
 
 // ---------- vykreslení kabelů: středový uzel + ramena k sousedním elektrickým blokům (InstancedMesh)
-const cableMats = {
-  copper: new THREE.MeshStandardMaterial({ color: 0xc8743a, metalness: 0.6, roughness: 0.4 }),
-  gold: new THREE.MeshStandardMaterial({ color: 0xf2c440, metalness: 0.8, roughness: 0.3 }),
+// Jádro kabelu ukazuje svůj kov (měď, zlato). Kudy teče proud, běží po kabelu tyrkysové pulzy: čím větší odběr,
+// tím rychleji a jasněji. Bez proudu je kabel tmavý. aPow = 0 bez proudu, jinak 0,3–1 podle zatížení sítě.
+const PULSE = new THREE.Color(TECH.cyan);
+function cableMat(color, roughness) {
+  const m = new THREE.MeshStandardMaterial({ color, metalness: 1, roughness, envMapIntensity: 1.3 });
+  m.customProgramCacheKey = () => 'cable';
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = UNI.time;
+    sh.uniforms.uPulse = { value: PULSE };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', `#include <common>
+attribute float aPow;
+varying float vPow;
+varying vec3 vCW;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+vPow = aPow;
+vCW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform float uTime;
+uniform vec3 uPulse;
+varying float vPow;
+varying vec3 vCW;`)
+      .replace('#include <emissivemap_fragment>', `if (vPow > 0.0) {
+  float run = fract((vCW.x + vCW.y + vCW.z) * 1.6 - uTime * (0.7 + 2.6 * vPow));
+  totalEmissiveRadiance += uPulse * (0.06 + vPow * 2.4 * smoothstep(0.78, 0.97, run) * (1.0 - smoothstep(0.97, 1.0, run)));
+}
+#include <emissivemap_fragment>`);
+  };
+  return m;
+}
+const cableMats = { copper: cableMat(0xd07a42, 0.32), gold: cableMat(0xf0c450, 0.22) };
+const sheathMat = new THREE.MeshStandardMaterial({ color: 0x17191e, roughness: 0.7, metalness: 0.2 });
+// uzel: kulatá spojka v tmavé objímce; rameno: kovové jádro
+const cableGeos = {
+  c: new THREE.CylinderGeometry(0.085, 0.085, 0.17, 12),
+  a: new THREE.CylinderGeometry(0.05, 0.05, 0.42, 10).rotateZ(Math.PI / 2).translate(0.29, 0, 0),
+  s: new THREE.CylinderGeometry(0.1, 0.1, 0.06, 12),
 };
-const cableGeos = { c: new THREE.BoxGeometry(0.2, 0.2, 0.2), a: new THREE.BoxGeometry(0.41, 0.12, 0.12).translate(0.295, 0, 0) };
 const ARM_ROT = [[0, 0, 0], [0, Math.PI, 0], [0, 0, Math.PI / 2], [0, 0, -Math.PI / 2], [0, -Math.PI / 2, 0], [0, Math.PI / 2, 0]];
 const cablePool = new Map();
+let cableT = 0;
 export function rebuildCables() {
   const lists = new Map();
   const push = (key, m) => { if (!lists.has(key)) lists.set(key, []); lists.get(key).push(m); };
@@ -37,12 +73,13 @@ export function rebuildCables() {
     dummy.scale.set(1, 1, 1);
     dummy.rotation.set(0, 0, 0);
     dummy.updateMatrix();
-    push(`${B.cable}|c`, dummy.matrix.clone());
+    push(`${B.cable}|c`, [dummy.matrix.clone(), k]);
+    push('sheath|s', [dummy.matrix.clone(), k]);
     DIRS6.forEach(([dx, dy, dz], i) => {
       if (!elecOf(blocks.get(bkey(x + dx, y + dy, z + dz)))) return;
       dummy.rotation.set(...ARM_ROT[i]);
       dummy.updateMatrix();
-      push(`${B.cable}|a`, dummy.matrix.clone());
+      push(`${B.cable}|a`, [dummy.matrix.clone(), k]);
     });
   }
   for (const [key, list] of lists) {
@@ -50,123 +87,201 @@ export function rebuildCables() {
     if (!m || m.instanceMatrix.count < list.length) {
       if (m) { scene.remove(m); m.dispose(); }
       const [mat, part] = key.split('|');
-      m = new THREE.InstancedMesh(cableGeos[part], cableMats[mat], Math.max(64, Math.ceil(list.length * 1.5)));
+      const n = Math.max(64, Math.ceil(list.length * 1.5));
+      m = new THREE.InstancedMesh(cableGeos[part].clone(), mat === 'sheath' ? sheathMat : cableMats[mat], n);
+      m.geometry.setAttribute('aPow', new THREE.InstancedBufferAttribute(new Float32Array(n), 1));
       m.frustumCulled = false;
       scene.add(m);
       cablePool.set(key, m);
     }
-    list.forEach((mt, i) => m.setMatrixAt(i, mt));
+    list.forEach(([mt], i) => m.setMatrixAt(i, mt));
+    m.userData.keys = list.map(([, k]) => k);
     m.count = list.length;
     m.instanceMatrix.needsUpdate = true;
   }
-  for (const [key, m] of cablePool) if (!lists.has(key)) m.count = 0;
+  for (const [key, m] of cablePool) if (!lists.has(key)) { m.count = 0; m.userData.keys = []; }
+  cableT = 0;
+}
+// Zatížení kabelu: 0 = bez proudu, jinak 0,3–1 podle toho, kolik síť vyrábí a odebírá (4× za sekundu)
+function updateCablePulses(dt) {
+  if ((cableT -= dt) > 0) return;
+  cableT = 0.25;
+  for (const m of cablePool.values()) {
+    const a = m.geometry.getAttribute('aPow'), keys = m.userData.keys || [];
+    for (let i = 0; i < keys.length; i++) {
+      const st = netStats(keys[i]), flow = st ? Math.max(st[0], st[1]) : 0;
+      a.array[i] = flow > 0 ? 0.3 + 0.7 * Math.min(1, flow / 200) : 0;
+    }
+    a.needsUpdate = true;
+  }
 }
 
-// ---------- modely zařízení (volá buildSpecial); přední strana je +z
+// ---------- modely zařízení (volá buildSpecial); přední strana je +z. Vzhled a materiály: machines/machine-models.js
 export function buildElecModel(type, g) {
-  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.5, ...o });
-  const box = (w, h, d, m, x, y, z, parent = g) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); parent.add(me); return me; };
-  const steel = M({ color: 0x8a96a4, metalness: 0.7, roughness: 0.35 }), dark = M({ color: 0x2a2a30 });
-  const glowMat = (c) => M({ color: 0x222222, emissive: c, emissiveIntensity: 0 });
-  const U = g.userData;
+  const T = techMats(), { box, cyl } = builder(g), U = g.userData;
+  const red = () => new THREE.MeshStandardMaterial({ color: 0xd82a2a, roughness: 0.35 });
   if (type === 'coal_generator') {
-    box(0.9, 0.8, 0.9, steel, 0, 0.4, 0);
-    for (let i = 0; i < 4; i++) box(0.6, 0.04, 0.02, dark, 0, 0.55 + i * 0.07, 0.46);
-    U.glow = box(0.4, 0.16, 0.02, glowMat(0xff6a1a), 0, 0.22, 0.46).material;
-    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 8), dark);
-    pipe.position.set(-0.28, 1.05, -0.25);
-    g.add(pipe);
-    const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 14), M({ color: 0xc8743a, metalness: 0.6 }));
-    coil.rotation.z = Math.PI / 2;
-    coil.position.set(0.5, 0.45, 0);
-    g.add(coil);
+    box(0.94, 0.06, 0.88, T.dark, 0, 0.03, 0);
+    box(0.9, 0.72, 0.84, T.housing, 0, 0.42, 0, 0.04);
+    box(0.7, 0.05, 0.6, T.trim, 0, 0.8, -0.04, 0.02);
+    box(0.5, 0.24, 0.03, T.dark, 0, 0.26, 0.425, 0.01); // dvířka topeniště
+    U.glow = box(0.42, 0.14, 0.02, glowMat(TECH.amber), 0, 0.26, 0.437).material;
+    for (let i = 0; i < 4; i++) box(0.56, 0.025, 0.02, T.dark, 0, 0.5 + i * 0.055, 0.425); // větrací mřížka
+    addStrip(g, 0.72, 0.022, 0.012, 0, 0.71, 0.425);
+    addStatus(g, 0.36, 0.6, 0.43);
+    // ventilátor na boku (točí se, když generátor běží)
+    const fan = new THREE.Group();
+    fan.position.set(-0.46, 0.46, 0);
+    fan.rotation.z = Math.PI / 2;
+    g.add(fan);
+    const grille = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.022, 8, 24).rotateY(Math.PI / 2), T.chrome);
+    grille.position.copy(fan.position);
+    g.add(grille);
+    for (let i = 0; i < 5; i++) { const bl = box(0.16, 0.012, 0.06, T.dark, 0, 0, 0, 0, fan); bl.geometry.translate(0.09, 0, 0); bl.rotation.set(0, (i / 5) * Math.PI * 2, 0.35); }
+    cyl(0.04, 0.04, 0.04, T.chrome, 0, 0.01, 0, 10, fan);
+    U.fan = fan;
+    cyl(0.06, 0.07, 0.42, T.chrome, -0.28, 1.0, -0.25, 12); // výfuk
+    cyl(0.075, 0.075, 0.05, T.dark, -0.28, 1.22, -0.25, 12);
+    const out = cyl(0.11, 0.11, 0.08, T.copper, 0.47, 0.45, 0, 16); // výstup proudu
+    out.rotation.z = Math.PI / 2;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.015, 6, 20).rotateY(Math.PI / 2), glowMat(TECH.cyan, 0.15));
+    ring.position.set(0.515, 0.45, 0);
+    g.add(ring);
+    U.strips.push(ring.material);
+    addHolo(g, type, 1.45);
   } else if (type === 'solar_panel') {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.55, 8), steel);
-    post.position.y = 0.27;
-    g.add(post);
-    const c = document.createElement('canvas');
-    c.width = c.height = 32;
-    const x2 = c.getContext('2d');
-    x2.fillStyle = '#1a2a5a'; x2.fillRect(0, 0, 32, 32);
-    x2.fillStyle = '#8aa0c8'; for (let i = 0; i <= 32; i += 8) { x2.fillRect(i, 0, 1, 32); x2.fillRect(0, i, 32, 1); }
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const panel = box(0.96, 0.04, 0.96, M({ map: tex, metalness: 0.4, roughness: 0.2 }), 0, 0.6, 0);
+    box(0.4, 0.04, 0.4, T.dark, 0, 0.02, 0, 0.01);
+    cyl(0.045, 0.055, 0.56, T.chrome, 0, 0.3, 0, 10);
+    addStatus(g, 0, 0.1, 0.2);
+    const panel = new THREE.Group();
+    panel.position.y = 0.62;
     panel.rotation.x = 0.45; // nakloněný ke slunci
+    g.add(panel);
+    box(1, 0.05, 1, T.chrome, 0, 0, 0, 0.015, panel); // hliníkový rám
+    const tx = solarTex();
+    const cells = new THREE.Mesh(new THREE.PlaneGeometry(0.94, 0.94).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({
+      map: tx.map, emissiveMap: tx.edge, emissive: TECH.cyan, emissiveIntensity: 0, metalness: 0.4, roughness: 0.12, envMapIntensity: 1.6,
+    }));
+    cells.position.y = 0.027;
+    panel.add(cells);
+    U.cells = cells.material;
+    addHolo(g, type, 1.35);
   } else if (type === 'battery_block') {
-    box(0.8, 0.9, 0.8, M({ color: 0x2e3a2e }), 0, 0.45, 0);
-    box(0.3, 0.06, 0.12, M({ color: 0xd8783a, metalness: 0.6 }), -0.2, 0.93, 0);
-    box(0.3, 0.06, 0.12, M({ color: 0xc8c8c8, metalness: 0.6 }), 0.2, 0.93, 0);
-    U.bars = [0, 1, 2, 3, 4].map((i) => box(0.36, 0.1, 0.02, glowMat(0x3aff5a), 0, 0.15 + i * 0.14, 0.41));
+    box(0.84, 0.05, 0.84, T.dark, 0, 0.025, 0);
+    box(0.8, 0.8, 0.8, T.housing, 0, 0.45, 0, 0.04);
+    box(0.66, 0.05, 0.66, T.trim, 0, 0.87, 0, 0.02);
+    cyl(0.06, 0.06, 0.07, T.copper, -0.18, 0.92, 0, 12); // + pól
+    cyl(0.06, 0.06, 0.07, T.chrome, 0.18, 0.92, 0, 12); // − pól
+    box(0.26, 0.66, 0.02, T.dark, 0, 0.45, 0.405, 0.01); // okénko s ukazatelem nabití
+    U.bars = [0, 1, 2, 3, 4].map((i) => box(0.2, 0.09, 0.02, glowMat(TECH.cyan), 0, 0.2 + i * 0.125, 0.413).material);
+    addStatus(g, 0.3, 0.75, 0.41);
+    addHolo(g, type, 1.4);
   } else if (type === 'power_switch') {
-    box(0.34, 0.06, 0.34, M({ color: 0xe8e4dc }), 0, 0.03, 0);
+    box(0.36, 0.06, 0.36, T.trim, 0, 0.03, 0, 0.02);
+    box(0.2, 0.03, 0.12, T.dark, 0, 0.07, 0, 0.01);
     const pivot = new THREE.Group();
-    pivot.position.y = 0.06;
+    pivot.position.y = 0.07;
     g.add(pivot);
-    box(0.06, 0.26, 0.06, dark, 0, 0.13, 0, pivot);
-    box(0.1, 0.08, 0.1, M({ color: 0xd82a2a }), 0, 0.27, 0, pivot);
+    box(0.05, 0.26, 0.05, T.chrome, 0, 0.13, 0, 0, pivot);
+    box(0.1, 0.08, 0.1, red(), 0, 0.27, 0, 0.02, pivot);
     U.lever = pivot;
-  } else if (type === 'electric_lamp') {
-    box(0.36, 0.05, 0.36, dark, 0, 0.025, 0);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.25, 8), dark);
-    pole.position.y = 0.65;
-    g.add(pole);
-    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.24, 14, 1, true), M({ color: 0x3a5a3a, side: THREE.DoubleSide }));
-    shade.position.y = 1.32;
-    g.add(shade);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 8), glowMat(0xfff0b0));
-    bulb.position.y = 1.2;
-    g.add(bulb);
-    U.glow = bulb.material;
+    addStatus(g, 0.12, 0.075, 0.12);
+  } else if (type === 'electric_lamp') { // pouliční lampa: štíhlý sloup, rameno s teple bílým světelným panelem
+    box(0.36, 0.05, 0.36, T.dark, 0, 0.025, 0, 0.01);
+    cyl(0.03, 0.04, 1.26, T.housing, 0, 0.66, 0, 10);
+    box(0.44, 0.07, 0.16, T.housing, 0.1, 1.3, 0, 0.025);
+    U.glow = box(0.34, 0.015, 0.1, glowMat(TECH.warm, 0, 0x1a1712), 0.12, 1.258, 0).material;
+    addStrip(g, 0.02, 0.5, 0.02, 0, 0.6, 0.035);
   } else if (type === 'bulb_lamp') {
-    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 6), dark);
-    cord.position.y = 0.79;
-    g.add(cord);
-    box(0.08, 0.08, 0.08, dark, 0, 0.56, 0);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), glowMat(0xfff0b0));
+    cyl(0.012, 0.012, 0.42, T.dark, 0, 0.79, 0, 6);
+    cyl(0.045, 0.04, 0.08, T.housing, 0, 0.56, 0, 12);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), glowMat(TECH.warm, 0, 0x2a2620));
     bulb.position.y = 0.44;
     g.add(bulb);
     U.glow = bulb.material;
   } else if (type === 'motor_block') {
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.7, 16), steel);
+    box(0.7, 0.08, 0.56, T.dark, 0, 0.04, 0, 0.02);
+    const body = cyl(0.32, 0.32, 0.62, T.housing, 0, 0.45, 0, 24);
     body.rotation.x = Math.PI / 2;
-    body.position.y = 0.45;
-    g.add(body);
-    for (let i = 0; i < 6; i++) box(0.02, 0.62, 0.66, dark, -0.34 + i * 0.136 * 0, 0.45, 0).rotation.z = (i / 6) * Math.PI;
-    box(0.7, 0.1, 0.6, dark, 0, 0.05, 0);
+    for (let i = 0; i < 5; i++) { const fin = cyl(0.335, 0.335, 0.025, T.dark, 0, 0.45, -0.22 + i * 0.11, 24); fin.rotation.x = Math.PI / 2; }
+    for (const z of [-0.31, 0.31]) {
+      const r = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.014, 6, 28), glowMat(TECH.cyan, 0.15));
+      r.position.set(0, 0.45, z);
+      g.add(r);
+      (U.strips ||= []).push(r.material);
+    }
     const shaft = new THREE.Group();
     shaft.position.set(0, 0.45, 0.4);
     g.add(shaft);
-    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2, 8), M({ color: 0xd8d8d8, metalness: 0.9 }));
+    const sh = cyl(0.05, 0.05, 0.2, T.chrome, 0, 0, 0, 10, shaft);
     sh.rotation.x = Math.PI / 2;
-    shaft.add(sh);
-    box(0.3, 0.06, 0.04, M({ color: 0xd82a2a }), 0, 0, 0.09, shaft);
+    box(0.3, 0.06, 0.04, red(), 0, 0, 0.09, 0, shaft);
     U.shaft = shaft;
+    addStatus(g, 0.25, 0.12, 0.29);
+    addHolo(g, type, 1.15);
   } else if (type === 'electric_furnace') {
-    box(1, 1, 1, steel, 0, 0.5, 0);
-    U.glow = box(0.55, 0.32, 0.02, glowMat(0xff7a2a), 0, 0.45, 0.505).material;
-    U.led = box(0.06, 0.06, 0.02, glowMat(0x3aff5a), 0.36, 0.85, 0.505).material;
+    box(1, 1, 1, T.housing, 0, 0.5, 0, 0.04);
+    box(0.84, 0.84, 0.02, T.trim, 0, 0.5, 0.5, 0.01);
+    box(0.6, 0.36, 0.02, T.dark, 0, 0.45, 0.515, 0.01);
+    U.glow = box(0.54, 0.3, 0.02, glowMat(TECH.amber), 0, 0.45, 0.522).material;
+    addStrip(g, 0.6, 0.02, 0.01, 0, 0.78, 0.515);
+    addStatus(g, 0.33, 0.84, 0.515);
+    addHolo(g, type, 1.4);
   } else if (type === 'charger') {
-    box(0.7, 0.45, 0.6, M({ color: 0xe8e4dc, roughness: 0.6 }), 0, 0.225, 0);
-    box(0.4, 0.04, 0.2, dark, 0, 0.46, -0.05);
-    U.led = box(0.08, 0.06, 0.02, glowMat(0xffa020), 0.22, 0.32, 0.305).material;
-  } else if (type === 'computer') buildComputerModel(g);
-  else if (type === 'printer') buildPrinterModel(g);
+    box(0.7, 0.42, 0.6, T.trim, 0, 0.21, 0, 0.04);
+    box(0.44, 0.03, 0.26, T.dark, 0, 0.43, -0.04, 0.01);
+    addStrip(g, 0.46, 0.012, 0.28, 0, 0.415, -0.04);
+    addStatus(g, 0.25, 0.3, 0.305);
+    addHolo(g, type, 1.05);
+  } else if (type === 'computer') { buildComputerModel(g); addHolo(g, type, 1.1); }
+  else if (type === 'printer') { buildPrinterModel(g); addHolo(g, type, 0.95); }
+  mergeStatic(g);
 }
-// Vzhled zařízení podle stavu (svítí, točí se, ukazuje nabití)
+// Solární články: tmavě modré se stříbrnou mřížkou; hrany článků svítí tyrkysově, když na panel svítí slunce
+let solarT = null;
+function solarTex() {
+  if (solarT) return solarT;
+  const mk = (fn, srgb = true) => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); fn(x); const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+  const grid = (x, col, w) => { x.fillStyle = col; for (let i = 0; i <= 128; i += 32) { x.fillRect(i - w / 2, 0, w, 128); x.fillRect(0, i - w / 2, 128, w); } };
+  solarT = {
+    map: mk((x) => { x.fillStyle = '#0e1c44'; x.fillRect(0, 0, 128, 128); for (let i = 0; i < 128; i += 4) { x.fillStyle = 'rgba(120,150,220,0.12)'; x.fillRect(0, i, 128, 1); } grid(x, '#b8c4d4', 2); }),
+    edge: mk((x) => { x.fillStyle = '#000'; x.fillRect(0, 0, 128, 128); grid(x, '#ffffff', 2); }),
+  };
+  return solarT;
+}
+// Vzhled zařízení podle stavu (svítí, točí se, ukazuje nabití, hologram s údajem)
+let wasOn = new Map();
 export function updatePowerVisuals(dt, time) {
+  updateCablePulses(dt);
+  const cam = camera.position;
   for (const [k, s] of specials) {
     const e = elecOf(s.type);
     if (!e) continue;
-    const st = power.get(k), U = s.obj.userData, on = !!st?.pw;
+    const st = power.get(k), U = s.obj.userData;
+    let on = !!st?.pw;
+    if (e.solar) on = sunLevel > 0.05 && s.y >= topY(s.x, s.z) && netOf.has(k);
+    if (e.store) on = (st?.e || 0) > 0;
     if (U.glow) U.glow.emissiveIntensity = on ? (s.type === 'coal_generator' || s.type === 'electric_furnace' ? 1.3 + Math.sin(time * 9 + s.x) * 0.3 : 2.4) : 0;
     if (U.shaft && on) U.shaft.rotation.z += dt * 18;
-    if (U.bars) U.bars.forEach((b, i) => (b.material.emissiveIntensity = (st?.e || 0) / BAT_CAP > i / 5 + 0.01 ? 1.6 : 0));
+    if (U.fan && on) U.fan.rotation.y += dt * 14;
+    if (U.bars) U.bars.forEach((b, i) => (b.emissiveIntensity = (st?.e || 0) / BAT_CAP > i / 5 + 0.01 ? 1.8 : 0.05));
     if (U.lever) U.lever.rotation.x = st?.on === false ? 0.6 : -0.6;
-    if (U.led) { U.led.emissiveIntensity = on ? 1.6 : 0.2; }
-    if (U.screen) drawPCScreen(k, U.screen, st);
+    if (U.led) U.led.emissiveIntensity = on ? 1.6 : 0.2;
+    if (U.status) setStatus(U.status, e.switch ? st?.on !== false : on, time);
+    if (U.strips) for (const m of U.strips) m.emissiveIntensity = on ? 1.5 + 0.25 * Math.sin(time * 2.2 + s.x) : 0.08;
+    if (U.cells) U.cells.emissiveIntensity = on ? 0.25 + sunLevel * 0.9 : 0;
+    if (U.screen) { drawPCScreen(k, U.screen, st); U.screen.scan.visible = !!(st?.pc && on); if (U.screen.scan.visible) U.screen.scan.material.map.offset.y = -time * 0.2; }
     if (U.sheet) { U.sheet.visible = on; if (on) U.sheet.position.z = 0.24 + ((time * 0.33) % 1) * 0.12; } // list vyjíždí z tiskárny
+    if (U.holo) {
+      const H = U.holo, show = e.store ? netOf.has(k) : on;
+      if (show) drawHolo(H, e.gen ? `+${e.gen} W` : e.solar ? `+${Math.round(e.solar * sunLevel)} W` : e.store ? `${Math.round(((st?.e || 0) / BAT_CAP) * 100)} %` : `${e.use} W`);
+      updateHolo(H, s.obj, show, cam, dt, time);
+    }
+    // zvuk, když se stroj poblíž rozběhne
+    if (on && wasOn.get(k) === false && !e.switch && (cam.x - s.x) ** 2 + (cam.z - s.z) ** 2 < 15 * 15) Sound.powerUp();
+    wasOn.set(k, on);
   }
+  if (wasOn.size > specials.size * 2 + 64) wasOn = new Map([...wasOn].filter(([k]) => specials.has(k)));
 }
 // Pravé tlačítko na vypínač: zapnout / vypnout (síť se hned přepočítá)
 export function toggleSwitch(k) {

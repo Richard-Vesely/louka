@@ -313,3 +313,20 @@ export const SMELT_TIME = 3;
   ITEMS.car_battery_empty = { name: 'Autobaterie (vybitá)', stack: 16, cat: 'vehicles', art: ['battery', '#5a5a62'] };
   for (const r of RECIPES) if (r.out === 'car_battery') r.out = 'car_battery_empty';
 })();
+
+// ---------- futuristické stavební bloky: technické panely a neony. Neon svítí barvou, která má ve hře pevný význam:
+// tyrkysová = elektřina, jantarová = teplo a oheň, fialová = Markova dimenze (light = svítí jako lampa a odhání stínožrouty).
+(() => {
+  const block = (id, name, cat, b) => { ITEMS[id] = { name, stack: 64, cat, block: id }; BLOCKS[id] = { name, solid: true, drop: id, ...b }; };
+  const R = (out, n, shape, key) => RECIPES.push({ out, n, shape, key, cat: ITEMS[out].cat });
+  block('tech_panel', 'Technický panel', 'build', { hard: 3, tool: 'pick', req: 2 });
+  R('tech_panel', 4, ['PP', 'PP'], { P: 'steel_plate' });
+  block('white_panel', 'Bílý panel', 'build', { hard: 2, tool: 'pick', req: 1 });
+  R('white_panel', 4, ['QP', 'PQ'], { Q: 'quartz', P: 'plastic' });
+  block('neon_cyan', 'Tyrkysový neon', 'decor', { hard: 0.8, light: 10, lightColor: 0x38e8ff });
+  R('neon_cyan', 4, [' G ', 'GSG', ' G '], { G: 'glass', S: 'shard' });
+  block('neon_amber', 'Jantarový neon', 'decor', { hard: 0.8, light: 10, lightColor: 0xffb066 });
+  R('neon_amber', 4, [' G ', 'GTG', ' G '], { G: 'glass', T: 'torch' });
+  block('neon_magenta', 'Fialový neon', 'decor', { hard: 0.8, light: 10, lightColor: 0xd04bff });
+  R('neon_magenta', 4, [' G ', 'GMG', ' G '], { G: 'glass', M: 'markorite_raw' });
+})();
