@@ -227,7 +227,7 @@ export function hitMob(m, dmg, yaw = player.yaw) {
     NET.req(['hit', m.nid, dmg, player.yaw]);
     m.flash = 1;
     sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : [1, 0.25, 0.2], 18, 3.5, 1.5);
-    Sound.hit();
+    Sound.at(m.pos.x, m.pos.y + m.def.cy, m.pos.z, () => Sound.hit(), { ref: 4 });
     player.shake = 0.1;
     return;
   }
@@ -236,21 +236,22 @@ export function hitMob(m, dmg, yaw = player.yaw) {
 export const playerSafe = () => shrineDist(player.pos.x, player.pos.z) < 11 || nearLight(player.pos.x, player.pos.z, 5);
 
 // ---------- co se děje s tvory (události z pravidel): jiskry, zvuky, kořist, zranění
+// Zvuky tvorů znějí z místa, kde tvor je (směr a vzdálenost).
+const mobAt = (m, fn, ref = 4) => Sound.at(m.pos.x, m.pos.y + m.def.cy, m.pos.z, fn, { ref });
 on('mobHit', (m, local) => {
   sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : m.type === 'golem' ? [0.4, 0.9, 1] : [1, 0.25, 0.2], 18, 3.5, 1.5);
-  Sound.hit();
+  mobAt(m, () => { Sound.hit(); if (m.type === 'golem') Sound.mat('crystal', 'hit', 1.5); });
   if (local) player.shake = 0.1;
-  if (m.type === 'sheep') Sound.baa();
-  if (m.type === 'boar' || m.type === 'wolf') Sound.grunt();
+  if (m.type === 'sheep' || m.type === 'boar' || m.type === 'wolf' || m.type === 'cow' || m.type === 'chicken') mobAt(m, () => Sound.mobVoice(m.type));
 });
 on('mobKilled', (m) => {
   sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 50, 5, 2);
-  if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') Sound.kill();
+  mobAt(m, () => { if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') Sound.kill(); else Sound.burst({ dur: 0.35, f0: 1200, f1: 200, q: 0.8, vol: 0.18, type: 'lowpass' }); });
 });
 on('chestLoot', () => { if (invOpen && ui.mode === 'chest') renderInventory(); });
 on('mobBurn', (m) => debris.emit(m.pos.x, m.pos.y + 0.8, m.pos.z, [0.1, 0.1, 0.1], 2, 1, 2));
-on('mobAttack', (m) => { if (m.type === 'markoman' || m.type === 'golem') Sound.swing(); });
-on('mobSound', (m) => ({ sheep: () => Sound.baa(), crawler: () => Sound.growl(), wolf: () => Sound.howl(), deer: () => {}, chicken: () => Sound.cluck(), cow: () => Sound.moo() }[m.type] || (() => Sound.grunt()))());
+on('mobAttack', (m) => mobAt(m, () => { if (m.type === 'markoman' || m.type === 'golem') Sound.swing(); else if (m.type === 'wolf' || m.type === 'boar' || m.type === 'crawler') Sound.mobVoice(m.type); }));
+on('mobSound', (m) => mobAt(m, () => Sound.mobVoice(m.type), m.type === 'wolf' || m.type === 'cow' ? 8 : 4)); // vytí a bučení je slyšet dál
 on('spawnerSpawn', (x, y, z) => sparks.emit(x, y, z, [0.8, 0.3, 1], 25, 2, 1));
 // Kořist pro hráče u této obrazovky, když je do 24 m; zranění od tvora.
 NET.localLoot = (m, id, n) => { if (Math.hypot(m.pos.x - player.pos.x, m.pos.y - player.pos.y, m.pos.z - player.pos.z) < 24) addItem(id, n); };
