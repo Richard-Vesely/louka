@@ -18,12 +18,12 @@ export function startServer(env) {
   });
 }
 export const stop = (s) => new Promise((ok) => { if (s.child.exitCode !== null) return ok(); s.child.on('exit', ok); s.child.kill(); });
-/** A player over WebSocket. `hello` is merged into ['hello', { name, pass, … }] (e.g. { v: 2, world: 'kreativ' }). */
+/** A player over WebSocket. `hello` is merged into ['hello', { name, pass, pin: '1234', … }] (e.g. { v: 2, world: 'kreativ' }; { pin: undefined, token } = log in with a token). */
 export function player(port, name, pass, hello = {}) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
   const p = { ws, msgs: [], welcome: null };
   ws.on('message', (raw) => { const m = JSON.parse(raw.toString()); p.msgs.push(m); if (m[0] === 'welcome') p.welcome = m[1]; });
-  p.ready = new Promise((ok) => ws.on('open', () => { ws.send(JSON.stringify(['hello', { name, pass, ...hello }])); ok(); }));
+  p.ready = new Promise((ok) => ws.on('open', () => { ws.send(JSON.stringify(['hello', { name, pass, pin: '1234', ...hello }])); ok(); }));
   p.send = (m) => ws.send(JSON.stringify(m));
   p.waitFor = async (fn, ms = 8000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const m = p.msgs.find(fn); if (m) return m; await sleep(30); } return null; };
   p.close = () => new Promise((ok) => { if (ws.readyState === WebSocket.CLOSED) return ok(); ws.on('close', ok); ws.close(); });

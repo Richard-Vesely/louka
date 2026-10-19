@@ -12,10 +12,11 @@ přidávat věci vy (s pomocí AI). A máme **stálý server**, kde svět zůsta
 
 **Jak hrát**
 - Otevři **https://<adresa serveru>**, napiš své jméno, klikni na svět (**Hlavní svět** nebo **Kreativní svět**)
-  a poprvé zadej heslo **<heslo>**.
-- Hrát spolu jde i bez serveru: jeden dá **Další možnosti → Vytvořit server na svém počítači** a pošle ostatním kód
-  (např. `LOUKA-7K2F`), ostatní dají **Další možnosti → Připojit se kódem** a napíšou ty 4 znaky.
-- **Hra pro jednoho** ukládá svět jen ve tvém prohlížeči.
+  a poprvé zadej heslo **<heslo>** a vymysli si **PIN** (4 číslice). Zapamatuj si ho: se jménem a PINem máš svůj
+  batoh i na jiném počítači. Když ho zapomeneš, Richard ho smaže a vymyslíš si nový.
+- Hrát spolu jde i bez serveru: jeden dá **Další možnosti → Vytvořit hru na svém počítači** a pošle ostatním kód
+  (např. `LOUKA-7K2F`), ostatní dají **Další možnosti → Připojit se ke kamarádovi kódem** a napíšou ty 4 znaky.
+- **Hrát sám** ukládá svět jen ve tvém prohlížeči.
 
 **Jak do hry přidat něco svého**
 1. Kód je tady: https://github.com/Richard-Vesely/louka (účet na GitHubu je od 13 let; mladší pracujte ve dvojici nebo přes Richarda).

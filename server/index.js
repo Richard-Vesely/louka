@@ -11,6 +11,8 @@
 //   MAX_PLAYERS     kolik hráčů najednou v jednom světě (výchozí 8)
 //   ALLOW_CREATIVE  1 = všichni smí kreativní režim (výchozí 0; jen když WORLDS není nastavené)
 //   SAVE_SECONDS    jak často ukládat svět (výchozí 30)
+//   ADMIN_PASSWORD  heslo stránky /admin se seznamem hráčů a resetem PINu (prázdné = stránka vypnutá)
+// Profily hráčů (přezdívka + PIN) jsou v DATA_DIR/players.json; správa z příkazové řádky: node server/admin.js
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startServer } from './server.js';
@@ -32,10 +34,12 @@ const srv = await startServer({
   staticDir: env.STATIC_DIR === '' ? null : path.resolve(env.STATIC_DIR || path.join(here, '..', 'dist')),
   maxPlayers: Number(env.MAX_PLAYERS || 8),
   saveEveryMs: 1000 * Number(env.SAVE_SECONDS || 30),
+  adminPassword: env.ADMIN_PASSWORD || '',
   log,
 });
 log(`Server Říše běží: http://localhost:${srv.port}/  (hráči se připojí na ws://<adresa>:${srv.port}/ws, světy: ${srv.worlds.join(', ')})`);
 if (!env.ROOM_PASSWORD) log('Pozor: ROOM_PASSWORD není nastavené – připojit se může kdokoli, kdo zná adresu.');
+log(env.ADMIN_PASSWORD ? `Správa hráčů: http://localhost:${srv.port}/admin` : 'Správa hráčů /admin je vypnutá (ADMIN_PASSWORD není nastavené); seznam hráčů: node server/admin.js players');
 
 // Neočekávaná chyba: zapsat do logu celou, ať se dá najít. Server běží dál (spadlý svět se restartuje sám).
 process.on('uncaughtException', (e) => log('Neočekávaná chyba: ' + (e.stack || e)));

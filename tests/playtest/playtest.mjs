@@ -1,4 +1,4 @@
-// Play-test of single player ("Hra pro jednoho") in a real browser, through the window.game debug API.
+// Play-test of single player ("Hrát sám") in a real browser, through the window.game debug API.
 // Usage: node tests/playtest/playtest.mjs [dir-or-url] [out-prefix]
 //   dir-or-url  default dist (run `npm run build` first); legacy/ tests Marek's original file
 //   out-prefix  where to write <prefix>.json and <prefix>.png (default playtest-sp)
@@ -18,10 +18,12 @@ const ev = (fn, arg) => page.evaluate(fn, arg);
 
 try {
   // ------------------------------------------------------------ menu
-  check('menu: title and buttons in Czech', (await page.textContent('#mSolo')) === 'Hra pro jednoho' && (await page.textContent('#mMore')) === 'Další možnosti ▸' && (await page.textContent('#mSettings')) === 'Nastavení');
+  check('menu: title and buttons in Czech', (await page.textContent('#mSolo b')) === 'Hrát sám' && (await page.textContent('#mSolo small')) === 'Jen ty, svět se uloží v tomhle prohlížeči' && (await page.textContent('#mMore')) === 'Další možnosti' && (await page.textContent('#mSettings')) === 'Nastavení');
+  const mainText = await page.innerText('#pgMain');
+  check('menu: no technical words on the main page', !/server|kód|adres|websocket|peerjs/i.test(mainText), mainText);
   check('menu: no club server known -> no world buttons', await ev(() => document.getElementById('mWorlds').hidden));
   await page.click('#mMore');
-  check('menu: Další možnosti offers host and join by code', (await page.isVisible('#pgMore')) && (await page.textContent('#mHost')) === 'Vytvořit server na svém počítači' && (await page.textContent('#mJoin')) === 'Připojit se kódem');
+  check('menu: Další možnosti offers host and join by code', (await page.isVisible('#pgMore')) && (await page.textContent('#mHost b')) === 'Vytvořit hru na svém počítači' && (await page.textContent('#mHost small')) === 'Kamarádi se připojí kódem, který uvidíš. Nech hru otevřenou.' && (await page.textContent('#mJoin b')) === 'Připojit se ke kamarádovi kódem');
   await page.click('#mJoin');
   await page.fill('#mCode', 'xx');
   await page.press('#mCode', 'Enter');
@@ -33,7 +35,7 @@ try {
   const off = await openPage(browser, url + '?server=127.0.0.1:9', { label: 'offline: ', ignore: [/Failed to load resource|ERR_CONNECTION|ERR_ADDRESS/] });
   const offOk = await off.waitForSelector('#mWorlds .world-off', { timeout: 15000 }).then(() => true, () => false);
   const offState = await off.evaluate(() => ({ n: document.querySelectorAll('#mWorlds button').length, text: document.querySelector('#mWorlds button')?.textContent, disabled: document.querySelector('#mWorlds button')?.disabled }));
-  check('menu: unreachable club server shows one disabled line', offOk && offState.n === 1 && offState.text === 'Server kroužku je nedostupný' && offState.disabled, JSON.stringify(offState));
+  check('menu: unreachable club server shows one disabled line', offOk && offState.n === 1 && offState.text === 'Svět teď není dostupný, zkus to za chvíli nebo hraj sám.' && offState.disabled, JSON.stringify(offState));
   const soloOk = await off.isEnabled('#mSolo');
   await off.click('#mMore');
   check('menu: …and single player + Další možnosti still work', soloOk && await off.isVisible('#pgMore #mHost') && off.errors.length === 0, off.errors.join(' | '));

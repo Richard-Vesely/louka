@@ -55,7 +55,7 @@ Pojmenuj ji podle toho, co děláš (malá písmena, bez háčků, slova spoj po
 ```bash
 npm run dev
 ```
-Otevři **http://localhost:5173** (v Codespaces se otevře samo), klikni **Hra pro jednoho** a vyzkoušej,
+Otevři **http://localhost:5173** (v Codespaces se otevře samo), klikni **Hrát sám** a vyzkoušej,
 že tvoje věc funguje. Užitečné příkazy v konzoli prohlížeče (F12): `game.addItem('med', 5)`, `game.setTime(0.9)` (noc).
 
 Pak spusť testy:

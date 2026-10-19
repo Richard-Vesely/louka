@@ -62,7 +62,7 @@ test('two worlds: list, choice, isolation, creative, limits, save and restart', 
     assert.ok(offer, 'a client without a world gets the list of worlds');
     assert.deepEqual(offer[1].map((w) => w.id), ['svet', 'kreativ']);
     assert.equal(a.welcome, null, 'and does not join yet');
-    a.send(['hello', { name: 'Ája', pass: 'tajne', v: 2, world: 'svet' }]);
+    a.send(['hello', { name: 'Ája', pass: 'tajne', pin: '1234', v: 2, world: 'svet' }]);
     assert.ok(await a.waitFor((m) => m[0] === 'welcome'), 'Ája joins after choosing');
     assert.deepEqual(a.welcome.worldInfo, { id: 'svet', name: 'Hlavní svět', creative: false, first: true });
     assert.equal(a.welcome.perm, false, 'no creative in the survival world');
@@ -148,7 +148,8 @@ test('a server from before WORLDS keeps its world as the first world', { timeout
   }
   // the old layout: DATA_DIR/world.json + DATA_DIR/backups/
   fs.renameSync(path.join(dataDir, 'svet', 'world.json'), path.join(dataDir, 'world.json'));
-  fs.renameSync(path.join(dataDir, 'svet', 'backups'), path.join(dataDir, 'backups'));
+  fs.mkdirSync(path.join(dataDir, 'backups'), { recursive: true }); // (already there: the players' backups)
+  for (const f of fs.readdirSync(path.join(dataDir, 'svet', 'backups'))) fs.renameSync(path.join(dataDir, 'svet', 'backups', f), path.join(dataDir, 'backups', f));
   fs.rmSync(path.join(dataDir, 'svet'), { recursive: true });
   srv = await startServer({ DATA_DIR: dataDir, WORLDS });
   try {
@@ -164,4 +165,5 @@ test('a server from before WORLDS keeps its world as the first world', { timeout
   }
   assert.ok(!fs.existsSync(path.join(dataDir, 'world.json')));
   assert.ok(fs.existsSync(path.join(dataDir, 'svet', 'world.json')) && fs.readdirSync(path.join(dataDir, 'svet', 'backups')).length === 1);
+  assert.deepEqual(fs.readdirSync(path.join(dataDir, 'backups')).map((f) => f.replace(/\d/g, '0')), ['players-0000-00-00.json'], 'player backups stay in DATA_DIR/backups');
 });

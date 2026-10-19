@@ -54,6 +54,7 @@ export function migrateOldLayout(dataDir, firstId, log) {
   if (fs.existsSync(oldBackups)) {
     fs.mkdirSync(backups, { recursive: true });
     for (const f of fs.readdirSync(oldBackups)) {
+      if (!f.startsWith('world-')) continue; // zálohy profilů hráčů (players-…) patří do DATA_DIR/backups
       const to = path.join(backups, f);
       if (!fs.existsSync(to)) fs.renameSync(path.join(oldBackups, f), to);
     }
