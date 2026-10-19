@@ -8,11 +8,10 @@ import { others } from '../../../shared/net/room.js';
 import { setDay } from '../../../shared/sim/day.js';
 import { spawnGroundItem } from '../../../shared/sim/ground-items.js';
 import { MOBS, mobs, removeMob, spawnMob } from '../../../shared/sim/mobs.js';
-import { wrapAngle } from '../../../shared/util.js';
 import { KV_MAPS, blocks } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { BOOT } from '../game/boot.js';
-import { viewOf } from '../mobs/mobs.js';
+import { mobLife, poseMob, viewOf } from '../mobs/mobs.js';
 import { receiveGift } from '../pc/papers-world.js';
 import { refreshSpecial } from '../player/eating.js';
 import { swapHeld } from '../player/interaction.js';
@@ -139,32 +138,15 @@ export function updatePuppets(dt) {
     const V = viewOf(m);
     if (m.dead) {
       m.deathT += dt;
-      V.group.scale.setScalar(Math.max(0.01, 1 - m.deathT * 2.5));
-      V.group.rotation.z += dt * 6;
-      if (m.deathT > 0.4) { removeMob(m); puppets.delete(nid); }
+      poseMob(V, m, dt, 0);
+      if (m.deathT > 0.4) { removeMob(m); puppets.delete(nid); } // model dohraje pád sám (mobs.js)
       continue;
     }
     const ox = m.pos.x, oz = m.pos.z;
     if (m.pos.distanceTo(m.tgt) > 8) m.pos.copy(m.tgt); else m.pos.lerp(m.tgt, 1 - Math.exp(-dt * 10));
     const sp = dt > 0 ? Math.hypot(m.pos.x - ox, m.pos.z - oz) / dt : 0;
-    m.phase += dt * (sp * 2.2 + (m.type === 'crawler' ? 2 : 0));
-    let hop = 0;
-    if (m.type === 'crawler') {
-      hop = Math.abs(Math.sin(m.phase)) * (sp > 2 ? 0.5 : 0.18);
-      const squash = 1 + Math.cos(m.phase * 2) * 0.12;
-      V.body.scale.set(1 / Math.sqrt(squash), 0.8 * squash, 1.15 / Math.sqrt(squash));
-    } else if (V.arms.length) {
-      const swing = Math.sin(m.phase * (m.type === 'golem' ? 1.1 : 1.6)) * Math.min(sp / 2, 1) * 0.8;
-      V.legs[0].rotation.x = swing; V.legs[1].rotation.x = -swing;
-      V.arms[0].rotation.x = -swing * 0.8; V.arms[1].rotation.x = swing * 0.6;
-    } else {
-      const swing = Math.sin(m.phase * 2.2) * Math.min(sp / 2, 1) * 0.7;
-      V.legs.forEach((l, i) => (l.rotation.x = (i === 0 || i === 3 ? 1 : -1) * swing));
-    }
-    V.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
-    V.group.rotation.y += wrapAngle(m.ry - V.group.rotation.y) * Math.min(1, dt * 10);
-    V.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
     m.flash = Math.max(0, m.flash - dt * 5);
-    for (const mat of V.mats) if (!mat.userData.glow) mat.emissive.setRGB(m.flash * 1.5, m.flash * 1.5, m.flash * 1.5);
+    poseMob(V, m, dt, sp);
   }
+  mobLife(dt);
 }
