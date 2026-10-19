@@ -38,7 +38,7 @@ const hash = (name) => { let h = 7; for (const ch of String(name || '')) h = (h 
 /** Výchozí oblek podle jména: každý hráč má od začátku jinou barvu (jako dřív barevné tričko). */
 export function defaultCostume(name = '') {
   const h = hash(name);
-  return { s: 'explorer', c: h % SUIT_COLORS.length, l: 0, v: 0, e: 1 + ((h >> 5) % (EMBLEMS.length - 1)) };
+  return { s: 'explorer', c: h % SUIT_COLORS.length, l: 0, v: 0, e: 1 + ((h >>> 5) % (EMBLEMS.length - 1)) };
 }
 
 /**

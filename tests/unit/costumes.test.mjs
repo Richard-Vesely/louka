@@ -19,6 +19,10 @@ test('costumes: data, defaults per name, cleaning and the short text in the posi
   assert.deepEqual(defaultCostume('Ája'), d, 'the same name always gets the same default');
   assert.deepEqual(cleanCostume(d), { ...d });
   assert.ok(new Set(['Ája', 'Bára', 'Kuba', 'Ema', 'Tom'].map((n) => defaultCostume(n).c)).size > 2, 'different names get different colours');
+  for (const n of ['Klient', 'Hostitel', 'Hráč', 'Žofie Příliš Dlouhá', 'x', '', '🙂🙂🙂', 'Ondřej123']) { // každé jméno dá platný oblek, i ten v textu pozice
+    const c = defaultCostume(n);
+    assert.deepEqual(cleanCostume(encodeCostume(c), 'jiné jméno'), c, n);
+  }
   // čištění: neplatné části → výchozí, nikdy nehází
   for (const bad of [null, undefined, 42, 'x', [], { s: 'ninja' }, { s: 'pilot', c: 99, l: -1, v: 1.5, e: '2' }, 'pilot.1.2', 'pilot.a.b.c.d', 'p'.repeat(100)]) {
     const c = cleanCostume(bad, 'Ája');

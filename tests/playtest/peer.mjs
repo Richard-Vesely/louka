@@ -35,6 +35,14 @@ try {
   await waitGame(B, 60000);
   check('client joins with the 4-character code', await B.evaluate(() => window.game.NET.client === true));
   check('both see each other', await until(A, () => window.game.others.size === 1 && [...window.game.others.values()][0].pose) && await until(B, () => [...window.game.others.values()].some((P) => P.name === 'Hostitel' && P.pose)));
+  // Můj oblek přes PeerJS: hostitel (jeho pozice jde z room.local) i klient vidí oblek toho druhého
+  await A.evaluate(() => window.game.openCostume());
+  await A.click('#costume .cos-suit[data-s="sky"]');
+  await A.click('#costume [data-act="ok"]');
+  await B.evaluate(() => window.game.openCostume());
+  await B.click('#costume .cos-suit[data-s="guard"]');
+  await B.click('#costume [data-act="ok"]');
+  check('costumes travel both ways (host in Nebeský, client in Strážce)', await until(B, () => [...window.game.others.values()].some((P) => P.name === 'Hostitel' && P.avatar?.costume.s === 'sky')) && await until(A, () => [...window.game.others.values()].some((P) => P.avatar?.costume.s === 'guard')));
   check('client got its name and creative permission', await B.evaluate(() => window.game.NET.name === 'Klient' && window.game.NET.perm === true));
 
   // world edits both ways
