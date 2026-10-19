@@ -38,7 +38,8 @@ When you add or change a feature, update this file in the same pull request.
   (the same code next time). Max 6 players. **Připojit se ke kamarádovi kódem**: type the friend's code (just the 4
   characters is enough).
 - After leaving a multiplayer game the menu shows why (e.g. *Spojení se přerušilo. Zkus se připojit znovu.*).
-- **Nastavení**: graphics quality (auto by graphics card/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity.
+- **Nastavení**: graphics quality (auto by graphics card/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity,
+  and the sound sliders **Hlasitost** (80 %), **Zvuky** (100 %) and **Hudba** (60 %); they apply at once (a short click plays at the new volume).
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
 
@@ -133,8 +134,35 @@ When you add or change a feature, update this file in the same pull request.
 ## 4. Mining, building, items
 - **Mining** with hold-to-break and tool tiers: wood → stone → iron → crystal → markorite.
   Axe, pickaxe, shovel, sword (and hoe). Some ores need a better pickaxe (*Potřebuješ…*).
-- **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window.
-- **Drop items** (G one, Shift+G whole stack): they lie on the ground, anyone can pick them up; they vanish after 5 min.
+- **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window
+  (left = all, right = one). Glassy futuristic look: slots glow on hover, rarity-tinted edges, the window is only as wide
+  as the backpack; UI sounds for take, put, gather, spread, sort, open and close. Minecraft tricks:
+  - **Drag with an item** over several slots: left splits the stack evenly, right puts one in each; swept slots glow and
+    show the count they will get, the cursor shows what is left. Dragging over one slot is an ordinary click.
+  - **Double-click** gathers the same items onto the cursor (partial stacks first, at most one full stack);
+    **Shift + double-click** moves every stack of that item to the other side (chest ↔ backpack, hotbar ↔ backpack).
+  - **Shift + drag** shift-moves every slot you sweep; **1–9 over a slot** swaps it with that hotbar slot (from a machine
+    output it only takes); **Q over a slot** drops one, **Ctrl+Q** the stack; **wheel** over a stack moves one item to
+    the other side (down) or pulls one back (up).
+  - **Seřadit** (sort) merges and orders the backpack (hotbar stays) or a chest: tools, weapons, armor, food, blocks,
+    materials, tech.
+  - **Crafting**: hovering a recipe in the book previews it in the grid; a ready result glows (*Shift + klik = vyrob
+    vše*); Shift-click on the result crafts everything; **Space** crafts the last recipe again into the backpack
+    (Shift + Space as many as possible).
+  - **Creative**: middle-click on a slot takes a full stack, middle-drag puts a full stack into every empty slot swept.
+  - **Rich tooltips** (Czech): name coloured by rarity (white, yellow, cyan, purple), kind and tier, a short description,
+    chips for attack, mining speed, armor, food, health and flying, durability (when an item has it), fuel time, what it
+    smelts into, in how many recipes it is used; **F3 + H** adds the item id.
+  - Nothing is lost with a full backpack: closing the window, refilling the campfire or returning the grid drops the rest
+    on the ground (*Batoh je plný*).
+- **Hotbar**: a glowing ring slides to the selected slot, slot numbers 1–9, an icon pops when its slot gains items, the
+  item name fades in above the hotbar for 2 s, worn tools pulse red (≤ 10 % durability).
+- **Pick block** (middle mouse button in the world): takes what you aim at into your hand from the backpack (in creative
+  a full stack even if you don't have it); otherwise *V batohu nemáš: …*.
+- **Drop items** (Q one, Ctrl+Q whole stack; G and Shift+G still work): they lie on the ground, anyone can pick them up;
+  they vanish after 5 min. Identical items lying together merge into one stack (decided by whoever holds the world).
+  Lying items bob and spin with a soft shadow and show 1–5 models by count (1, 2–16, 17–32, 33–48, 49+). Within 2.4 m an
+  item slides toward you (magnet), flies into you shrinking and plays a short high *plip*.
 - **Building**: ~110 block types: planks of 5 woods, stones and polished stones, bricks, tiles, glass and panes,
   sandstone, snow, obsidian, mushroom blocks, roof tiles, concrete in 8 colours (from flower dyes), copper,
   gold, steel, quartz, lanterns, torches. **Stairs and slabs** (two slabs make a full block), bars, railings,
@@ -145,7 +173,7 @@ When you add or change a feature, update this file in the same pull request.
 - **Farm traps**: spikes (*Bodce*) hurt mobs; loot of mobs killed on spikes goes to a chest nearby.
 - **Mob spawner** blocks in dungeons and fortresses.
 
-*Kód:* mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
+*Kód:* mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
 
 ## 5. Food and cooking
 - **Campfire** (*Táborák*): roast meat and fish, smelt iron, bake sand into glass, clay into tiles.
@@ -225,9 +253,50 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 
 *Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/` (worlds: `server/worlds.js`, `server/world-worker.js`; profiles: `server/profiles.js`, `server/me.js`; admin: `server/admin-http.js`, `server/admin.js`); menu `client/src/menu/menu.js` (world buttons: `renderWorlds`, login: `askProfile`).
 
-## 11. Controls (summary)
+## 11. Sound and music
+All sound is made in the browser (WebAudio synthesis, no recordings). Every sound varies a little in pitch (±10 %) and
+volume (±15 %) so repeats don't sound like a machine gun; at most 32 short sounds play at once (ambient ones give way first).
+A gentle compressor keeps the mix from clipping.
+- **Footsteps by material** in the rhythm of the walk (heel + toe on hard floors): grass, leaves and crops, dirt, sand
+  (grainy), snow (crunch and squeak), wood (hollow knock), stone, metal and machines (ringing), glass, crystal (chime) and
+  shallow water (splash). Running steps are louder. **Landing** after a fall thumps, louder the higher the fall.
+  **Water:** jumping or running in splashes, wading deep makes swimming strokes, and with the head under water everything
+  is muffled (low-pass) with bubbles.
+- **Mining, breaking and placing by material**: each hit of the hold-to-break sounds like the block (quieter and lower than
+  the final break, plus a pickaxe clink on stone and ores), the break crumbles (glass shatters, crystal rings), placing knocks.
+  Wrong tool: a dull *tonk*. A felled tree crashes with its crown rustling. Sounds come from where the block is (left/right).
+- **Items and food**: pick-up *plip* with random pitch, throwing, opening a chest (creaky lid), filling a bucket or the car,
+  eating crunches (soup and drinks slurp) and a swallow at the end, tool-break snap (`Sound.toolBreak()`, ready for tool wear).
+- **Windows**: soft clicks on buttons, a quiet tick when hovering slots and buttons, pick / put sounds when moving items,
+  a rising blip when the backpack opens and a falling one when it closes, a tick when the hotbar slot changes.
+- **Ambience** that cross-fades with the place and time: wind by gusts (stronger in tundra, desert and high up; whistling
+  in the tundra), leaves rustling in forests, insects by day (a loud drone in the jungle), **birds** by day (warbler,
+  tit, cuckoo, dove, woodpecker; jungle calls and parrots; a hawk over the desert) with a **dawn chorus**,
+  **crickets** at night, **owls** in night forests, **frogs** at ponds, lapping water; **caves**: low rumble,
+  echoing drips and the occasional rock settling, plus **reverb** that grows with depth (also a little under a roof);
+  volcano lava rumble and bubbling pops; the Mark dimension: a dark detuned drone and alien sweeps.
+- **Things in the world hum** from where they stand (the 4 nearest): campfire and torches crackle, a burning furnace roars,
+  a cooking stove sizzles, a running generator hums at 50 Hz, motors whine, electric furnaces and chargers buzz, computers
+  whir, powered lamps and live cables buzz softly when you are close, spawners drone, an awake portal and light shards shimmer.
+- **Positional sound in multiplayer**: other players' footsteps (by the material under them) and their building and
+  breaking are heard from where they are; animal and monster voices (sheep, cow, chicken, wolf, boar, deer, shadow-eater,
+  markoman, crystal golem) come from the creature, also for joined players; the golem stomps.
+- **Music**: a quiet generated piece (soft piano, pads, bass) plays for 1–3 minutes, then 3–7 minutes of silence, like in
+  Minecraft. Day: D dorian; night: A minor; caves: phrygian; the Mark dimension: whole-tone (it comes sooner when you
+  arrive). When a piece starts its Czech name shows for a moment under the clock (*♪ Ranní louka*, *♪ Hvězdná noc*,
+  *♪ Hlubiny*, *♪ Markova hvězda*…). Turn it off with the **Hudba** slider.
+- **Weather hooks** (no weather yet): `Sound.rainLevel = 0–1` plays layered rain (muffled under a roof) and
+  `Sound.thunder(distance)` a crackle and rumble delayed by the distance.
+
+*Kód:* `client/src/audio/`: `sound.js` (mix, volumes, positional sound, reverb, test renderer `Sound.offline`), `sfx.js`
+(material and game sound recipes), `voices.js` (animals, birds, insects, thunder), `materials.js` (which material is
+under the feet / being mined), `ambience.js` (ambience beds and one-shots), `hums.js` (machines and fires), `music.js`,
+`soundscape.js` (senses the surroundings each frame, other players, remote edits), `ui-sounds.js` (window sounds),
+`volume.js` (slider values). Console: `game.Sound.music.start('night')`, `game.soundEnv`, `game.Sound.level()`.
+
+## 12. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
-E inventory · G drop · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
+E inventory · Q / G drop (Ctrl+Q / Shift+G stack) · middle button pick block · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
 Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.

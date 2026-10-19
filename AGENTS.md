@@ -59,6 +59,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item, day/night colours; the graphics look and what each Grafika tier turns on (`look.js`), post-processing (`post.js`), shadows, clouds, water, weather, embers/smoke (`ambient-fx.js`). Grafika Automaticky: `client/src/game/gpu.js` |
 | `client/src/player/` | player movement and collisions, aiming, mining/placing/using, backpack, survival, eating |
 | `client/src/mobs/mobs.js` | creature 3D models, animation, sounds (behaviour is in `shared/sim/mobs.js`) |
+| `client/src/audio/` | all sound (WebAudio synthesis): `sound.js` mix + `Sound.at(x, y, z, fn)` positional sound, recipes in `sfx.js` / `voices.js`, materials, ambience, machine hums, music; `soundscape.js` runs it each frame |
 | `client/src/ui/` | HUD, inventory window, touch controls |
 | `client/src/machines/`, `pc/`, `vehicles/`, `dining/`, `world/` | the browser side of machines, the computer + Tanks + documents, car + plane, table manners, shrine/fishing/dropped items |
 | `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars, chat + Esc menu, the net loop (`mp-start.js`) |
@@ -153,7 +154,7 @@ npm install                     # once
 npm run dev                     # the game: open http://localhost:5173 (Hrát sám)
 npm test                        # unit tests + the Node server over WebSocket (fast)
 npm run build                   # build into dist/
-npm run playtest                # menu + single player in a real browser (42 checks, needs the build)
+npm run playtest                # menu + single player in a real browser (43 checks), then the inventory tricks (27 checks); needs the build
 npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart; then player profiles (name + PIN, backpack on the server, admin page)
 npm run test:worlds             # Node server with 2 worlds + 2 browsers: world buttons, password once, isolation, creative, saves per world
 npm run test:peer               # browser host + browser client over PeerJS (needs internet)

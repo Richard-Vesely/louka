@@ -9,6 +9,7 @@ import { updatePower } from '../../../shared/sim/power.js';
 import { EYE } from '../../../shared/world/constants.js';
 import { vehicles } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
+import { updateSoundscape } from '../audio/soundscape.js';
 import { dining, updateDining } from '../dining/dining.js';
 import { refreshFurnaceUI, updateFurnaceGlow } from '../machines/furnace.js';
 import { stoveVisuals } from '../machines/kitchen.js';
@@ -131,7 +132,8 @@ export function tick(realDt) {
   updateAmbientFx(realDt, underground); // jiskry a kouř nad ohněm, prach v jeskyni, světélka v Markově dimenzi
   sparks.update(realDt);
   debris.update(realDt);
-  Sound.update(U.wind.value.z * Math.min(1.6, U.wind.value.w), night, realDt);
+  const gust = Math.min(1, U.wind.value.z * (0.6 + 0.4 * U.wind.value.w)); // společný vítr (za deště a bouřky silnější)
+  updateSoundscape(realDt, gust); // zvuky okolí, hudba, stroje, kroky ostatních
 
   U.cam.value.copy(camera.position);
   sky.position.copy(camera.position);

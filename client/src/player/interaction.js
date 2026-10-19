@@ -10,6 +10,7 @@ import { bkey, blockMeta, blocks, chairRot, chests, crops, fires, furnaces, pcDi
 import { structuresNear } from '../../../shared/world/structures.js';
 import { biomeAt, forest } from '../../../shared/world/terrain.js';
 import { V, VOX, columnDug, getVox, setVox, topY } from '../../../shared/world/voxels.js';
+import { blockMaterial, targetMaterial, voxMaterial } from '../audio/materials.js';
 import { Sound } from '../audio/sound.js';
 import { MP } from '../game/boot.js';
 import { harvestCrop } from '../machines/kitchen.js';
@@ -67,6 +68,8 @@ export function cellFree(x, y, z) {
 }
 const mining = { key: null, p: 0 };
 const toolOf = (s) => (s && ITEMS[s.id].tool ? ITEMS[s.id] : null);
+// Zvuk z místa, kde se těží nebo staví (do 5 m plná hlasitost, jen směr zleva / zprava)
+const sfxAt = (pt, fn) => (pt ? Sound.at(pt[0], pt[1], pt[2], fn, { ref: 5 }) : fn());
 const CHIP = { tree: [0.42, 0.3, 0.17], rock: [0.5, 0.5, 0.48], iron: [0.65, 0.35, 0.15], grass: [0.25, 0.5, 0.12], planks: [0.6, 0.45, 0.28], cobble: [0.5, 0.5, 0.48], bricks: [0.55, 0.52, 0.48], dirt: [0.42, 0.3, 0.2] };
 
 export function updateInteraction(dt) {
@@ -101,7 +104,7 @@ export function updateInteraction(dt) {
     if (req && !(tool && tool.tool === req.tool && tool.tier >= req.tier)) {
       warn = `Potřebuješ ${target.reqName || (req.tier > 1 ? 'kamenný krumpáč' : 'krumpáč')}`;
       mining.p = 0;
-      if (swingCd <= 0) { startSwing(); swingCd = 0.4; Sound.mine(); }
+      if (swingCd <= 0) { startSwing(); swingCd = 0.4; sfxAt(target.at, () => Sound.denied()); }
     } else {
       const speed = tool && tool.tool === target.tool ? TOOL_SPEED[tool.tier] : 1;
       mining.p += (dt * speed) / target.hard;
@@ -110,9 +113,7 @@ export function updateInteraction(dt) {
         swingCd = 0.34;
         const chip = target.kind === 'vox' ? VOX[target.vox].chip : CHIP[target.kind === 'rock' && target.rock.iron ? 'iron' : target.kind === 'block' ? target.type : target.kind] || CHIP.rock;
         debris.emit(...target.at, chip, 6, 2.5, 1.5);
-        if (target.kind === 'tree' || target.tool === 'axe') Sound.chop();
-        else if (target.kind === 'grass' || target.tool === 'shovel') Sound.rustle();
-        else Sound.mine();
+        sfxAt(target.at, () => Sound.blockHit(targetMaterial(target), tool?.tool));
       }
       if (mining.p >= 1) { breakTarget(target); mining.key = null; mining.p = 0; }
     }
@@ -149,7 +150,8 @@ export function breakTarget(t) {
       if (!tr.pine && !tr.mark && Math.random() < 0.45) addItem('apple', randInt(1, 3)); // jabloně
     }
     debris.emit(tr.x, tr.y + tr.trunkH, tr.z, [0.2, 0.45, 0.12], 60, 5, 2);
-    Sound.crack();
+    sfxAt(t.at, () => { Sound.blockBreak(targetMaterial(t)); Sound.crack(); });
+    Sound.at(tr.x, tr.y + tr.trunkH, tr.z, () => Sound.mat('leaves', 'break', 1.4), { ref: 5 }); // padající koruna
     rebuildForest(player.pos.x, player.pos.z, true);
   } else if (t.kind === 'paper') takeSpot(t.id);
   else if (t.kind === 'vehicle') { // rozebrané auto se vrátí do batohu i s kufrem a baterií
@@ -159,7 +161,7 @@ export function breakTarget(t) {
     for (const s of v.slots) if (s) addItem(s.id, s.n);
     addItem(v.type === 'plane' ? 'biplane' : v.type, 1);
     vehicles.delete(t.id);
-    Sound.crack();
+    sfxAt(t.at, () => { Sound.blockBreak('metal'); Sound.crack(); });
   } else if (t.kind === 'rock') {
     removed.add(t.key);
     const r = t.rock;
@@ -167,7 +169,7 @@ export function breakTarget(t) {
     else addItem('stone', 2 + Math.floor(r.s * 3));
     if (Math.random() < 0.3) addItem('salt', randInt(1, 2)); // solné krystalky v kameni
     debris.emit(r.x, r.y + 0.3, r.z, CHIP[r.iron ? 'iron' : 'rock'], 40, 4, 2);
-    Sound.crack();
+    sfxAt(t.at, () => { Sound.blockBreak('stone'); Sound.crack(); });
     rebuildForest(player.pos.x, player.pos.z, true);
   } else if (t.kind === 'block') {
     const k = bkey(...t.cell);
@@ -189,7 +191,7 @@ export function breakTarget(t) {
     furnaces.delete(k);
     chests.delete(k);
     debris.emit(...t.at, CHIP[t.type] || CHIP.planks, 25, 3, 1.5);
-    Sound.crack();
+    sfxAt(t.at, () => Sound.blockBreak(blockMaterial(t.type)));
     rebuildBlocks();
   } else if (t.kind === 'grass') {
     addItem('fiber', randInt(1, 2));
@@ -209,6 +211,7 @@ export function breakTarget(t) {
     if (bio === 'mushroom') { if (Math.random() < 0.18) addItem('glowshroom', 1); if (Math.random() < 0.3) addItem('mushroom', 1); }
     cutGrass(t.point[0], t.point[2]);
     debris.emit(...t.point, CHIP.grass, 18, 2, 2.5);
+    sfxAt(t.point, () => Sound.blockBreak('grass'));
   } else if (t.kind === 'vox') {
     const [x, y, z] = t.cell, def = VOX[t.vox];
     setVox(x, y, z, V.AIR);
@@ -221,7 +224,7 @@ export function breakTarget(t) {
     if (t.surface) dropSpotsAt(x, y + 1, z);
     debris.emit(x + 0.5, y + 0.5, z + 0.5, def.chip, 30, 3, 1.5);
     if (def.glow) { sparks.emit(x + 0.5, y + 0.5, z + 0.5, [0.4, 0.95, 1.0], 50, 4, 2); Sound.pickup(); }
-    else Sound.crack();
+    sfxAt([x + 0.5, y + 0.5, z + 0.5], () => Sound.blockBreak(voxMaterial(t.vox)));
   }
 }
 
@@ -236,7 +239,7 @@ export function useItem() {
       if (v.fuel >= fmax - 0.5) { toast('Nádrž je plná'); return; }
       v.fuel = Math.min(fmax, v.fuel + 15);
       consumeSelected();
-      Sound.rustle();
+      Sound.pour();
       toast(`Natankováno: ${v.fuel.toFixed(1)} / ${fmax} l`);
     } else openInventory('car', target.id);
     return;
@@ -265,7 +268,7 @@ export function useItem() {
   if (held0?.id === 'fishing_rod') { useRod(); return; }
   // Studna: prázdný kbelík naplníš vodou
   if (target?.kind === 'block' && target.type === 'well') {
-    if (held0?.id === 'bucket') { swapHeld('water_bucket'); Sound.rustle(); toast('Načerpal jsi vodu'); } else toast('Na vodu potřebuješ prázdný kbelík');
+    if (held0?.id === 'bucket') { swapHeld('water_bucket'); Sound.pour(); toast('Načerpal jsi vodu'); } else toast('Na vodu potřebuješ prázdný kbelík');
     return;
   }
   // Elektrická zařízení a kabely: vypínač se přepne, ostatní otevřou přehled sítě (s blokem v ruce se staví dál)
@@ -276,7 +279,7 @@ export function useItem() {
   }
   if (target?.kind === 'block' && STATION_UI[target.type]) {
     openInventory(STATION_UI[target.type], bkey(...target.cell));
-    if (target.type === 'chest') { Sound.place(); for (const r of structuresNear(target.cell[0], target.cell[2], 14)) ruinsOpened.add(r.key); }
+    if (target.type === 'chest') { Sound.chest(); for (const r of structuresNear(target.cell[0], target.cell[2], 14)) ruinsOpened.add(r.key); }
     return;
   }
   if (target?.kind === 'portal') return usePortal(target.shrine);
@@ -290,7 +293,7 @@ export function useItem() {
     }
     if (m.type === 'cow' && held0?.id === 'bucket') {
       if (m.milkT > 0) { toast('Kráva potřebuje chvíli odpočinout'); return; }
-      m.milkT = 40; swapHeld('milk_bucket'); Sound.rustle(); toast('Podojil jsi krávu');
+      m.milkT = 40; swapHeld('milk_bucket'); Sound.pour(); toast('Podojil jsi krávu');
       return;
     }
   }
@@ -307,7 +310,7 @@ export function useItem() {
     crops.set(k, { stage: 0, t: 0, next: 25 + Math.random() * 30 });
     consumeSelected();
     rebuildBlocks();
-    Sound.place();
+    sfxAt([x + 0.5, y + 1, z + 0.5], () => Sound.blockPlace('leaves'));
     return;
   }
   if (d.food) {
@@ -322,7 +325,7 @@ export function useItem() {
       blockMeta.delete(k);
       consumeSelected();
       rebuildBlocks();
-      Sound.place();
+      sfxAt(target.point, () => Sound.blockPlace(blockMaterial(d.block)));
       return;
     }
   }
@@ -353,7 +356,7 @@ function tillGround() {
   blocks.set(bkey(...cell), 'farmland');
   rebuildBlocks();
   debris.emit(cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5, [0.4, 0.28, 0.18], 14, 2, 1.5);
-  Sound.rustle();
+  sfxAt([cell[0] + 0.5, cell[1] + 1, cell[2] + 0.5], () => Sound.blockPlace('dirt'));
 }
 // Otočení a poloha tvarovaného bloku při položení: schody stoupají směrem od hráče,
 // půlblok je nahoře, když míříš na horní polovinu stěny nebo na spodek bloku.
@@ -379,7 +382,7 @@ export function placeBlock(d, [x, y, z]) {
     rebuildBlocks();
   }
   consumeSelected();
-  Sound.place();
+  sfxAt([x + 0.5, y + 0.5, z + 0.5], () => Sound.blockPlace(blockMaterial(d.block)));
   return true;
 }
 // Stavění pod sebe (jako v Minecraftu): dívej se dolů, skákej a drž pravé tlačítko – pod nohama roste sloup.

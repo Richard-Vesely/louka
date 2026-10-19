@@ -67,6 +67,9 @@ try {
   await until(B, () => window.game.chests.has('6,2,30'));
   await B.evaluate(() => { const c = Array(27).fill(null); c[0] = { id: 'apple', n: 5 }; window.game.chests.set('6,2,30', c); });
   check('chest contents from Bára reach Ája', await until(A, () => window.game.chests.get('6,2,30')?.[0]?.id === 'apple'));
+  // inventory tricks in a chest: Ája drags 9 stones over 3 chest slots (split evenly) and sorts the chest
+  await A.evaluate(() => { const g = window.game; g.openInventory('chest', '6,2,30'); g.inv.cursor = { id: 'stone', n: 9 }; g.invTricks.spreadCursor([['chest', 3], ['chest', 4], ['chest', 5]], 0); g.invTricks.sortContainer('chest'); g.closeInventory(); });
+  check('drag-split and sort in a chest reach Bára', await until(B, () => { const c = window.game.chests.get('6,2,30'); return c?.[0]?.id === 'apple' && c[1]?.id === 'stone' && c[1].n === 9 && c.filter(Boolean).length === 2; }), await B.evaluate(() => JSON.stringify(window.game.chests.get('6,2,30')?.filter(Boolean))));
 
   check('animals simulated by the server appear', await until(A, () => window.game.mobs.length > 0, null, 20000), String(await A.evaluate(() => window.game.mobs.length)));
   const mob = await A.evaluate(() => { const ms = window.game.mobs.filter((x) => !x.dead), m = ms.find((x) => ['sheep', 'chicken', 'cow', 'deer'].includes(x.type)) || ms[0]; return m && { nid: m.nid, hp: m.hp }; });
@@ -85,10 +88,30 @@ try {
   await B.evaluate(() => { const g = window.game, it = g.groundItems.find((x) => x.id === 'stone'); T.tp(it.pos.x, it.pos.z, it.pos.y); g.player.pos.set(it.pos.x, it.pos.y, it.pos.z); });
   check('Bára picks it up through the server', await until(B, (b) => { const g = window.game, it = g.groundItems.find((x) => x.id === 'stone' && x.n > 0); if (it) g.player.pos.set(it.pos.x, it.pos.y, it.pos.z); return g.countItem('stone') >= b + 3; }, before), await B.evaluate(() => JSON.stringify({ n: window.game.countItem('stone'), items: window.game.groundItems.map((x) => [x.id, x.n, x.age.toFixed(1), x.req.toFixed(1), x.pos.x.toFixed(1), x.pos.y.toFixed(1), x.pos.z.toFixed(1)]), p: window.game.player.pos, alive: window.game.player.alive, veh: window.game.player.vehicle })));
   check('…and it is gone for Ája', await until(A, () => !window.game.groundItems.some((x) => x.id === 'stone' && x.n > 0)));
+  // two stacks dropped on the same spot merge into one on the server, everybody sees one stack
+  await A.evaluate(() => { const g = window.game, p = g.player.pos, y = g.groundHeight(p.x + 5, p.z); for (const n of [2, 3]) g.spawnGroundItem('dirt', n, { x: p.x + 5, y: y + 0.5, z: p.z }, { x: 0, y: 0, z: 0 }, 5); });
+  check('stacks lying together merge on the server (Bára sees one stack of 5)', await until(B, () => { const d = window.game.groundItems.filter((x) => x.id === 'dirt' && x.n > 0); return d.length === 1 && d[0].n === 5; }), await B.evaluate(() => JSON.stringify(window.game.groundItems.map((x) => [x.id, x.n]))));
 
   await B.evaluate(() => { const el = document.getElementById('chatInput'); el.value = 'Ahoj Ájo'; el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); });
   check('chat works through the server', await until(A, () => document.getElementById('feed').textContent.includes('Ahoj Ájo')));
   await shot(B, `${out}.png`);
+
+  // sound: Bára hears Ája build and walk (from where Ája is) and the server's animals
+  const heard = await B.evaluate(() => {
+    const g = window.game, S = g.Sound;
+    S.init();
+    const T0 = window.T; T0.tp(12, 46, g.groundHeight(12, 46));
+    window.__heard = { place: 0, step: 0, mob: 0 };
+    for (const [fn, k] of [['blockPlace', 'place'], ['footstep', 'step'], ['mobVoice', 'mob']]) { const orig = S[fn]; S[fn] = function (...a) { window.__heard[k]++; return orig.apply(this, a); }; }
+    return !!S.ctx;
+  });
+  await A.evaluate(() => { const g = window.game; window.T.tp(14, 48, g.groundHeight(14, 48)); g.player.yaw = 0; });
+  await sleep(500);
+  await A.evaluate(() => { window.game.blocks.set('16,3,46', 'planks'); window.game.keys.add('KeyW'); });
+  await sleep(1500);
+  await A.evaluate(() => window.game.keys.delete('KeyW'));
+  await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); } });
+  check('sound: a joined player hears others build and walk, and the animals', heard && await until(B, () => window.__heard.place > 0 && window.__heard.step > 0 && window.__heard.mob > 0, null, 8000), await B.evaluate(() => JSON.stringify(window.__heard)));
 
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
   await sleep(1500);

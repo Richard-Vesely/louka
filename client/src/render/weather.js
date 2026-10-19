@@ -159,28 +159,9 @@ function makeBolt(x, z, top, bottom) {
   return m;
 }
 
-// ------------------------------------------------------------ zvuk: šum deště (smyčka) a hrom
-const audio = { gain: null, filter: null };
-function rainAudio(level, under, dt) {
-  const c = Sound.ctx;
-  if (!c || !Sound.master) return;
-  if (!audio.gain) {
-    const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const src = c.createBufferSource();
-    src.buffer = buf; src.loop = true;
-    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
-    audio.filter = c.createBiquadFilter(); audio.filter.type = 'lowpass'; audio.filter.frequency.value = 7000;
-    audio.gain = c.createGain(); audio.gain.gain.value = 0;
-    src.connect(hp).connect(audio.filter).connect(audio.gain).connect(Sound.master);
-    src.start();
-  }
-  const t = c.currentTime;
-  audio.gain.gain.setTargetAtTime(level * 0.16 * (1 - under * 0.6), t, 0.8);
-  audio.filter.frequency.setTargetAtTime(under > 0.5 ? 800 : 7000, t, 0.5); // v jeskyni je déšť jen tlumeně slyšet
-  // jednotlivé kapky: krátké cvaknutí, náhodně
-  if (level > 0.05 && under < 0.5 && Math.random() < dt * 40 * level) Sound.burst?.({ dur: 0.012, f0: 2500 + Math.random() * 2500, f1: 1800, q: 4, vol: 0.02 + Math.random() * 0.03 });
-}
+// ------------------------------------------------------------ zvuk: déšť (přes zvukové okolí) a hrom
+// Šum deště a kapky hraje zvukové okolí (audio/ambience.js) podle Sound.rainLevel; tady je jen hrom.
+function rainAudio(level) { Sound.rainLevel = level; }
 function thunder(dist) {
   const c = Sound.ctx;
   if (!c || !Sound.master) return;
@@ -248,5 +229,5 @@ export function updateWeather(dt, clock, under = 0) {
   if (bolt) bolt.visible = boltT > 0.18 || (boltT > 0.05 && boltT < 0.12);
   flashT = Math.max(0, flashT - dt);
   W.flash = flashT > 0 ? (flashT > 0.33 ? 1 : flashT > 0.25 ? 0.2 : flashT > 0.12 ? 0.75 : flashT / 0.12 * 0.4) * (1 - under) : 0;
-  rainAudio(W.rain, under, dt);
+  rainAudio(W.rain);
 }
