@@ -1,0 +1,33 @@
+{
+  "name": "louka",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Říše (Louka) – survival hra v prohlížeči pro AI kroužek: hra pro jednoho, server v prohlížeči (PeerJS) i stálý server (Node.js).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/index.js",
+    "test": "node --test \"tests/unit/*.test.mjs\"",
+    "playtest": "node tests/playtest/playtest.mjs dist",
+    "test:peer": "node tests/playtest/peer.mjs",
+    "test:server": "node tests/playtest/server-mp.mjs",
+    "test:worlds": "node tests/playtest/server-worlds.mjs",
+    "test:all": "npm test && npm run build && npm run playtest && npm run test:server && npm run test:worlds && npm run test:peer",
+    "test:load": "node tests/load/bots.mjs 8 60",
+    "test:load:worlds": "node tests/load/bots.mjs 8 60 2"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "dependencies": {
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "peerjs": "1.5.4",
+    "playwright": "1.55.0",
+    "three": "0.169.0",
+    "vite": "7.3.7"
+  }
+}

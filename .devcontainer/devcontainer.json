@@ -1,0 +1,14 @@
+{
+  "name": "Říše (Louka)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [5173, 8787],
+  "portsAttributes": {
+    "5173": { "label": "Hra (otevři v prohlížeči)", "onAutoForward": "openBrowser" },
+    "8787": { "label": "Herní server (npm start)", "onAutoForward": "silent" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["CONTRIBUTING.md"] },
+    "vscode": { "settings": { "files.eol": "\n" } }
+  }
+}

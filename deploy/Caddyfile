@@ -1,0 +1,6 @@
+# Caddy: HTTPS certifikát zařídí sám (Let's Encrypt) a přeposílá hru i WebSocket (wss://) na server.
+# Nahraď hry.example.cz svou adresou (setup-vps.sh to udělá sám).
+hry.example.cz {
+	encode gzip
+	reverse_proxy 127.0.0.1:8787
+}
