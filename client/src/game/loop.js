@@ -20,6 +20,7 @@ import { updatePuppets } from '../net/multiplayer.js';
 import { pcOpen, updatePC } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
 import { updateDocs } from '../pc/papers-world.js';
+import { applyCameraFeel, timeScale } from '../player/camera-feel.js';
 import { updateEating } from '../player/eating.js';
 import { updateInteraction } from '../player/interaction.js';
 import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
@@ -31,6 +32,7 @@ import { rebuildForest } from '../render/forest.js';
 import { grassLayers, regrowGrass } from '../render/grass.js';
 import { ground } from '../render/ground.js';
 import { updateHeldModel, updateSwing } from '../render/held-item.js';
+import { updateChips, updateStars } from '../render/chips.js';
 import { debris, sparks } from '../render/particles.js';
 import { U, camera, renderer, scene } from '../render/renderer.js';
 import { sky, stars, updateEnvironment } from '../render/sky.js';
@@ -67,13 +69,13 @@ if (!save) $('intro').style.display = 'grid';
 
 export function tick(realDt) {
   const playing = (isLocked() || game.testMode) && !invOpen && !guideOpen && !pcOpen && !docOpen;
-  const dt = playing ? realDt : 0;
+  const dt = playing ? realDt * timeScale(realDt) : 0; // timeScale: krátké zastavení po silném úderu (hit-stop)
   gameClock += realDt;
   gameTime += dt;
   U.time.value = gameClock;
 
   let moving = 0;
-  if (playing && player.alive) moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt);
+  if (playing && player.alive) { moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt); if (!player.vehicle && !player.sitting) applyCameraFeel(realDt, moving); }
   else if (player.vehicle && vehicles.has(player.vehicle)) { placeCarCamera(vehicles.get(player.vehicle)); Sound.engine(false, 0); }
   else { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
   updateVehicles(realDt);
@@ -122,6 +124,8 @@ export function tick(realDt) {
   if (Math.random() < realDt * 6) for (const s of specials.values()) if (s.type === 'campfire') sparks.emit(s.x + 0.5, s.ry + 0.4, s.z + 0.5, [1, 0.5, 0.15], 1, 0.6, 1.5);
   sparks.update(realDt);
   debris.update(realDt);
+  updateChips(realDt);
+  updateStars(realDt);
   const gust = 0.5 + 0.5 * Math.sin(gameClock * 0.35) * Math.sin(gameClock * 0.13 + 1);
   updateSoundscape(realDt, gust); // zvuky okolí, hudba, stroje, kroky ostatních
 

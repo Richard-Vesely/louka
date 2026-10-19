@@ -226,6 +226,12 @@ const STYLE = {
   shadow: { plate: 0x1b1724, metal: 0.5, rough: 0.45, trim: 0x3a2f4c, fabric: 0x221d2c },
   sky: { plate: 0xf4f1ea, metal: 0.3, rough: 0.25, trim: 0xe0b040, fabric: 0xf0ede6 },
 };
+/** Barvy obleku (látka, tmavé spoje, pláty, světla) – pro ruku z první osoby v render/held-item.js. */
+export function suitPalette(costume) {
+  const c = cleanCostume(costume), st = STYLE[c.s], suit = new THREE.Color(SUIT_COLORS[c.c][1]);
+  const fabric = c.s === 'scientist' ? new THREE.Color(0xf2f5f7).lerp(suit, 0.12) : st.fabric ? new THREE.Color(st.fabric).lerp(suit, 0.18) : suit;
+  return { fabric, dark: fabric.clone().multiplyScalar(0.42), plate: new THREE.Color(st.plate), light: new THREE.Color(LIGHT_COLORS[c.l][1]) };
+}
 function suitMats(c) {
   const st = STYLE[c.s];
   const suit = new THREE.Color(SUIT_COLORS[c.c][1]);

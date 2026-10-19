@@ -2,6 +2,7 @@
 // (world.json → players[id profilu]). Tady se kontroluje tvar a velikost, aby se do uložení nedostal nesmysl.
 // Pořád platí, že hráči se věří (KNOWN-ISSUES.md): upravený prohlížeč může poslat jiné předměty, ale ne rozbitý soubor.
 import { ITEMS, cleanCostume } from '../shared/data/index.js';
+import { maxDur } from '../shared/tools.js';
 
 export const ME_MAX_BYTES = 64 * 1024;
 export const INV_SLOTS = 36, ARMOR_SLOTS = 4;
@@ -9,11 +10,14 @@ const DOC = /^doc_[A-Za-z0-9_-]{1,64}$/; // vytištěné dokumenty mají id podl
 const known = (id) => typeof id === 'string' && (Object.hasOwn(ITEMS, id) || DOC.test(id));
 const num = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
 
-// Políčko: null, nebo { id, n }. Neznámý předmět (třeba odebraný z nové verze hry) se zahodí, rozbité políčko = celý stav pryč.
+// Políčko: null, nebo { id, n, w? } (w = opotřebení nástroje, shared/tools.js). Neznámý předmět (třeba odebraný z nové verze hry)
+// se zahodí, rozbité políčko = celý stav pryč. Nesmyslné opotřebení se jen vynechá (nástroj bude jako nový).
 function slot(s) {
   if (s == null) return null;
   if (typeof s !== 'object' || !Number.isInteger(s.n) || s.n < 1 || s.n > 9999 || typeof s.id !== 'string') throw new Error('slot');
-  return known(s.id) ? { id: s.id, n: s.n } : null;
+  if (!known(s.id)) return null;
+  const max = maxDur(s.id);
+  return max && Number.isInteger(s.w) && s.w > 0 && s.w < max ? { id: s.id, n: s.n, w: s.w } : { id: s.id, n: s.n };
 }
 // { id: true } – co hráč už vyrobil / postavil (tipy ve hře)
 function flags(o) {
@@ -30,7 +34,7 @@ function flags(o) {
  * Zkontroluje a uklidí stav hráče. Vrátí čistou kopii, nebo null (nesmysl: ignorovat).
  * @param {unknown} me
  * @param {number} [bytes] délka zprávy (JSON), když je známá
- * @returns {{ inv: ({id: string, n: number}|null)[], armor: ({id: string, n: number}|null)[], pos: number[], yaw: number, hp: number, hunger: number, crafted: object, placedAny: object, creative: boolean, flying: boolean, flyT: number, look?: object } | null}
+ * @returns {{ inv: ({id: string, n: number, w?: number}|null)[], armor: ({id: string, n: number, w?: number}|null)[], pos: number[], yaw: number, hp: number, hunger: number, crafted: object, placedAny: object, creative: boolean, flying: boolean, flyT: number, look?: object } | null}
  */
 export function cleanMe(me, bytes = 0) {
   if (bytes > ME_MAX_BYTES || !me || typeof me !== 'object' || Array.isArray(me)) return null;

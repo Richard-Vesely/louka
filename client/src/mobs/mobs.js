@@ -6,13 +6,16 @@ import { wrapAngle } from '../../../shared/util.js';
 import { RIM, animateCharacter, buildMobModel } from './mob-models.js';
 import { on } from '../../../shared/events.js';
 import { NET } from '../../../shared/net/net.js';
-import { hurtMob, mobs } from '../../../shared/sim/mobs.js';
+import { DEATH_TIME, hurtMob, mobs } from '../../../shared/sim/mobs.js';
+import { MOB_INVULN } from '../../../shared/tools.js';
 import { nearLight } from '../../../shared/world/collision.js';
 import { shrineDist } from '../../../shared/world/terrain.js';
 import { Sound } from '../audio/sound.js';
+import { toolSound } from '../audio/tool-sounds.js';
 import { addItem } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { damagePlayer } from '../player/survival.js';
+import { emitChips, emitStars } from '../render/chips.js';
 import { debris, sparks } from '../render/particles.js';
 import { scene } from '../render/renderer.js';
 import { invOpen, renderInventory, ui } from '../ui/inventory-ui.js';
@@ -20,12 +23,14 @@ import { invOpen, renderInventory, ui } from '../ui/inventory-ui.js';
 // ============================================================ tvorové: modely (mob-models.js), animace a „život“
 // Oči mrkají, hlava sleduje hráče do 8 m, uši a ocas sebou škubnou, zvířata se na místě pasou a rozhlížejí,
 // při běhu se práší, stínožrout za sebou nechává kouř, golemovi pulzují praskliny. Zásah = krátce zčervená,
-// smrt = převrátí se na bok a zmizí v obláčku. Stejná animace pro tvory, které simuluje tahle hra, i pro loutky klienta.
+// smrt = převrátí se na bok a zmizí v obláčku (DEATH_TIME z pravidel). Stejná animace pro tvory, které simuluje tahle hra,
+// i pro loutky klienta.
 const views = new Map();
 export function viewOf(m) {
   let V = views.get(m);
   if (!V) {
     V = buildMobModel(m.type);
+    V.mats = V.flash;
     V.group.position.set(m.pos.x, m.pos.y, m.pos.z);
     V.group.rotation.y = m.ry;
     Object.assign(V, { yaw: m.ry, t: Math.random() * 10, blink: 1 + Math.random() * 4, idleT: 2 + Math.random() * 4, idle: null, ear: 0, earT: 2 + Math.random() * 5, step: 0 });
@@ -34,18 +39,12 @@ export function viewOf(m) {
   }
   return V;
 }
-// Mrtví tvorové dohrají pád na bok, i když je pravidla už odebrala.
-const dying = [];
 // Každý snímek: model pro nového tvora, pryč s modelem tvora, který zmizel.
 export function syncMobViews() {
   for (const m of mobs) viewOf(m);
   if (views.size > mobs.length) {
     const alive = new Set(mobs);
-    for (const [m, V] of views) {
-      if (alive.has(m)) continue;
-      views.delete(m);
-      if (m.dead) dying.push({ V, t: m.deathT || 0 }); else scene.remove(V.group, V.shadow);
-    }
+    for (const [m, V] of views) if (!alive.has(m)) { scene.remove(V.group, V.shadow); views.delete(m); }
   }
 }
 const lerpA = (a, b, k) => a + wrapAngle(b - a) * k;
@@ -56,7 +55,7 @@ const lerpA = (a, b, k) => a + wrapAngle(b - a) * k;
 export function poseMob(V, m, dt, sp) {
   V.t += dt;
   const k = (r) => 1 - Math.exp(-dt * r);
-  if (m.dead) { poseDeath(V, m.deathT || 0); return; }
+  if (m.dead) { animateDeath(V, m); return; }
   m.phase += dt * (sp * 2.2 + (m.type === 'crawler' ? 2 : 0));
   const amt = Math.min(sp / 2, 1);
   let hop = 0;
@@ -120,33 +119,46 @@ export function poseMob(V, m, dt, sp) {
   }
   // golemovi pulzují praskliny, stínožroutovi žilky
   for (const mat of V.flash) if (mat.userData.pulse) mat.emissiveIntensity = (m.type === 'golem' ? 0.5 : 0.35) + Math.sin(V.t * 2.4) * 0.3;
-  V.group.position.set(m.pos.x, m.pos.y + hop, m.pos.z);
+  V.group.position.set(m.pos.x, m.pos.y + hop + hitHop(m, dt), m.pos.z);
   V.yaw = lerpA(V.yaw, m.ry, k(12));
   V.group.rotation.set(0, V.yaw, 0);
   V.shadow.position.set(m.pos.x, m.pos.y + 0.03, m.pos.z);
-  // zásah: krátce zčervená
-  const f = m.flash || 0;
-  if (f > 0 || V.flashOn) { for (const mat of V.flash) if (!mat.userData.glow && !mat.userData.pulse) mat.emissive.setRGB(f * 1.1, f * 0.12, f * 0.08); V.flashOn = f > 0; }
+  V.shadow.visible = true;
+  paintFlash(V, m.flash || 0);
 }
-// Smrt: převrátí se na bok, pak se zmenší a zmizí v obláčku.
-function poseDeath(V, t) {
-  const k = Math.min(1, t / 0.55), e = k * k * (3 - 2 * k);
-  V.group.rotation.set(0, V.yaw, e * Math.PI / 2);
-  V.group.scale.setScalar(Math.max(0.01, 1 - Math.max(0, t - 0.85) * 4) * (V.big ? 1.1 : 1));
-  for (const mat of V.flash) if (!mat.userData.glow && !mat.userData.pulse) mat.emissive.setRGB(0.6 * (1 - k), 0.05, 0.03);
+// Zásah: tvor zčervená (jako v Minecraftu). Svítící části (oči, krystaly) zůstanou; pulzující praskliny si záři řídí samy.
+const FLASH_RED = new THREE.Color(0.9, 0.06, 0.04);
+export function paintFlash(V, f) {
+  if (V.lastFlash === f) return;
+  V.lastFlash = f;
+  for (const mat of V.mats) {
+    if (mat.userData.glow) continue;
+    const base = (mat.userData.baseColor ??= mat.color.clone()); // bílá ovce musí zčervenat, ne jen zesvětlat
+    mat.color.copy(base).lerp(FLASH_RED, f * 0.7);
+    if (!mat.userData.pulse) mat.emissive.setRGB(f * 0.45, f * 0.02, 0);
+  }
 }
-function updateDying(dt) {
-  for (let i = dying.length - 1; i >= 0; i--) {
-    const D = dying[i];
-    D.t += dt;
-    poseDeath(D.V, D.t);
-    if (D.t > 1.1) {
-      const p = D.V.group.position;
-      debris.emit(p.x, p.y + 0.4, p.z, [0.75, 0.75, 0.78], 22, 1.6, 1.4); // obláček
-      Sound.at(p.x, p.y + 0.4, p.z, () => Sound.burst({ dur: 0.3, f0: 1100, f1: 180, q: 0.7, vol: 0.12, type: 'lowpass' }), { max: 20 }); // tiché „puf“
-      scene.remove(D.V.group, D.V.shadow);
-      dying.splice(i, 1);
-    }
+// Po zásahu tvor krátce poskočí (odhození vypadá jako rána, ne jako posun)
+export function hitHop(m, dt) {
+  if (!(m.hitHop > 0)) return 0;
+  m.hitHop = Math.max(0, m.hitHop - dt);
+  return Math.sin((1 - m.hitHop / 0.28) * Math.PI) * 0.28;
+}
+// Smrt: tvor se převrátí na bok, zčervená a rozplyne se v obláčku kouře
+export function animateDeath(V, m) {
+  const k = Math.min(1, m.deathT / 0.35);
+  V.baseScale ??= V.group.scale.x;
+  V.group.rotation.set(0, V.yaw ?? m.ry, (m.nid % 2 ? 1 : -1) * k * k * (Math.PI / 2));
+  const fade = Math.max(0, Math.min(1, (DEATH_TIME - m.deathT) / 0.2));
+  V.group.scale.setScalar(Math.max(0.01, fade) * V.baseScale);
+  V.shadow.visible = fade > 0.5;
+  paintFlash(V, 0.55);
+  if (!m.puffed && m.deathT > DEATH_TIME - 0.22) {
+    m.puffed = true;
+    const at = [m.pos.x, m.pos.y + m.def.cy * 0.6, m.pos.z];
+    debris.emit(...at, [0.8, 0.8, 0.82], 26, 1.4, 1.4);
+    if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') sparks.emit(...at, m.type === 'golem' ? [0.4, 0.9, 1] : [0.6, 0.25, 1], 20, 2, 1.5);
+    toolSound('poof');
   }
 }
 const MOON = new THREE.Color(0x6e8bc4);
@@ -155,37 +167,49 @@ export function animateMobs(dt) {
   for (const m of mobs) poseMob(viewOf(m), m, dt, Math.hypot(m.vel.x, m.vel.z));
   mobLife(dt);
 }
-/** Pro hostitele i klienta: dohrání smrti a měsíční obrys tvorů podle toho, jak je tma. */
-export function mobLife(dt) {
-  updateDying(dt);
+/** Pro hostitele i klienta: měsíční obrys tvorů a postav podle toho, jak je tma. */
+export function mobLife() {
   RIM.value.copy(MOON).multiplyScalar(daylight().night * 0.45);
 }
 
 // ---------- útok hráče u této obrazovky; připojený hráč posílá ránu hostiteli
-export function hitMob(m, dmg, yaw = player.yaw) {
+// kb = síla odhození, fx = { crit, charge } jen pro efekty. Vrací false, když byl tvor ještě nezranitelný.
+let localFx = null;
+export function hitMob(m, dmg, yaw = player.yaw, kb = 1, fx = {}) {
   if (NET.client) { // útok jde hostiteli, tady jen odezva
-    NET.req(['hit', m.nid, dmg, player.yaw]);
+    const now = performance.now() / 1000;
+    if (m.dead || now - (m.hitAt || -9) < MOB_INVULN) return false;
+    m.hitAt = now;
+    NET.req(['hit', m.nid, dmg, yaw, kb]);
     m.flash = 1;
-    sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : [1, 0.25, 0.2], 18, 3.5, 1.5);
-    Sound.at(m.pos.x, m.pos.y + m.def.cy, m.pos.z, () => Sound.hit(), { ref: 4 });
-    player.shake = 0.1;
-    return;
+    hitFx(m, dmg, true, fx);
+    return true;
   }
-  hurtMob(m, dmg, yaw);
+  localFx = fx;
+  try { return hurtMob(m, dmg, yaw, kb); } finally { localFx = null; }
+}
+const HIT_COL = { crawler: [[0.45, 0.15, 0.7], [0.2, 0.05, 0.3]], golem: [[0.45, 0.95, 1], [0.7, 0.75, 0.8]], markoman: [[0.55, 0.06, 0.06], [0.7, 0.72, 0.76]] };
+// Odezva zásahu: jiskry, kapky (kostičky), u kritického zásahu hvězdičky, zvuk a poskočení
+function hitFx(m, dmg, local, fx) {
+  const at = [m.pos.x, m.pos.y + m.def.cy, m.pos.z];
+  sparks.emit(...at, m.type === 'crawler' ? [0.7, 0.25, 1.0] : m.type === 'golem' ? [0.4, 0.9, 1] : [1, 0.3, 0.2], 8 + Math.min(16, Math.round(dmg * 1.5)), 3.5, 1.5);
+  emitChips(at, HIT_COL[m.type] || [[0.6, 0.05, 0.05], [0.35, 0.02, 0.03]], Math.min(14, 3 + Math.round(dmg)), { speed: 1.8, up: 2, size: [0.03, 0.06], life: [0.3, 0.8], spread: m.def.radius * 0.6 });
+  m.hitHop = 0.28;
+  if (fx?.crit) { emitStars(at, [1, 0.92, 0.55], 16, 3.5); toolSound('crit'); }
+  if (local) toolSound((fx?.charge ?? 1) < 0.5 ? 'weak' : 'hit', fx?.charge ?? 1); else mobAt(m, () => Sound.hit()); // rána jiného hráče zní od tvora
 }
 export const playerSafe = () => shrineDist(player.pos.x, player.pos.z) < 11 || nearLight(player.pos.x, player.pos.z, 5);
 
 // ---------- co se děje s tvory (události z pravidel): jiskry, zvuky, kořist, zranění
 // Zvuky tvorů znějí z místa, kde tvor je (směr a vzdálenost).
 const mobAt = (m, fn, ref = 4) => Sound.at(m.pos.x, m.pos.y + m.def.cy, m.pos.z, fn, { ref });
-on('mobHit', (m, local) => {
-  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.7, 0.25, 1.0] : m.type === 'golem' ? [0.4, 0.9, 1] : [1, 0.25, 0.2], 18, 3.5, 1.5);
-  mobAt(m, () => { Sound.hit(); if (m.type === 'golem') Sound.mat('crystal', 'hit', 1.5); });
-  if (local) player.shake = 0.1;
+on('mobHit', (m, local, dmg = 1) => {
+  hitFx(m, dmg, local, local ? localFx : null);
+  if (m.type === 'golem') mobAt(m, () => Sound.mat('crystal', 'hit', 1.5));
   if (m.type === 'sheep' || m.type === 'boar' || m.type === 'wolf' || m.type === 'cow' || m.type === 'chicken') mobAt(m, () => Sound.mobVoice(m.type));
 });
 on('mobKilled', (m) => {
-  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 50, 5, 2);
+  sparks.emit(m.pos.x, m.pos.y + m.def.cy, m.pos.z, m.type === 'crawler' ? [0.6, 0.2, 1.0] : [0.9, 0.85, 0.75], 30, 4, 2);
   mobAt(m, () => { if (m.type === 'crawler' || m.type === 'markoman' || m.type === 'golem') Sound.kill(); else Sound.burst({ dur: 0.35, f0: 1200, f1: 200, q: 0.8, vol: 0.18, type: 'lowpass' }); });
 });
 on('chestLoot', () => { if (invOpen && ui.mode === 'chest') renderInventory(); });

@@ -6,10 +6,13 @@ import { Vec3 } from '../vec3.js';
 import { solidAny, voxFloor } from '../world/collision.js';
 import { groundHeight } from '../world/voxels.js';
 
-export const groundItems = []; // { gid, id, n, pos, vel, age, delay, spin, req }
-export function spawnGroundItem(id, n, pos, vel, delay = 0.6, gid = NET.uid()) {
-  NET.op(['g', gid, id, n, [pos.x, pos.y, pos.z].map(r2), [vel.x, vel.y, vel.z].map(r2), delay]);
-  groundItems.push({ gid, id, n, pos: new Vec3(pos.x, pos.y, pos.z), vel: new Vec3(vel.x, vel.y, vel.z), age: 0, delay, spin: Math.random() * 6, req: 0 });
+export const groundItems = []; // { gid, id, n, pos, vel, age, delay, spin, req, w? }
+// w = opotřebení nástroje (shared/tools.js); posílá se jen u opotřebovaných kusů jako 8. prvek operace 'g'.
+export function spawnGroundItem(id, n, pos, vel, delay = 0.6, gid = NET.uid(), w = 0) {
+  const op = ['g', gid, id, n, [pos.x, pos.y, pos.z].map(r2), [vel.x, vel.y, vel.z].map(r2), delay];
+  if (w > 0) op.push(w);
+  NET.op(op);
+  groundItems.push({ gid, id, n, pos: new Vec3(pos.x, pos.y, pos.z), vel: new Vec3(vel.x, vel.y, vel.z), age: 0, delay, spin: Math.random() * 6, req: 0, ...(w > 0 ? { w } : {}) });
 }
 // Podlaha pod předmětem: povrch terénu nebo horní stěna bloku
 function itemFloor(x, y, z) {
@@ -62,7 +65,7 @@ export function updateGroundItems(dt, pickup) {
 export function claimGroundItem(gid) {
   const it = groundItems.find((g) => g.gid === gid);
   if (!it || it.n <= 0) return null;
-  const got = { id: it.id, n: it.n };
+  const got = it.w ? { id: it.id, n: it.n, w: it.w } : { id: it.id, n: it.n };
   it.n = 0;
   NET.op(['gx', it.gid, 0]);
   return got;

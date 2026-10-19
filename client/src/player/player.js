@@ -283,7 +283,7 @@ export function updatePlayer(dt) {
   }
   lastStepSign = sign;
   player.sprinting = sprint && moving > 1;
-  const bobY = Math.sin(player.bob) * 0.035 * Math.min(1, moving / WALK);
+  const bobY = 0; // houpání kamery při chůzi: player/camera-feel.js
   player.shake = Math.max(0, player.shake - dt);
   const sh = player.shake * 0.4;
   player.stepSmooth *= Math.exp(-dt * 12); // kamera po schodu dojede plynule
