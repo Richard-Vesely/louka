@@ -226,30 +226,33 @@ const STYLE = {
   shadow: { plate: 0x1b1724, metal: 0.5, rough: 0.45, trim: 0x3a2f4c, fabric: 0x221d2c },
   sky: { plate: 0xf4f1ea, metal: 0.3, rough: 0.25, trim: 0xe0b040, fabric: 0xf0ede6 },
 };
+// Nic není úplně bílé (pravidlo vzhledu): bílý oblek by na slunci přezářil a s post-processingem se rozmazal do záře.
+const tame = (c, max = 0.72) => { const h = {}; c.getHSL(h); if (h.l > max) c.setHSL(h.h, h.s, max); return c; };
 /** Barvy obleku (látka, tmavé spoje, pláty, světla) – pro ruku z první osoby v render/held-item.js. */
 export function suitPalette(costume) {
   const c = cleanCostume(costume), st = STYLE[c.s], suit = new THREE.Color(SUIT_COLORS[c.c][1]);
   const fabric = c.s === 'scientist' ? new THREE.Color(0xf2f5f7).lerp(suit, 0.12) : st.fabric ? new THREE.Color(st.fabric).lerp(suit, 0.18) : suit;
-  return { fabric, dark: fabric.clone().multiplyScalar(0.42), plate: new THREE.Color(st.plate), light: new THREE.Color(LIGHT_COLORS[c.l][1]) };
+  tame(fabric);
+  return { fabric, dark: fabric.clone().multiplyScalar(0.42), plate: tame(new THREE.Color(st.plate)), light: new THREE.Color(LIGHT_COLORS[c.l][1]) };
 }
 function suitMats(c) {
   const st = STYLE[c.s];
   const suit = new THREE.Color(SUIT_COLORS[c.c][1]);
   const light = new THREE.Color(LIGHT_COLORS[c.l][1]);
-  const fabricC = st.fabric ? new THREE.Color(st.fabric).lerp(suit, 0.18) : suit.clone();
+  const fabricC = tame(st.fabric ? new THREE.Color(st.fabric).lerp(suit, 0.18) : suit.clone());
   const std = (o) => new THREE.MeshStandardMaterial(o);
   const M = {
     light,
     fabric: std({ color: fabricC, map: fabricTex(), roughness: 0.8 }),
     fabricDark: std({ color: fabricC.clone().multiplyScalar(0.42), map: fabricTex(), roughness: 0.85 }),
-    paint: std({ color: c.s === 'shadow' ? new THREE.Color(0x2a2236) : c.s === 'sky' ? new THREE.Color(0xf6f3ec) : suit, roughness: 0.32, metalness: 0.25 }),
-    plate: std({ color: st.plate, map: plateTex(), roughness: st.rough, metalness: st.metal }),
+    paint: std({ color: tame(c.s === 'shadow' ? new THREE.Color(0x2a2236) : c.s === 'sky' ? new THREE.Color(0xf6f3ec) : suit.clone(), 0.7), roughness: 0.32, metalness: 0.25 }),
+    plate: std({ color: tame(new THREE.Color(st.plate), 0.7), map: plateTex(), roughness: st.rough, metalness: st.metal }),
     trim: std({ color: st.trim, roughness: 0.3, metalness: 1 }),
     rubber: std({ color: 0x343a46, roughness: 0.7 }),
     visor: std({ color: new THREE.Color(VISOR_COLORS[c.v][1]).multiplyScalar(0.5), roughness: 0.05, metalness: 0.85, envMapIntensity: 1.4 }), // tónované sklo
     glow: std({ color: light.clone().multiplyScalar(0.3), emissive: light, emissiveIntensity: 2.2, roughness: 0.4 }),
     shine: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false }),
-    coat: std({ color: new THREE.Color(0xf2f5f7).lerp(suit, 0.12), map: fabricTex(), roughness: 0.85, side: THREE.DoubleSide }),
+    coat: std({ color: tame(new THREE.Color(0xf2f5f7).lerp(suit, 0.12)), map: fabricTex(), roughness: 0.85, side: THREE.DoubleSide }),
     cape: std({ color: c.s === 'shadow' ? new THREE.Color(0x15111d) : suit.clone().multiplyScalar(0.7), map: fabricTex(), roughness: 0.9, side: THREE.DoubleSide }),
   };
   M.glow.userData.glow = true;
@@ -491,7 +494,7 @@ export function armorMat(tier) {
     4: std({ color: 0xbff4ff, metalness: 0.25, roughness: 0.12, emissive: 0x38e8ff, emissiveMap: crackTex(), emissiveIntensity: 1.4 }),
     5: std({ color: 0x8a46c4, metalness: 0.8, roughness: 0.28, emissive: 0xd04bff, emissiveMap: crackTex(), emissiveIntensity: 0.9 }),
     shadow: std({ color: 0x241e30, metalness: 0.4, roughness: 0.5, emissive: 0xd04bff, emissiveMap: crackTex(), emissiveIntensity: 0.8 }),
-    sky: std({ color: 0xf4f1ea, metalness: 0.35, roughness: 0.22, emissive: 0xffb066, emissiveIntensity: 0.12 }),
+    sky: std({ color: tame(new THREE.Color(0xf4f1ea), 0.7), metalness: 0.35, roughness: 0.22, emissive: 0xffb066, emissiveIntensity: 0.12 }),
   }[tier] || std({ color: 0x9aa0a8, metalness: 0.6, roughness: 0.4 });
   m.userData.tier = tier;
   return (armorMats[tier] = addRim(m));

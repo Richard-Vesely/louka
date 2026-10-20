@@ -161,7 +161,7 @@ export function tick(realDt) {
   touchUI.update(realDt);
   NET.update(realDt);
   if (performance.now() - lastFrameAt < 300) { // na pozadí se nevykresluje
-    post.menu = invOpen || pcOpen || docOpen || guideOpen; // svět za oknem stačí v polovičním rozlišení
+    post.menu = invOpen || pcOpen || docOpen || guideOpen || !!document.getElementById('costume'); // svět za oknem (i za výběrem obleku) stačí v polovičním rozlišení
     updateShadows(realDt, underground);
     updateWater();
     renderFrame(realDt);

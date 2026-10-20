@@ -127,7 +127,7 @@ When you add or change a feature, update this file in the same pull request.
       occlusion** (N8AO, half resolution) on a separate graphics card; 1024 px shadows and no AO on integrated graphics.
     - *střední* (the club laptops): 1024 px shadows, no AO or shafts, FXAA instead of MSAA.
     - **Dynamic resolution** drops to 60–70 % when a frame takes over ~18 ms and comes back when there is headroom.
-      With a window open (backpack, computer, guide) the world behind it renders at half resolution without AO.
+      With a window open (backpack, computer, guide, *Můj oblek*) the world behind it renders at half resolution without AO.
   - **Grafika: nízká** stays as cheap as before (no composer, no shadows, ACES); it still gets the warm-white fire light,
     wind, weather, dusk sky, simple water, reeds, embers, cave edges and ore light. CI renders with it.
   - Screenshots for comparing graphics: `node tests/playtest/shots.mjs dist <out> [--quality low|medium|high|auto]
@@ -153,7 +153,8 @@ When you add or change a feature, update this file in the same pull request.
   light colour that stand out at night, an emblem on the chest and a soft shadow under the feet. **Armor shows on
   the model** as plates on the helmet, chest, shoulders, thighs and boots: iron is steel, crystal is icy with glowing
   cyan cracks, markorite is violet metal with a purple glow, *Stínové* is dark with magenta seams, *Nebeské* is white
-  enamel with gold trim. Putting on a piece clicks.
+  enamel with gold trim. Putting on a piece clicks. White and light suits are never pure white, so they don't glare
+  or blur into a glow in the sun with Grafika střední/vysoká.
 - **Animations** (procedural, also on other players): walk and run (longer stride, leaning forward, knees bend),
   idle breathing and looking around now and then, the head follows where you look (the body turns after 75°),
   swings that depend on the tool (pick and axe chop, sword sweeps, shovel scoops, hand and blocks punch), eating
@@ -267,7 +268,7 @@ mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack
 | Jelen (deer) | 8 | shy, flees; venison |
 | Kanec (boar) | 12 | attacks when hit |
 | Vlk (wolf) | 14 | attacks at night or when hit |
-| Stínožrout (shadow-eater) | 10 | night monster, burns at sunrise, avoids light and the shrine |
+| Stínožrout (shadow-eater) | 10 | night monster, burns at sunrise, avoids light and the shrine; violet veins and a moonlit rim show its outline at night |
 | Markoman | 26 | Mark dimension, always hostile, good loot |
 | Krystalový golem | 60 | Mark dimension, strong, drops shards and markorite |
 

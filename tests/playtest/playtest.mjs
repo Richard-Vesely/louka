@@ -151,12 +151,13 @@ try {
   // ------------------------------------------------------------ tools and combat: durability, cracks, repair, attack charge, armor wear
   r = await ev(() => {
     const g = window.game; T.clearInv(); T.give('wood_pick', 1); T.hold('wood_pick'); g.renderHotbar();
+    g.mobs.length = 0; // a mob wandering into the swing takes the hits (and wears the pick by 2), so the timing check gets flaky
     T.tpg(-14, 30); T.step(5);
     const p = g.player.pos, x = Math.floor(p.x), y = Math.floor(p.y) + 1, z = Math.floor(p.z) - 2, k = `${x},${y},${z}`;
     g.blocks.set(k, 'cobble'); g.rebuildBlocks();
     T.aim(x + 0.5, y + 0.5, z + 0.5);
     g.input.lmb = true; T.step(10);
-    const mid = { stage: g.crackStage(), p: +g.mineState().p.toFixed(2) };
+    const mid = { stage: g.crackStage(), p: +g.mineState().p.toFixed(2), tg: g.target && (g.target.type || g.target.kind), near: g.mobs.filter((m) => m.pos.distanceTo(p) < 5).map((m) => m.type).join() };
     const n = T.mineUntil(() => !g.blocks.has(k));
     const s = g.inv.slots[0];
     return { mid, n, w: s?.w, bar: !!document.querySelector('#hotbar .slot .dur'), stone: T.count('stone'), cracksGone: g.crackStage() === -1, k };

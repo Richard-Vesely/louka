@@ -244,7 +244,7 @@ export function buildMobModel(type) {
     extra.crystal = crystal;
   } else { // stínožrout: tmavá lesklá koule se zářícími žilkami, ostny a purpurovýma očima
     kind = 'blob';
-    const skin = mat({ color: 0x120c18, roughness: 0.3, metalness: 0.2, emissive: 0xd04bff, emissiveMap: crackTex(), emissiveIntensity: 0.5 }, 'skin');
+    const skin = mat({ color: 0x241a30, roughness: 0.3, metalness: 0.2, emissive: 0xd04bff, emissiveMap: crackTex(), emissiveIntensity: 0.9 }, 'skin');
     skin.userData.pulse = true;
     body = new THREE.Mesh(new THREE.SphereGeometry(0.6, 22, 16), skin);
     body.position.y = 0.48;

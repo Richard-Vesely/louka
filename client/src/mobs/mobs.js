@@ -169,7 +169,7 @@ export function animateMobs(dt) {
 }
 /** Pro hostitele i klienta: měsíční obrys tvorů a postav podle toho, jak je tma. */
 export function mobLife() {
-  RIM.value.copy(MOON).multiplyScalar(daylight().night * 0.45);
+  RIM.value.copy(MOON).multiplyScalar(daylight().night * 0.6);
 }
 
 // ---------- útok hráče u této obrazovky; připojený hráč posílá ránu hostiteli
