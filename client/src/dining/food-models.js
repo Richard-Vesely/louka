@@ -523,7 +523,14 @@ export function iconVoxels(id, px = 0.02) {
   const voxelCache = (iconVoxels.cache ||= {}); // funkce se volá i dřív, než by se inicializovala konstanta
   let data = voxelCache[id];
   if (!data) {
-    const d = ICONS[id].canvas.getContext('2d').getImageData(0, 0, 16, 16).data;
+    let src = ICONS[id].canvas;
+    if (src.width !== 16) { // větší ikona (3D ikona bloku): zmenšit na 16×16
+      const c = document.createElement('canvas');
+      c.width = c.height = 16;
+      c.getContext('2d').drawImage(src, 0, 0, 16, 16);
+      src = c;
+    }
+    const d = src.getContext('2d').getImageData(0, 0, 16, 16).data;
     data = voxelCache[id] = [];
     for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
       const i = (y * 16 + x) * 4;

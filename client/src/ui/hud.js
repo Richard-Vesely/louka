@@ -46,7 +46,7 @@ function setMarker(item, x, z) {
 }
 export function feed(id, text) {
   const el = document.createElement('div');
-  el.innerHTML = `<img src="${ICONS[id].url}" alt="">`;
+  el.innerHTML = `<img src="${ICONS[id].url}"${ICONS[id].smooth ? ' class="sm"' : ''} alt="">`;
   el.append(text);
   $('feed').prepend(el);
   setTimeout(() => el.remove(), 3000);

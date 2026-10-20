@@ -5,6 +5,7 @@ import { NET } from '../../../shared/net/net.js';
 import { dayCount } from '../../../shared/sim/day.js';
 import { PRINT_TIME, elecOf, queuePrint } from '../../../shared/sim/power.js';
 import { papers } from '../../../shared/world/state.js';
+import { addStatus, addStrip, builder, techMats } from '../machines/machine-models.js';
 import { slotHTML } from '../ui/inventory-ui.js';
 
 // ============================================================ dokumenty: textový editor, tiskárna, papíry ve světě, čtení a předání
@@ -38,17 +39,19 @@ export function printerDev(st) {
     <div class="mc-note">${status}</div>${queue ? `<div class="mc-note">Fronta tisku:${queue}</div>` : ''}<div class="mc-note">Jeden list = 1 papír a ${PRINT_TIME} s. Příkon ${elecOf('printer').use} W jen při tisku.</div>`;
 }
 export function buildPrinterModel(g) {
-  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.55, ...o });
-  const box = (w, h, d, m, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); g.add(me); return me; };
-  const body = M({ color: 0xe0dcd4 }), dark = M({ color: 0x3a3a42 });
-  box(0.7, 0.3, 0.5, body, 0, 0.15, -0.02);
-  box(0.6, 0.02, 0.02, dark, 0, 0.2, 0.235); // výstupní štěrbina
-  box(0.5, 0.02, 0.2, body, 0, 0.06, 0.32); // zásobník
-  const tray = box(0.42, 0.14, 0.02, body, 0, 0.36, -0.2); // podavač papíru vzadu
+  const T = techMats(), { box } = builder(g);
+  const paper = new THREE.MeshStandardMaterial({ color: 0xfbf8ee, roughness: 0.8 });
+  box(0.7, 0.3, 0.5, T.trim, 0, 0.15, -0.02, 0.03);
+  box(0.62, 0.04, 0.4, T.housing, 0, 0.31, -0.04, 0.015); // grafitové víko
+  box(0.6, 0.02, 0.02, T.dark, 0, 0.2, 0.235); // výstupní štěrbina
+  addStrip(g, 0.6, 0.008, 0.01, 0, 0.225, 0.236);
+  box(0.5, 0.02, 0.2, T.trim, 0, 0.06, 0.32, 0.008); // zásobník
+  const tray = box(0.42, 0.14, 0.02, T.housing, 0, 0.38, -0.2); // podavač papíru vzadu
   tray.rotation.x = -0.4;
-  box(0.36, 0.11, 0.005, M({ color: 0xfbf8ee }), 0, 0.37, -0.19).rotation.x = -0.4;
-  g.userData.led = box(0.04, 0.03, 0.01, M({ color: 0x222222, emissive: 0x3aff5a, emissiveIntensity: 0 }), 0.28, 0.25, 0.231).material;
-  const sheet = box(0.36, 0.005, 0.24, M({ color: 0xfbf8ee }), 0, 0.075, 0.3);
+  box(0.36, 0.11, 0.005, paper, 0, 0.39, -0.19).rotation.x = -0.4;
+  addStatus(g, 0.28, 0.25, 0.232);
+  const sheet = box(0.36, 0.005, 0.24, paper, 0, 0.075, 0.3);
   sheet.visible = false;
+  sheet.userData.keep = true;
   g.userData.sheet = sheet;
 }

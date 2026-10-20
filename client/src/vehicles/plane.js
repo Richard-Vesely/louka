@@ -29,6 +29,30 @@ function planePoint(v, lx, ly, lz, out = planeVec) {
   planeMat.makeRotationFromEuler(planeEuler);
   return out.set(lx, ly, lz).applyMatrix4(planeMat).add(tmpV.set(v.x, v.y, v.z));
 }
+// Znak AI kroužku na křídla letadla (canvas): glow = jen svítící prstenec (emissiveMap)
+const emblemCache = {};
+function emblemTex(glow = false) {
+  if (emblemCache[glow]) return emblemCache[glow];
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const x = c.getContext('2d');
+  x.translate(64, 64);
+  if (!glow) { x.fillStyle = '#0f1a2e'; x.beginPath(); x.arc(0, 0, 62, 0, Math.PI * 2); x.fill(); }
+  else { x.fillStyle = '#000'; x.fillRect(-64, -64, 128, 128); }
+  x.strokeStyle = glow ? '#fff' : '#38e8ff';
+  x.lineWidth = 8;
+  x.beginPath(); x.arc(0, 0, 52, 0, Math.PI * 2); x.stroke();
+  if (!glow) {
+    x.fillStyle = '#f4f6fa';
+    x.font = 'bold 72px system-ui, sans-serif';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText('Ř', 0, 8);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return (emblemCache[glow] = t);
+}
 export function buildPlaneModel(color) {
   const g = new THREE.Group();
   const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.75, ...o });
@@ -52,8 +76,10 @@ export function buildPlaneModel(color) {
   box(9.2, 0.12, 1.5, wingM, 0, 2.38, -1.1);
   for (const x of [-3.3, 3.3]) for (const z of [-1.5, -0.4]) box(0.07, 1.36, 0.07, wood, x, 1.67, z);
   for (const x of [-0.5, 0.5]) box(0.06, 0.6, 0.06, wood, x, 2.06, -1.1);
-  const roundel = (x, y) => { cyl(0.42, 0.02, M({ color: 0x1a3a8a }), x, y, -1.1, 'y'); cyl(0.28, 0.03, M({ color: 0xf4f4f0 }), x, y, -1.1, 'y'); cyl(0.14, 0.04, M({ color: 0xc82a2a }), x, y, -1.1, 'y'); };
-  roundel(-3.4, 2.45); roundel(3.4, 2.45);
+  // znak kroužku (místo vojenských výsostných znaků): tmavý kruh, tyrkysový prstenec, bílé Ř
+  const emblem = M({ map: emblemTex(), transparent: true, roughness: 0.45, emissive: 0x38e8ff, emissiveMap: emblemTex(true), emissiveIntensity: 0.6 });
+  const roundel = (x, y) => { const d = new THREE.Mesh(new THREE.CircleGeometry(0.44, 32).rotateX(-Math.PI / 2), emblem); d.position.set(x, y, -1.1); g.add(d); };
+  roundel(-3.4, 2.445); roundel(3.4, 2.445);
   // ocasní plochy
   box(3.2, 0.08, 0.95, wingM, 0, 1.5, 3.55);
   box(0.08, 1.15, 1.0, fabric, 0, 2.05, 3.65);

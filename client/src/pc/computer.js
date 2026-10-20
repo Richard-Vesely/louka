@@ -8,6 +8,7 @@ import { clamp } from '../../../shared/util.js';
 import { blocks, power } from '../../../shared/world/state.js';
 import { Sound } from '../audio/sound.js';
 import { input, keys, lockPointer, player, unlockPointer } from '../player/player.js';
+import { addStatus, addStrip, builder, techMats } from '../machines/machine-models.js';
 import { tanksInit } from './tanks.js';
 
 // ============================================================ počítač: model, operační systém ŘíšeOS a hra Tanky 2D
@@ -24,27 +25,45 @@ const pcWall = (st) => PC_WALLS[st?.wall || 0] || PC_WALLS[0];
 
 // ---------- 3D model: skříň, monitor s obrazovkou (canvas), klávesnice a myš; přední strana je +z
 export function buildComputerModel(g) {
-  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.55, ...o });
-  const box = (w, h, d, m, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); g.add(me); return me; };
-  const dark = M({ color: 0x2a2a30 }), light = M({ color: 0xdcd8d0 });
-  box(0.24, 0.5, 0.5, dark, -0.35, 0.25, -0.08); // skříň
-  box(0.2, 0.03, 0.01, M({ color: 0x5a5a62 }), -0.35, 0.4, 0.175);
-  g.userData.led = box(0.03, 0.03, 0.01, M({ color: 0x222222, emissive: 0x3aff5a, emissiveIntensity: 0 }), -0.29, 0.45, 0.176).material;
-  box(0.2, 0.02, 0.15, dark, 0.12, 0.01, -0.14); // podstavec monitoru
-  box(0.05, 0.2, 0.04, dark, 0.12, 0.12, -0.16);
-  box(0.64, 0.42, 0.04, dark, 0.12, 0.43, -0.14);
+  const T = techMats(), { box, cyl } = builder(g);
+  box(0.24, 0.5, 0.5, T.housing, -0.35, 0.25, -0.08, 0.02); // skříň
+  box(0.2, 0.03, 0.01, T.dark, -0.35, 0.4, 0.175);
+  addStrip(g, 0.012, 0.3, 0.01, -0.3, 0.22, 0.176); // svítící proužek (tyrkysový = elektřina)
+  addStatus(g, -0.39, 0.45, 0.178);
+  box(0.22, 0.02, 0.15, T.housing, 0.12, 0.01, -0.14, 0.008); // podstavec monitoru
+  cyl(0.02, 0.02, 0.22, T.chrome, 0.12, 0.13, -0.17, 8);
+  box(0.66, 0.42, 0.035, T.dark, 0.12, 0.44, -0.14, 0.015); // tenký rámeček
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 160;
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.36), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
-  scr.position.set(0.12, 0.44, -0.119);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.37), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  scr.position.set(0.12, 0.44, -0.121);
   g.add(scr);
-  box(0.46, 0.025, 0.15, light, 0.06, 0.0125, 0.2); // klávesnice
-  for (let r = 0; r < 3; r++) box(0.42, 0.008, 0.03, M({ color: 0xb8b4ac }), 0.06, 0.029, 0.15 + r * 0.04);
-  box(0.06, 0.025, 0.09, light, 0.38, 0.0125, 0.22); // myš
-  g.userData.screen = { ctx: c.getContext('2d'), tex, key: '' };
+  // přes obraz běží jemné řádky a světelný pruh (zapnutý počítač „žije“)
+  const scan = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.37), new THREE.MeshBasicMaterial({ map: scanTex(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, opacity: 0.5 }));
+  scan.position.set(0.12, 0.44, -0.119);
+  scan.visible = false;
+  scan.userData.keep = true;
+  g.add(scan);
+  box(0.46, 0.022, 0.15, T.dark, 0.06, 0.011, 0.2, 0.008); // klávesnice s podsvícením
+  addStrip(g, 0.43, 0.006, 0.12, 0.06, 0.024, 0.2);
+  box(0.06, 0.025, 0.09, T.trim, 0.38, 0.0125, 0.22, 0.012); // myš
+  g.userData.screen = { ctx: c.getContext('2d'), tex, key: '', scan };
+}
+// Řádky přes obrazovku a pruh, který po ní pomalu jede dolů (posouvá se texturou)
+let scanT = null;
+function scanTex() {
+  if (scanT) return scanT;
+  const c = document.createElement('canvas');
+  c.width = 4; c.height = 128;
+  const x = c.getContext('2d');
+  for (let y = 0; y < 128; y++) { const bar = Math.max(0, 1 - Math.abs(y - 100) / 14); x.fillStyle = `rgba(150,240,255,${(y % 3 === 0 ? 0.1 : 0.02) + bar * 0.35})`; x.fillRect(0, y, 4, 1); }
+  scanT = new THREE.CanvasTexture(c);
+  scanT.wrapT = THREE.RepeatWrapping;
+  scanT.colorSpace = THREE.SRGBColorSpace;
+  return scanT;
 }
 // Obraz na monitoru ve světě (vidí ho i ostatní hráči): vypnuto, start, plocha
 export function drawPCScreen(k, S, st) {
