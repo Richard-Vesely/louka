@@ -282,3 +282,32 @@ export const neonTex = canvasTexture(128, (x, y) => {
   return [236 * k, 240 * k, 246 * k, 0.3, 0.22, 0];
 });
 export const neonMaskTex = canvasTexture(128, (x, y) => { const d = neonD(x, y), m = d < 13 ? 0 : 0.72 + 0.28 * sm(13, 44, d); return [255 * m, 255 * m, 255 * m]; });
+
+// Normálová mapa z jasu textury (Sobel): tmavé spáry a praskliny jsou hlubší, takže na bloky dopadá světlo s reliéfem.
+// tile = šířka dlaždice v atlasu (sousední dlaždice se nemíchají). Jen se střední a vysokou grafikou (vzhled, LK.normals).
+const normalCache = new Map();
+export function normalMapFrom(tex, tile = 0) {
+  if (normalCache.has(tex)) return normalCache.get(tex);
+  const img = tex.image, W = img.width, H = img.height;
+  const src = (img.getContext ? img : (() => { const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(img, 0, 0); return c; })()).getContext('2d').getImageData(0, 0, W, H).data;
+  const lum = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) lum[i] = (src[i * 4] * 0.3 + src[i * 4 + 1] * 0.59 + src[i * 4 + 2] * 0.11) / 255;
+  const T = tile || W;
+  const at = (x, y) => { const tx = Math.floor(x / T) * T; x = tx + ((x - tx) % T + T) % T; y = ((y % H) + H) % H; return lum[y * W + x]; };
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d'), out = g.createImageData(W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const tx = Math.floor(x / T) * T, lx = x - tx, xl = tx + ((lx - 1 + T) % T), xr = tx + ((lx + 1) % T);
+    const dx = (at(xr, y - 1) + 2 * at(xr, y) + at(xr, y + 1)) - (at(xl, y - 1) + 2 * at(xl, y) + at(xl, y + 1));
+    const dy = (at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1));
+    const nx = -dx * 2.2, ny = dy * 2.2, nz = 1, l = Math.hypot(nx, ny, nz);
+    out.data.set([(nx / l * 0.5 + 0.5) * 255, (ny / l * 0.5 + 0.5) * 255, (nz / l * 0.5 + 0.5) * 255, 255], (y * W + x) * 4);
+  }
+  g.putImageData(out, 0, 0);
+  const n = new THREE.CanvasTexture(c);
+  n.wrapS = tex.wrapS; n.wrapT = tex.wrapT;
+  n.anisotropy = tex.anisotropy;
+  normalCache.set(tex, n);
+  return n;
+}

@@ -24,8 +24,8 @@ import { updateEating } from '../player/eating.js';
 import { updateInteraction } from '../player/interaction.js';
 import { guideOpen, isLocked, player, updatePlayer } from '../player/player.js';
 import { updateShards, updateSurvival } from '../player/survival.js';
-import { rebuildBlocks, specials, updateLights } from '../render/blocks.js';
-import { applyUnderground, updateDay } from '../render/daylight.js';
+import { rebuildBlocks, updateLights } from '../render/blocks.js';
+import { applyUnderground, underground, updateDay } from '../render/daylight.js';
 import { applyDimension } from '../render/dimension.js';
 import { rebuildForest } from '../render/forest.js';
 import { grassLayers, regrowGrass } from '../render/grass.js';
@@ -33,7 +33,13 @@ import { ground } from '../render/ground.js';
 import { updateHeldModel, updateSwing } from '../render/held-item.js';
 import { updateChips, updateStars } from '../render/chips.js';
 import { debris, sparks } from '../render/particles.js';
-import { U, camera, renderer, scene } from '../render/renderer.js';
+import { initClouds, initRidge, updateClouds, updateRidge } from '../render/clouds.js';
+import { post, renderFrame } from '../render/post.js';
+import { FOG, U, camera, renderer, scene } from '../render/renderer.js';
+import { initShadows, updateShadows } from '../render/shadows.js';
+import { updateWater } from '../render/water.js';
+import { initWeather, updateWeather } from '../render/weather.js';
+import { initAmbientFx, updateAmbientFx } from '../render/ambient-fx.js';
 import { sky, stars, updateEnvironment } from '../render/sky.js';
 import { updateVoxChunks } from '../render/vox-mesh.js';
 import { $ } from '../ui/dom.js';
@@ -62,6 +68,11 @@ rebuildForest(player.pos.x, player.pos.z, true);
 rebuildBlocks();
 updateDay(0);
 updateEnvironment();
+initShadows();
+initClouds();
+initRidge();
+initWeather();
+initAmbientFx();
 renderHotbar();
 updateTips();
 if (!save) $('intro').style.display = 'grid';
@@ -82,11 +93,12 @@ export function tick(realDt) {
   updateSwing(dt, moving);
 
   const W = MP ? realDt : dt;
+  updateWeather(realDt, gameClock, underground); // počasí podle dne a času (stejné u všech hráčů)
   const { night, day } = updateDay(W);
   rebuildForest(player.pos.x, player.pos.z);
   updateVoxChunks(player.pos.x, player.pos.z);
-  applyDimension();
-  applyUnderground();
+  applyDimension(realDt);
+  applyUnderground(realDt);
   updateRuins(realDt);
   if ((playing || MP) && !NET.client) updateSpawners(realDt);
   if (playing) {
@@ -119,18 +131,20 @@ export function tick(realDt) {
   updatePortals(realDt);
   regrowGrass(realDt);
   updateLights(gameClock);
-  if (Math.random() < realDt * 6) for (const s of specials.values()) if (s.type === 'campfire') sparks.emit(s.x + 0.5, s.ry + 0.4, s.z + 0.5, [1, 0.5, 0.15], 1, 0.6, 1.5);
+  updateAmbientFx(realDt, underground); // jiskry a kouř nad ohněm, prach v jeskyni, světélka v Markově dimenzi
   sparks.update(realDt);
   debris.update(realDt);
   updateChips(realDt);
   updateStars(realDt);
-  const gust = 0.5 + 0.5 * Math.sin(gameClock * 0.35) * Math.sin(gameClock * 0.13 + 1);
+  const gust = Math.min(1, U.wind.value.z * (0.6 + 0.4 * U.wind.value.w)); // společný vítr (za deště a bouřky silnější)
   updateSoundscape(realDt, gust); // zvuky okolí, hudba, stroje, kroky ostatních
 
   U.cam.value.copy(camera.position);
   sky.position.copy(camera.position);
   ground.position.set(Math.round(camera.position.x / 4) * 4, 0, Math.round(camera.position.z / 4) * 4);
   stars.position.copy(camera.position);
+  updateClouds();
+  updateRidge(FOG.color, underground);
   // odlesky oblohy (drahé, ~10 ms) jen když se znatelně posunul čas dne, nejpozději po 12 s
   if ((envTimer += realDt) > 3 && (Math.abs(dayTime - envDay) > 0.012 || envTimer > 12)) { envTimer = 0; envDay = dayTime; updateEnvironment(); }
   cullFar(realDt);
@@ -144,7 +158,12 @@ export function tick(realDt) {
   updateHUD(realDt);
   touchUI.update(realDt);
   NET.update(realDt);
-  if (performance.now() - lastFrameAt < 300) renderer.render(scene, camera); // na pozadí se nevykresluje
+  if (performance.now() - lastFrameAt < 300) { // na pozadí se nevykresluje
+    post.menu = invOpen || pcOpen || docOpen || guideOpen; // svět za oknem stačí v polovičním rozlišení
+    updateShadows(realDt, underground);
+    updateWater();
+    renderFrame(realDt);
+  }
 }
 // Objekty za mlhou (stroje, zříceniny, krystaly, vozidla, papíry…) se nekreslí. Skupiny se světlem viditelným zdálky
 // (sprity, materiály bez mlhy) a skupiny v počátku souřadnic (obsah rozmístěný po světě) zůstávají. Skrývá jen to, co sama skryla.

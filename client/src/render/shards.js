@@ -1,6 +1,7 @@
 // Úlomky světla: krystal s paprskem.
 import './forest.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { GLOW } from './look.js';
 import { SHARD_CELL } from '../../../shared/world/constants.js';
 import { shardAt } from '../../../shared/world/nature.js';
 import { removed } from '../../../shared/world/state.js';
@@ -11,15 +12,16 @@ import { glowTex } from './sky.js';
 // ============================================================ úlomky – vzhled
 export const shardObjs = new Map();
 const beamMat = new THREE.ShaderMaterial({
-  uniforms: { uTime: U.time },
+  uniforms: { uTime: U.time, uNight: U.night },
   transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
   vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */`
-    uniform float uTime;
+    uniform float uTime, uNight;
     varying vec2 vUv;
     void main() {
-      float a = pow(1.0 - vUv.y, 2.5) * (0.55 + 0.15 * sin(uTime * 3.0 + vUv.y * 20.0));
-      gl_FragColor = vec4(vec3(0.35, 0.9, 1.0) * a * 0.6, 1.0);
+      float a = pow(max(1.0 - vUv.y, 0.0), 2.5) * (0.55 + 0.15 * sin(uTime * 3.0 + vUv.y * 20.0));
+      // paprsek je orientační bod: ve dne svítí silněji, aby byl vidět i proti jasné obloze
+      gl_FragColor = vec4(vec3(0.35, 0.9, 1.0) * a * 0.6 * (1.0 + ${(GLOW > 1 ? 1.4 : 1.0).toFixed(1)} * (1.0 - uNight)), 1.0);
     }`,
 });
 const crystalGeo = new THREE.OctahedronGeometry(0.42).scale(1, 1.7, 1);
@@ -37,7 +39,7 @@ export function refreshShards(px, pz) {
       g.position.set(s.x, terrainH(s.x, s.z), s.z);
       const crystal = new THREE.Mesh(crystalGeo, crystalMat);
       crystal.position.y = 1.3;
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0x66e8ff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(0x66e8ff).multiplyScalar(GLOW), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
       glow.scale.setScalar(3.2);
       glow.position.y = 1.3;
       g.add(crystal, glow, new THREE.Mesh(beamGeo, beamMat));

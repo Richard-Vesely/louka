@@ -1,5 +1,6 @@
 // Okno Nastavení (grafika, ovládání, tlačítka, citlivost, hlasitost) – používá ho hlavní menu i hra (window.RiseSettings).
 import { VOL_LABELS, readVolumes } from '../audio/volume.js';
+import { autoQuality } from '../game/gpu.js';
 const KEY = 'rise-nastaveni';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
 const store = (p) => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} dispatchEvent(new Event('rise-prefs')); };
@@ -16,7 +17,7 @@ function open(opts = {}) {
   const render = () => {
     const p = load();
     const seg = (k) => `<div class="seg">${OPTS[k].map(([v, t]) => `<button class="mc-btn ${(p[k] || '') === v ? 'on' : ''}" data-k="${k}" data-v="${v}">${t}</button>`).join('')}</div>`;
-    const autoQ = touchAuto ? 'nízká' : 'vysoká', autoC = touchAuto ? 'dotykové' : 'myš a klávesnice';
+    const autoQ = { low: 'nízká', medium: 'střední', high: 'vysoká' }[autoQuality(touchAuto)], autoC = touchAuto ? 'dotykové' : 'myš a klávesnice';
     box.innerHTML = `<div class="mc-panel set-panel px">
       <div class="mc-title">Nastavení</div>
       <div class="set-row"><div class="set-label">Grafika <small>(automaticky: ${autoQ})</small></div>${seg('quality')}</div>
