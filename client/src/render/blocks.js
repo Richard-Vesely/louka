@@ -3,7 +3,7 @@ import '../world/shrine.js'; // pořadí spouštění: nejdřív předchozí mod
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BLOCKS, CROPS, SHAPES } from '../../../shared/data/index.js';
+import { BLOCKS, CROPS, ITEMS, SHAPES } from '../../../shared/data/index.js';
 import { on } from '../../../shared/events.js';
 import { isPowered, markPowerDirty } from '../../../shared/sim/power.js';
 import { solidAt } from '../../../shared/world/collision.js';
@@ -18,8 +18,10 @@ import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { dummy, lumpy } from './forest.js';
 import { camera, scene } from './renderer.js';
+import { renderIcons } from './icon-render.js';
+import { readyBlockMat, setupBlockMat } from './materials.js';
 import { glowTex } from './sky.js';
-import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, dirtTex, farmlandTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, markdirtTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, rockTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex } from './textures.js';
+import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, dirtTex, farmlandTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, markdirtTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, rockTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex, techPanelTex, whitePanelTex, neonTex, neonMaskTex } from './textures.js';
 
 // ============================================================ položené bloky a stavby
 const blockMats = {
@@ -48,10 +50,21 @@ const blockMats = {
     glass: M(glassTex, 0.05, { transparent: true, depthWrite: false, metalness: 0.1 }),
     snow_block: M(snowTex, 0.9), obsidian: M(obsidianTex, 0.15, { metalness: 0.3 }), mushroom_block: M(mushroomCapTex, 0.7), mushroom_stem: M(mushroomStemTex, 0.85),
     roof_tiles: M(roofTilesTex, 0.75), concrete: M(concreteTex, 0.85),
+    tech_panel: M(techPanelTex, 0.4, { metalness: 0.8 }), white_panel: M(whitePanelTex, 0.3),
   });
+  // Neony: svítí jen sklo uprostřed (emissiveMap), barva podle významu (tyrkys / jantar / fialová)
+  for (const id of ['neon_cyan', 'neon_amber', 'neon_magenta']) {
+    const c = new THREE.Color(BLOCKS[id].lightColor);
+    blockMats[id] = M(neonTex, 0.22, { color: c.clone().multiplyScalar(0.7), emissive: c, emissiveMap: neonMaskTex, emissiveIntensity: 1.15 }); // nepřepálit do bílé
+  }
   for (const [id, b] of Object.entries(BLOCKS)) if (b.tint) blockMats[id] = M(concreteTex, 0.85, { color: b.tint }); // barevný beton
 }
-export const blockMat = (type) => blockMats[BLOCKS[type]?.mat || type];
+// Fyzikální vlastnosti podle rodiny bloku (render/materials.js): drsnost, kov, tmavší hrany, odlesky skla.
+for (const [k, v] of Object.entries(blockMats)) for (const m of [v].flat()) setupBlockMat(m, BLOCKS[k]?.tint ? 'concrete' : k);
+// Mapy reliéfu se dělají až pro bloky, které se opravdu kreslí (šetří start hry).
+const readyMat = (v) => { for (const m of [v].flat()) readyBlockMat(m); return v; };
+for (const k of ['planks', 'cobble', 'bricks']) readyMat(blockMats[k]); // používají je i modely (stůl, pec, studna)
+export const blockMat = (type) => { const v = blockMats[BLOCKS[type]?.mat || type]; return v && readyMat(v); };
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 // Kvádr části bloku: UV podle polohy v buňce, takže textura na schodech a půlblocích navazuje jako na celých kostkách
 function cellBoxGeo([x0, y0, z0, x1, y1, z1]) {
@@ -69,7 +82,7 @@ const shapeGeo = (shape) => (shapeGeoCache[shape] ||= mergeGeometries((SHAPES[sh
 const instPool = new Map(); // "tvar|materiál" -> InstancedMesh (zvětší se, když bloků přibude)
 export const specials = new Map(); // klíč -> { type, x, y, z, obj, flames }
 
-function buildSpecial(type, key) {
+export function buildSpecial(type, key) {
   const g = new THREE.Group();
   const flames = [];
   const flame = (scale, y) => {
@@ -335,7 +348,10 @@ function buildSpecial(type, key) {
 }
 
 on('blocksChanged', () => rebuildBlocks()); // pravidla změnila bloky (stavba, růst plodin)
+const litBlocks = []; // obyčejné bloky, které svítí (neony): { type, x, y, z, ry }
 export function rebuildBlocks() {
+  litBlocks.length = 0;
+  for (const [k, type] of blocks) if (BLOCKS[type].light && !BLOCKS[type].special) { const [x, y, z] = k.split(',').map(Number); litBlocks.push({ type, x, y, z, ry: y + 0.5, flames: [] }); }
   // Obyčejné bloky se kreslí po skupinách (stejný tvar + materiál = jeden InstancedMesh); schody a další tvary jsou natočené.
   const groups = new Map();
   for (const [k, type] of blocks) {
@@ -356,7 +372,7 @@ export function rebuildBlocks() {
     if (!m || m.instanceMatrix.count < list.length) {
       if (m) { scene.remove(m); m.dispose(); }
       const [shape, mk] = gk.split('|');
-      m = new THREE.InstancedMesh(shape === 'cube' ? boxGeo : shapeGeo(shape), blockMats[mk], Math.max(64, Math.ceil(list.length * 1.5)));
+      m = new THREE.InstancedMesh(shape === 'cube' ? boxGeo : shapeGeo(shape), readyMat(blockMats[mk]), Math.max(64, Math.ceil(list.length * 1.5)));
       m.frustumCulled = false;
       scene.add(m);
       instPool.set(gk, m);
@@ -386,7 +402,7 @@ export function rebuildBlocks() {
 const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(0xff9440, 0, 16, 1.7); scene.add(l); return l; });
 export function updateLights(time) {
   // elektrická světla svítí jen napájená
-  const list = [...specials.entries()].filter(([k, s]) => BLOCKS[s.type].light && (!BLOCKS[s.type].elec || isPowered(k))).map(([, s]) => s);
+  const list = [...specials.entries()].filter(([k, s]) => BLOCKS[s.type].light && (!BLOCKS[s.type].elec || isPowered(k))).map(([, s]) => s).concat(litBlocks);
   const p = player.pos;
   const d2 = (s) => (s.x + 0.5 - p.x) ** 2 + (s.ry - p.y) ** 2 + (s.z + 0.5 - p.z) ** 2;
   list.sort((a, b) => d2(a) - d2(b));
@@ -398,7 +414,37 @@ export function updateLights(time) {
     const s = list[heldTorch ? i - 1 : i];
     if (!s) { l.intensity = 0; return; }
     l.position.set(s.x + 0.5, s.ry + (s.type === 'campfire' ? 0.6 : s.type === 'electric_lamp' ? 1.2 : s.type === 'bulb_lamp' ? 0.45 : 0.85), s.z + 0.5);
-    l.intensity = BLOCKS[s.type].light * (BLOCKS[s.type].elec ? 1 : flick); // žárovka nebliká
+    l.intensity = BLOCKS[s.type].light * (BLOCKS[s.type].elec || BLOCKS[s.type].lightColor ? 1 : flick); // žárovka a neon neblikají
+    l.color.setHex(BLOCKS[s.type].lightColor || 0xff9440);
   });
   for (const s of list) for (const f of s.flames) f.scale.setScalar(f.userData.base * (0.85 + 0.2 * Math.sin(time * 17 + s.x + f.position.y * 9)));
 }
+
+// 3D ikony bloků a strojů (render/icon-render.js) – až po načtení všech modulů (modely strojů jsou v pozdějších souborech).
+const ICON_3D = ['workbench', 'chest', 'stove', 'furnace', 'adv_bench', 'table', 'chair', 'well', 'spikes', 'spawner', 'coal_generator', 'solar_panel',
+  'battery_block', 'power_switch', 'electric_lamp', 'bulb_lamp', 'motor_block', 'electric_furnace', 'charger', 'computer', 'printer'];
+export function blockIconList() {
+  const items = [];
+  for (const [id, b] of Object.entries(BLOCKS)) {
+    if (!ITEMS[id] || b.cable || b.special) continue;
+    const mat = blockMats[b.mat || id]; // bez map reliéfu (ty se dělají až pro bloky ve světě)
+    if (!mat) continue;
+    items.push([id, (g) => { const m = new THREE.Mesh((b.shape ? shapeGeo(b.shape) : boxGeo).clone(), mat); m.position.y = 0.5; if (b.shape) m.rotation.y = Math.PI; g.add(m); }, 0.5, 0.82]);
+  }
+  for (const id of ICON_3D) {
+    if (!BLOCKS[id] || !ITEMS[id]) continue;
+    items.push([id, (g) => {
+      const { obj } = buildSpecial(id, '');
+      g.add(obj);
+      const U = obj.userData; // stroj na ikoně je zapnutý: svítí proužky a zelená kontrolka (hologram ne)
+      if (U.holo) obj.remove(U.holo.mesh);
+      for (const m of U.strips || []) m.emissiveIntensity = 1.4;
+      if (U.status) { U.status.emissive.setHex(0x5cff8a); U.status.emissiveIntensity = 2; }
+      if (U.cells) U.cells.emissiveIntensity = 0.6;
+      if (U.glow) U.glow.emissiveIntensity = 1.4;
+    }]);
+  }
+  return items;
+}
+// Ikony se kreslí na pozadí chvíli po startu (shadery se překládají bez zastavení hry).
+setTimeout(() => renderIcons(blockIconList()), 300);

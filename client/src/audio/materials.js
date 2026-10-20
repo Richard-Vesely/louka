@@ -13,6 +13,7 @@ const BLOCK_MAT = {
   wheat_crop: 'leaves', tomato_crop: 'leaves', potato_crop: 'leaves', rice_crop: 'leaves', glowshroom: 'leaves',
   torch: 'wood', campfire: 'wood', lantern: 'metal', spikes: 'metal', spawner: 'metal', stove: 'metal', furnace: 'stone', well: 'stone',
   quartz_block: 'stone', quartz_pillar: 'stone', roof_tiles: 'stone', concrete: 'stone',
+  tech_panel: 'metal', white_panel: 'stone', neon_cyan: 'glass', neon_amber: 'glass', neon_magenta: 'glass',
 };
 const METAL = /iron|steel|copper|gold|bars|cable/;
 /** Materiál položeného bloku (podle id, materiálu schodů/půlbloků, kovu, elektřiny a nástroje). */

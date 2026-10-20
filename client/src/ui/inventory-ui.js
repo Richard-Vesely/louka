@@ -279,6 +279,7 @@ export function slotClick(c, i, button, shift) {
   refreshUI();
 }
 export function refreshUI() { renderInventory(); renderHotbar(); }
+addEventListener('rise-icons', () => refreshUI()); // nové 3D ikony bloků (render/icon-render.js)
 
 // Vybrání výsledku z výstupního políčka spotřebuje po jednom kusu z každého políčka mřížky.
 // Kolik kusů předmětu se ještě vejde do batohu

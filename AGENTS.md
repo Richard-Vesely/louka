@@ -196,8 +196,10 @@ Letters map to items, a space is an empty cell. Up to 2×2 works in the backpack
 1. In `shared/data/blocks.js`, inside the biome section, add with the `block()` helper:
    `block('honey_block', 'Medový blok', { hard: 1, tool: 'shovel', tint: 0xe8a020 });` and a recipe with `recipe(...)`.
    `tint` = coloured like concrete: the texture, the 3D block and the icon come for free.
-2. A block with its own texture: add a texture in `client/src/render/textures.js`, a material in `blockMats`
-   (`client/src/render/blocks.js`) and an icon in `client/src/render/icons-blocks.js`.
+2. A block with its own texture: add a texture in `client/src/render/textures.js` (each pixel returns
+   `[r, g, b, height, roughness, metal]`; height makes the relief), a material in `blockMats`
+   (`client/src/render/blocks.js`), its family in `BLOCK_PBR` (`client/src/render/materials.js`: stone, wood, brick,
+   metal, glass…) and a first icon in `client/src/render/icons-blocks.js` (a 3D icon is then drawn automatically).
 3. A special model (like the campfire): `special: true` in the block and a branch in `buildSpecial()` in `client/src/render/blocks.js`.
    `light: 10` makes it shine (and keeps shadow-eaters away).
 

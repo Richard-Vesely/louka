@@ -145,6 +145,8 @@ try {
     return { n, air: g.getVox(cx, top, cz) === 0, dirt: T.count('dirt'), fiber: T.count('fiber'), dug: g.columnDug(cx, cz) };
   });
   check('dig grass then dirt (voxel underground)', r.air && r.dirt >= 1 && r.fiber >= 1 && r.dug, JSON.stringify(r));
+  r = await ev(() => { let tiles = 0, glowOnly = true; for (const c of window.game.voxChunks.values()) { const a = c.mesh?.geometry.getAttribute('aTile'); if (a) tiles++; if (c.mesh && Array.isArray(c.mesh.material)) glowOnly = false; } return { tiles, glowOnly }; });
+  check('underground: one material on a texture array (layer per block type)', r.tiles > 0 && r.glowOnly, JSON.stringify(r));
 
   // ------------------------------------------------------------ tools and combat: durability, cracks, repair, attack charge, armor wear
   r = await ev(() => {
@@ -265,6 +267,26 @@ try {
     return { lamp: g.power.get(lamp)?.pw, gen: g.power.get(gen)?.pw };
   });
   check('power: coal generator lights an electric lamp through a cable', r.lamp === 1 && r.gen === 1, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game; T.tp(51, 54); T.step(30);
+    let pulse = 0, holo = 0;
+    g.scene.traverse((o) => {
+      const a = o.isInstancedMesh && o.geometry.getAttribute('aPow');
+      if (a) for (let i = 0; i < o.count; i++) pulse = Math.max(pulse, a.array[i]);
+      if (o.material?.uniforms?.uOn && o.visible) holo = Math.max(holo, o.material.uniforms.uOn.value);
+    });
+    return { pulse: +pulse.toFixed(2), holo: +holo.toFixed(2) };
+  });
+  check('power: energy pulses run along the live cable, a hologram shows above the generator', r.pulse > 0 && r.holo > 0.5, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game, k = '53,5,52';
+    g.blocks.set(k, 'neon_cyan'); g.rebuildBlocks(); T.step(3);
+    const lights = [];
+    g.scene.traverse((o) => { if (o.isPointLight && o.intensity > 0) lights.push(o.color.getHexString()); });
+    g.blocks.delete(k); g.rebuildBlocks();
+    return { neon: lights.includes('38e8ff'), lights };
+  });
+  check('a neon block lights its surroundings in its own colour', r.neon, JSON.stringify(r));
   r = await ev(() => {
     const g = window.game, f = '60,5,60', c = '60,6,60';
     g.blocks.set(f, 'farmland'); g.blocks.set(c, 'wheat_crop'); g.crops.set(c, { stage: 0, t: 0, next: 1 });
@@ -412,6 +434,10 @@ try {
   check('save + reload keeps world and backpack', after.blocks === before.blocks && after.stone === 7 && after.apple === 3 && after.portal && after.built === before.built && after.vox === before.vox && after.brick === 'bricks', JSON.stringify({ before, after }));
   check('save + reload keeps tool wear', after.pickW === 33, JSON.stringify(after));
   check('intro not shown after reload', await ev(() => document.getElementById('intro').style.display !== 'grid'));
+
+  // ------------------------------------------------------------ 3D icons of blocks and machines (drawn in the background after the start)
+  const icons3d = await page.waitForFunction(() => ['coal_generator', 'tech_panel', 'bricks', 'planks_stairs'].every((id) => window.game.ICONS[id]?.smooth && window.game.ICONS[id].canvas.width === 64), null, { timeout: 60000 }).then(() => true, () => false);
+  check('block and machine icons are 3D renders (64 px, smooth)', icons3d);
 
   // ------------------------------------------------------------ picture
   await ev(() => { const g = window.game; g.setTime(0.32); T.tp(0, 16, 0.45); g.player.yaw = 0; g.player.pitch = 0.05; T.step(30); });

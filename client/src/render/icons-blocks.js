@@ -2,7 +2,7 @@
 import './icons.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { BLOCKS, ITEMS, SHAPES, rotBox } from '../../../shared/data/index.js';
 import { ICONS } from './icons.js';
-import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex } from './textures.js';
+import { acaciaPlanksTex, barkTex, basaltTex, bricksTex, cherryPlanksTex, cobbleTex, concreteTex, copperBlockTex, cutCopperTex, glassTex, goldBlockTex, graniteTex, ironBlockTex, junglePlanksTex, marblePillarTex, marbleTex, markBarkTex, markPlanksTex, markRingsTex, mushroomCapTex, mushroomStemTex, obsidianTex, planksTex, polishedBasaltTex, polishedGraniteTex, polishedMarbleTex, polishedStoneTex, quartzPillarTex, quartzTex, ringsTex, roofTilesTex, sandTex, sandstoneTex, smoothSandstoneTex, snowTex, steelBlockTex, stoneTilesTex, techPanelTex, whitePanelTex, neonTex } from './textures.js';
 
 // ============================================================ ikony stavebních bloků (izometrické 3D tvary ze zmenšených textur)
 const shrinkTex = (tex) => { const c = document.createElement('canvas'); c.width = c.height = 16; c.getContext('2d').drawImage(tex.image, 0, 0, 16, 16); return c; };
@@ -94,10 +94,12 @@ function isoBoxes(top, side, boxes) {
   const T = {
     cherry_planks: cherryPlanksTex, jungle_planks: junglePlanksTex, acacia_planks: acaciaPlanksTex, sand: sandTex, sandstone: sandstoneTex,
     smooth_sandstone: smoothSandstoneTex, glass: glassTex, snow_block: snowTex, obsidian: obsidianTex, mushroom_block: mushroomCapTex,
-    mushroom_stem: mushroomStemTex, roof_tiles: roofTilesTex, concrete: concreteTex,
+    mushroom_stem: mushroomStemTex, roof_tiles: roofTilesTex, concrete: concreteTex, tech_panel: techPanelTex, white_panel: whitePanelTex,
   };
   const small = Object.fromEntries(Object.entries(T).map(([k, t]) => [k, shrinkTex(t)]));
   for (const k of Object.keys(T)) icon(k, isoBoxes(small[k], small[k], FULL));
+  const neon = shrinkTex(neonTex); // neony (dokud se nevykreslí 3D ikony, render/icon-render.js)
+  for (const id of ['neon_cyan', 'neon_amber', 'neon_magenta']) icon(id, isoBoxes(tint(neon, BLOCKS[id].lightColor), tint(neon, BLOCKS[id].lightColor), FULL));
   for (const [id, b] of Object.entries(BLOCKS)) {
     if (b.tint) icon(id, isoBoxes(tint(small.concrete, b.tint), tint(small.concrete, b.tint), FULL));
     if (b.shape && small[b.mat] && !ICONS[id]) icon(id, isoBoxes(small[b.mat], small[b.mat], (SHAPES[b.shape].render || SHAPES[b.shape].box).map((bx) => rotBox(bx, 2).map((v) => v * 16))));

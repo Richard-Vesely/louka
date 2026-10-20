@@ -138,6 +138,13 @@ export const SFX = {
   // Nalití / nabrání tekutiny (kbelík, mléko, palivo)
   pour() { this.burst({ dur: 0.4, f0: 600, f1: 1400, q: 1.5, vol: 0.12, type: 'bandpass', attack: 0.05 }); for (let i = 0; i < 4; i++) this.tone(R(300, 500), 0.05, 0.04, 'sine', 0.05 + i * R(0.06, 0.1), R(800, 1100), { attack: 0.004 }); },
   portal() { [220, 277, 330, 440, 554, 660].forEach((f, i) => this.tone(f, 2.2, 0.06, 'triangle', i * 0.1)); this.burst({ dur: 1.6, f0: 200, f1: 4000, q: 2, vol: 0.15 }); },
+  // stroj poblíž se rozběhl (machines/power.js): stoupající elektrický „vzzum“ a třpyt hologramu
+  powerUp() {
+    const k = R(0.92, 1.08);
+    this.tone(180 * k, 0.4, 0.04, 'sawtooth', 0, 520 * k, { attack: 0.02, filter: ['lowpass', 1800, 0.7] });
+    this.tone(880 * k, 0.25, 0.02, 'sine', 0.12, 1320 * k, { attack: 0.01 });
+    this.tone(1760 * k, 0.18, 0.01, 'triangle', 0.2, 2200 * k, { attack: 0.01 });
+  },
 
   // ---------- jídlo
   // Kousnutí: křupavé jídlo chroupe, polévka a pití srká.

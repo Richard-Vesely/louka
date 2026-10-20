@@ -6,7 +6,7 @@ import { ICONS } from '../render/icons.js';
 import { $ } from './dom.js';
 import { durColor, durOf } from './item-tooltip.js';
 
-export const iconImg = (id) => `<img src="${ICONS[id].url}" alt="">`;
+export const iconImg = (id) => `<img src="${ICONS[id].url}"${ICONS[id].smooth ? ' class="sm"' : ''} alt="">`; // 3D ikony bloků jsou hladké (render/icon-render.js)
 /** Vnitřek políčka: ikona, počet a proužek odolnosti. */
 export function slotInner(s) {
   if (!s) return '';
