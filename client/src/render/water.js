@@ -213,7 +213,7 @@ const rt = FX.quality === 'high' && FX.post ? new THREE.WebGLRenderTarget(16, 16
 const vcam = new THREE.PerspectiveCamera(), plane = new THREE.Plane(), clip = new THREE.Vector4(), q = new THREE.Vector4();
 const vpos = new THREE.Vector3(), vtarget = new THREE.Vector3(), vlook = new THREE.Vector3(), rotM = new THREE.Matrix4(), UPV = new THREE.Vector3(0, 1, 0);
 const camDir = new THREE.Vector3(), toPond = new THREE.Vector3(), hidden = [];
-if (rt) { REFL.tex.value = rt.texture; vcam.layers.set(0); } window.__REFL = { REFL, rt, near: () => near };
+if (rt) { REFL.tex.value = rt.texture; vcam.layers.set(0); }
 function renderReflection(pond) {
   const size = renderer.getDrawingBufferSize(new THREE.Vector2()).multiplyScalar(0.5).floor();
   if (rt.width !== size.x || rt.height !== size.y) rt.setSize(size.x, size.y);
