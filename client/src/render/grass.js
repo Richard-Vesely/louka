@@ -151,6 +151,7 @@ function makeGrass(layer) {
       varying vec4 vWa, vWb;
       ${NOISE_GLSL}
       ${AMBIENT_GLSL}
+      ${POINT_GLSL}
       void main() {
         float mk = step(${MARK_X.toFixed(1)}, vWorld.x);
         vec3 base = mix(vec3(0.03, 0.06, 0.012), vec3(0.01, 0.02, 0.07), mk);
@@ -173,7 +174,7 @@ function makeGrass(layer) {
         if (glow) col = vFlower < 2.0 ? vec3(0.3, 0.95, 1.0) : vec3(1.0, 0.35, 0.6);
         float diff = abs(dot(normalize(vNormal), uSunDir)) * 0.55 + 0.45;
         float ao = mix(0.3, 1.0, smoothstep(0.0, 0.7, vT));
-        vec3 lit = col * (hemiLight(vec3(0.0, 0.6 + vT * 0.4, 0.0), uAmbient) + uSunColor * diff * vShadow + vPoint) * ao;
+        vec3 lit = col * (hemiLight(vec3(0.0, 0.6 + vT * 0.4, 0.0), uAmbient) + uSunColor * diff * vShadow + softLight(vPoint)) * ao;
         vec3 view = normalize(vWorld - cameraPosition);
         // proti slunci stébla prosvítají (žlutozeleně)
         lit += col * vec3(1.0, 1.05, 0.7) * uSunColor * pow(max(dot(view, uSunDir), 0.0), 5.0) * vT * uSSS * 1.6 * vShadow;

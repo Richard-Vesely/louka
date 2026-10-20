@@ -129,7 +129,7 @@ const groundMat = new THREE.ShaderMaterial({
       float diff = max(dot(n, uSunDir), 0.0);
       float shadow = diff > 0.0 ? sunShadow(vWorld, n, ign(gl_FragCoord.xy)) : 1.0;
       diff *= shadow;
-      vec3 lit = col * (hemiLight(n, uAmbient) * 0.9 + uSunColor * diff + pointLights(vWorld, n, 0.0));
+      vec3 lit = col * (hemiLight(n, uAmbient) * 0.9 + uSunColor * diff + softLight(pointLights(vWorld, n, 0.0)));
       // kaustiky: světlo zvlněné hladinou se na dně rybníka vlní v jasných síťkách
       if (bed > 0.0 && uSunDir.y > 0.0) lit += col * uSunColor * caustic(p * 1.4, uTime) * 2.2 * smoothstep(0.05, 0.4, bedDepth) * exp(-bedDepth * 0.35) * shadow;
       if (pud > 0.01 || wet > 0.3) {
