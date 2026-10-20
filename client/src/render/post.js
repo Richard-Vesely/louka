@@ -37,6 +37,8 @@ const ATMOS_GLSL = /* glsl */`
   vec3 viewPos(vec2 uv, float d) { vec4 v = uInvProj * vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0); return v.xyz / v.w; }
   void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
     bool sky = depth >= 0.999999;
+    // vzdálené hory na obzoru (render/clouds.js, 2,6–3,2 km) se zahalí jako obloha, ne jako terén
+    if (!sky && length(viewPos(uv, depth)) > 2500.0) sky = true;
     vec3 vp = viewPos(uv, sky ? 0.5 : depth);
     vec3 wp = (uCamWorld * vec4(vp, 1.0)).xyz;
     vec3 rd = normalize(wp - uCamPos);
@@ -58,7 +60,7 @@ const ATMOS_GLSL = /* glsl */`
     // barva mlhy = barva oblohy u obzoru v tom směru (k slunci teplejší, od slunce modřejší), z odlesků oblohy
     vec3 fogCol = uFogColor;
     if (uEnvOn > 0.5) {
-      vec3 hd = normalize(vec3(rd.x, max(rd.y, 0.0) * 0.6 + 0.035, rd.z));
+      vec3 hd = normalize(vec3(rd.x, max(rd.y, 0.0) * 0.6 + 0.075, rd.z)); // kousek nad obzorem: modřejší než bělavý pruh u země
       vec3 skyCol = textureCubeUV(uEnv, hd, 0.55).rgb * uEnvGain;
       fogCol = mix(fogCol, skyCol, uSkyFog * (1.0 - uUnder));
     }
@@ -132,7 +134,7 @@ class AtmosphereEffect extends Effect {
   }
 }
 // Konstanty pro čtení odlesků oblohy (PMREM) – stejné jako počítá three.js pro materiály (WebGLPrograms).
-function cubeUVDefines(h) {
+export function cubeUVDefines(h) {
   const maxMip = Math.log2(h) - 2;
   return `#define CUBEUV_TEXEL_WIDTH ${(1 / (3 * Math.max(2 ** maxMip, 7 * 16))).toFixed(8)}
   #define CUBEUV_TEXEL_HEIGHT ${(1 / h).toFixed(8)}
