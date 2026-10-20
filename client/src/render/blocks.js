@@ -2,6 +2,7 @@
 import '../world/shrine.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
+import { FX, GLOW, LK } from './look.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { BLOCKS, CROPS, ITEMS, SHAPES } from '../../../shared/data/index.js';
 import { on } from '../../../shared/events.js';
@@ -17,7 +18,7 @@ import { buildElecModel, rebuildCables } from '../machines/power.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { dummy, lumpy } from './forest.js';
-import { camera, scene } from './renderer.js';
+import { U, camera, scene } from './renderer.js';
 import { renderIcons } from './icon-render.js';
 import { readyBlockMat, setupBlockMat } from './materials.js';
 import { glowTex } from './sky.js';
@@ -86,7 +87,7 @@ export function buildSpecial(type, key) {
   const g = new THREE.Group();
   const flames = [];
   const flame = (scale, y) => {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff8a2a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(0xff8a2a).multiplyScalar(GLOW), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     s.scale.setScalar(scale);
     s.position.y = y;
     s.userData.base = scale;
@@ -261,7 +262,7 @@ export function buildSpecial(type, key) {
     const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), new THREE.MeshStandardMaterial({ color: 0x3a0a4a, emissive: 0xc040ff, emissiveIntensity: 2 }));
     core.position.y = 0.48;
     g.add(core);
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xb040ff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(0xb040ff).multiplyScalar(GLOW), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     s.scale.setScalar(1.2);
     s.position.y = 0.48;
     s.userData.base = 1.2;
@@ -399,7 +400,9 @@ export function rebuildBlocks() {
 }
 
 // Světla pochodní a táboráků: pevný počet světel se přiděluje těm nejbližším.
-const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(0xff9440, 0, 16, 1.7); scene.add(l); return l; });
+// Oheň svítí teplou bílou (asi 3000 K, LK.torch), ne červeně – zelená tráva pod ním zůstane zelená; elektřina chladně bílou.
+const FIRE_COL = new THREE.Color(...LK.torch), ELEC_COL = new THREE.Color(0.86, 0.95, 1.0), GLOWSHROOM_COL = new THREE.Color(0.35, 0.9, 1.0), SPAWNER_COL = new THREE.Color(0.8, 0.35, 1.0), tmpLC = new THREE.Color();
+const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(FIRE_COL, 0, 16, 1.7); scene.add(l); return l; });
 export function updateLights(time) {
   // elektrická světla svítí jen napájená
   const list = [...specials.entries()].filter(([k, s]) => BLOCKS[s.type].light && (!BLOCKS[s.type].elec || isPowered(k))).map(([, s]) => s).concat(litBlocks);
@@ -409,14 +412,23 @@ export function updateLights(time) {
   // Pochodeň v ruce svítí kolem hráče (v jeskyních k nezaplacení).
   const heldTorch = heldStack()?.id === 'torch';
   lightPool.forEach((l, i) => {
-    const flick = 0.85 + 0.1 * Math.sin(time * 13 + i) + 0.05 * Math.sin(time * 31 + i * 3);
-    if (heldTorch && i === 0) { l.position.set(camera.position.x + 0.3, camera.position.y + 0.2, camera.position.z); l.intensity = 4.5 * flick; return; }
+    // plamen mihotá 2–3× za sekundu o ±15 %
+    const flick = 0.92 + 0.09 * Math.sin(time * 14.5 + i * 1.7) + 0.045 * Math.sin(time * 33 + i * 3) + 0.025 * Math.sin(time * 71 + i);
+    if (heldTorch && i === 0) { l.position.set(camera.position.x + 0.3, camera.position.y + 0.2, camera.position.z); l.intensity = 4.5 * flick; l.color.copy(FIRE_COL); return; }
     const s = list[heldTorch ? i - 1 : i];
     if (!s) { l.intensity = 0; return; }
+    const elec = BLOCKS[s.type].elec;
     l.position.set(s.x + 0.5, s.ry + (s.type === 'campfire' ? 0.6 : s.type === 'electric_lamp' ? 1.2 : s.type === 'bulb_lamp' ? 0.45 : 0.85), s.z + 0.5);
-    l.intensity = BLOCKS[s.type].light * (BLOCKS[s.type].elec || BLOCKS[s.type].lightColor ? 1 : flick); // žárovka a neon neblikají
-    l.color.setHex(BLOCKS[s.type].lightColor || 0xff9440);
+    l.color.copy(BLOCKS[s.type].lightColor ? tmpLC.setHex(BLOCKS[s.type].lightColor) : elec ? ELEC_COL : s.type === 'glowshroom' ? GLOWSHROOM_COL : s.type === 'spawner' ? SPAWNER_COL : FIRE_COL);
+    l.intensity = BLOCKS[s.type].light * (elec || BLOCKS[s.type].lightColor ? 1 : flick); // žárovka a neon neblikají
   });
+  // stejná světla dostane i terén a tráva (mají vlastní shader, viz POINT_GLSL v light-glsl.js)
+  for (let i = 0; i < U.pl.value.length; i++) {
+    const l = lightPool[i];
+    if (!l || l.intensity <= 0) { U.pl.value[i].w = 0; continue; }
+    U.pl.value[i].set(l.position.x, l.position.y, l.position.z, l.intensity);
+    U.plColor.value[i].set(l.color.r, l.color.g, l.color.b);
+  }
   for (const s of list) for (const f of s.flames) f.scale.setScalar(f.userData.base * (0.85 + 0.2 * Math.sin(time * 17 + s.x + f.position.y * 9)));
 }
 

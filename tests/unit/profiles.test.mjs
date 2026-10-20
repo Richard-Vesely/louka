@@ -62,7 +62,9 @@ test('profiles: create, log in with PIN or token, wrong PIN, throttle, reset', (
   assert.deepEqual(cleanName('a\u0000b  c'), { name: 'ab c' });
   assert.ok('error' in cleanName('x'.repeat(17)));
   // daily backup of players.json
-  assert.deepEqual(fs.readdirSync(path.join(dir, 'backups')), [`players-${new Date().toISOString().slice(0, 10)}.json`], 'the daily backup is named by the real date (server/persist.js)');
+  const backups = fs.readdirSync(path.join(dir, 'backups'));
+  assert.equal(backups.length, 1);
+  assert.match(backups[0], /^players-\d{4}-\d{2}-\d{2}\.json$/); // (dnešní datum; dřív tu bylo pevné datum, které po půlnoci selhalo)
 });
 
 test('player state: shape, size and known items are checked', () => {

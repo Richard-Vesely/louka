@@ -1,6 +1,7 @@
 // Předmět v ruce a máchnutí.
 import '../player/player.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
+import { GLOW } from './look.js';
 import { ITEMS } from '../../../shared/data/index.js';
 import { NET } from '../../../shared/net/net.js';
 import { lerp, smoothstep, wrapAngle } from '../../../shared/util.js';
@@ -102,7 +103,7 @@ export function buildHeld(id) { // používají ho i postavičky ostatních hrá
     mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), blockMat(d.block), 0, 0.15).rotation.set(0.3, 0.6, 0);
   } else if (id === 'torch') {
     mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.4, 6), handleMat, 0, 0.1);
-    const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff8a2a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(0xff8a2a).multiplyScalar(GLOW), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     f.scale.setScalar(0.25);
     f.position.y = 0.33;
     g.add(f);

@@ -435,6 +435,23 @@ try {
   check('save + reload keeps tool wear', after.pickW === 33, JSON.stringify(after));
   check('intro not shown after reload', await ev(() => document.getElementById('intro').style.display !== 'grid'));
 
+  // ------------------------------------------------------------ graphics pipeline (render/look.js, post.js, shadows.js)
+  r = await ev(() => { const g = window.game; return { look: g.LK?.name, post: g.FX.post, low: g.QUALITY === 'low', composer: !!g.post.composer, shadows: g.renderer.shadowMap.enabled, tone: g.renderer.toneMapping }; });
+  check('graphics: low = no post-processing and no shadows, medium/high = composer + shadows', !!r.look && (r.low ? !r.post && !r.composer && !r.shadows : r.post && r.composer && r.shadows), JSON.stringify(r));
+  // Grafika Automaticky: softwarové WebGL (CI) = nízká; počasí z pravidel a game.setWeather; soumrak a hvězdy
+  r = await ev(() => {
+    const g = window.game, out = { quality: g.QUALITY, gpu: g.FX.gpu };
+    g.setTime(0.5); g.setWeather({ rain: 1, storm: 1 }); T.step(240, 0.05);
+    const rain = g.scene.children.find((o) => o.renderOrder === 5);
+    Object.assign(out, { rain: +g.weather.rain.toFixed(2), wet: +g.weather.wet.toFixed(2), rainVisible: !!rain?.visible, overcast: +g.weather.overcast.toFixed(2) });
+    g.setWeather(null); g.weather.rain = g.weather.storm = g.weather.wet = 0;
+    g.setTime(0.762); T.step(2, 0.01); out.twilight = +g.vis.twilight.toFixed(2); out.starsDusk = +g.vis.starK.toFixed(2);
+    g.setTime(0.0); T.step(2, 0.01); out.starsNight = +g.vis.starK.toFixed(2); out.moon = +g.vis.moonK.toFixed(2);
+    g.setTime(0.32); T.step(2, 0.01);
+    return out;
+  });
+  check('graphics: weather (rain, wet ground) and dusk/night sky', r.rain > 0.9 && r.rainVisible && r.wet > 0.05 && r.overcast > 0.8 && r.twilight > 0.3 && r.starsNight > 0.9 && r.moon > 0.9, JSON.stringify(r));
+  if (!process.env.PLAYTEST_QUALITY) check('graphics: Automaticky picks nízká on software WebGL', r.gpu !== 'software' || r.quality === 'low', JSON.stringify(r));
   // ------------------------------------------------------------ 3D icons of blocks and machines (drawn in the background after the start)
   const icons3d = await page.waitForFunction(() => ['coal_generator', 'tech_panel', 'bricks', 'planks_stairs'].every((id) => window.game.ICONS[id]?.smooth && window.game.ICONS[id].canvas.width === 64), null, { timeout: 60000 }).then(() => true, () => false);
   check('block and machine icons are 3D renders (64 px, smooth)', icons3d);

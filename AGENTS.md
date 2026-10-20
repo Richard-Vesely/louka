@@ -49,7 +49,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `shared/world/state.js` | **the world state**: blocks, chests, fires, stoves, crops, furnaces, power, vehicles, papers… (`SyncMap` sends changes) |
 | `shared/world/save.js` | `loadWorld(save)` / `worldState()` – the save shape used everywhere |
 | `shared/world/nature.js`, `structures.js`, `collision.js` | trees, rocks, shards, ponds; structures and their builders; what is solid |
-| `shared/sim/*.js` | simulations: `day.js`, `mobs.js` (AI, spawning, spawners), `ground-items.js`, `machines.js` (campfire, furnace, stove, crops), `power.js` (grid, printer) |
+| `shared/sim/*.js` | simulations: `day.js`, `mobs.js` (AI, spawning, spawners), `ground-items.js`, `machines.js` (campfire, furnace, stove, crops), `power.js` (grid, printer), `weather.js` (rain, storm, fog from the day number and time: the same for every player, never sent) |
 | `shared/net/net.js` | the `NET` object the rules talk to (mode, `op()` for world changes, hooks) |
 | `shared/net/ops.js` | applying world changes from others (`applyOp`), small maps diff (`kvDiff`, `applyKV`) |
 | `shared/net/room.js` | **the host**: accepts players, handles their messages, broadcasts (browser host and Node server) |
@@ -58,7 +58,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/main.js` | entry point: menu, then the game modules |
 | `client/src/menu/` | main menu (world buttons first from `GET /worlds`, then *Hrát sám*, then *Nastavení · Další možnosti*; club password asked once; player name + PIN asked once per device, then "Hraješ jako X · Změnit hráče"; *Další možnosti*: host in the browser / join by code) and settings |
 | `client/src/game/` | boot (`NET` setup), prefs, save/load in the browser, the frame loop `loop.js` (`tick`), `debug.js` (`window.game`) |
-| `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item + first-person suit hand, day/night colours; `character.js` = the suit model, armor plates and animation (no side effects, the menu uses it too) |
+| `client/src/render/` | renderer, sky, textures, icons, ground, grass, forest, blocks, underground meshes, particles, held item + first-person suit hand, day/night colours; `character.js` = the suit model, armor plates and animation (no side effects, the menu uses it too); the graphics look and what each Grafika tier turns on (`look.js`), post-processing (`post.js`), shadows, clouds, water, weather, embers/smoke (`ambient-fx.js`). Grafika Automaticky: `client/src/game/gpu.js` |
 | `client/src/player/` | player movement and collisions, aiming, mining/placing/using, backpack, survival, eating |
 | `client/src/mobs/` | `mob-models.js` creature 3D models; `mobs.js` animation and life (`poseMob`), sounds, sparks (behaviour is in `shared/sim/mobs.js`) |
 | `client/src/audio/` | all sound (WebAudio synthesis): `sound.js` mix + `Sound.at(x, y, z, fn)` positional sound, recipes in `sfx.js` / `voices.js`, materials, ambience, machine hums, music; `soundscape.js` runs it each frame |
