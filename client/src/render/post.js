@@ -123,6 +123,7 @@ class AtmosphereEffect extends Effect {
     g('uShafts').value = post.menu ? 0 : LK.shafts * (1 - post.weather);
     // za deště je vzduch šedý (barva mlhy), za jasna má barvu oblohy
     g('uSkyFog').value = 0.85 * (1 - 0.75 * post.weather);
+    g('uEnvGain').value = 1 - 0.45 * post.night; // noční opar u obzoru tmavší (jinak svítí jako bílý pás)
     const env = scene.environment;
     if (env && env.image?.height) {
       g('uEnv').value = env;
@@ -159,7 +160,7 @@ const AGX_GLSL = /* glsl */`
 const LOOK_GLSL = /* glsl */`
   #include <tonemapping_pars_fragment>
   ${AGX_GLSL}
-  uniform float uSat, uContrast, uVignette, uGrain, uHue, uNightK, uUnderK;
+  uniform float uSat, uContrast, uVignette, uGrain, uHue, uNightK, uUnderK, uLift;
   uniform vec3 uCool, uWarm, uNightTint;
   float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
   void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
@@ -186,6 +187,8 @@ const LOOK_GLSL = /* glsl */`
     }
     vec2 d = uv - 0.5;
     c *= 1.0 - uVignette * smoothstep(0.2, 0.75, dot(d, d) * 2.0);
+    // nic není úplně černé: nejtmavší místa se zvednou do tmavé modrošedé (v jeskyni a v noci víc), světla se nezmění
+    c += uLift * (1.0 - smoothstep(0.0, 0.25, luma(c))) * mix(vec3(0.85, 0.92, 1.1), vec3(0.75, 0.88, 1.25), uNightK);
     if (uGrain > 0.0) c += (fract(sin(dot(uv * 913.7 + fract(time * 7.3), vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * uGrain;
     outputColor = vec4(clamp(c, 0.0, 1.0), inputColor.a);
   }
@@ -197,7 +200,7 @@ class LookEffect extends Effect {
       uniforms: new Map([
         ['uSat', u(G.sat)], ['uContrast', u(G.contrast)], ['uVignette', u(G.vignette)], ['uGrain', u(LK.grain)], ['uHue', u(G.hue)],
         ['uCool', u(new THREE.Vector3(...G.cool))], ['uWarm', u(new THREE.Vector3(...G.warm))], ['uNightTint', u(new THREE.Vector3(...G.nightTint))],
-        ['uNightK', u(0)], ['uUnderK', u(0)], ['uAgxPower', u(G.power)], ['uAgxSat', u(G.agxSat)], ['uExposure', u(1)],
+        ['uNightK', u(0)], ['uUnderK', u(0)], ['uLift', u(0)], ['uAgxPower', u(G.power)], ['uAgxSat', u(G.agxSat)], ['uExposure', u(1)],
       ]),
     });
   }
@@ -211,6 +214,7 @@ class LookEffect extends Effect {
     u('uNightK').value = post.night * (1 - post.under);
     u('uGrain').value = LK.grain; u('uAgxPower').value = G.power; u('uAgxSat').value = G.agxSat;
     u('uExposure').value = LK.exposure * post.exposure;
+    u('uLift').value = G.lift[0] + (G.lift[1] - G.lift[0]) * Math.max(post.night, post.under);
     const B = LK.bloom, b = post.bloom;
     b.intensity = B.intensity; b.luminanceMaterial.threshold = B.threshold; b.luminanceMaterial.smoothing = B.smoothing; b.mipmapBlurPass.radius = B.radius;
   }
@@ -225,7 +229,9 @@ function build() {
     const size = renderer.getDrawingBufferSize(new THREE.Vector2());
     const ao = new N8AOPostPass(scene, camera, size.x, size.y);
     ao.setQualityMode('Performance');
-    Object.assign(ao.configuration, { aoRadius: LK.ao.radius, distanceFalloff: 0.6, intensity: LK.ao.intensity, halfRes: true, depthAwareUpsampling: true, gammaCorrection: false, color: new THREE.Color(0, 0, 0) });
+    // N8AO by jinak průhledné věci (voda, déšť, lístky) kreslilo ještě dvakrát navíc a čtyřikrát za snímek procházelo scénu
+    ao.autoDetectTransparency = false;
+    Object.assign(ao.configuration, { aoRadius: LK.ao.radius, distanceFalloff: 0.6, intensity: LK.ao.intensity, halfRes: true, depthAwareUpsampling: true, gammaCorrection: false, transparencyAware: false, color: new THREE.Color(0, 0, 0) });
     composer.addPass(ao);
     post.ao = ao;
   }

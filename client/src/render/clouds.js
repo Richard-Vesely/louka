@@ -50,6 +50,9 @@ export function initClouds() {
         col += vec3(1.0, 0.45, 0.35) * uTwilight * (0.25 + 0.35 * mu) * (1.0 - c * 0.4);
         // v noci jsou mraky jen tmavě šedomodré (měsíc)
         col *= mix(1.0, 0.55, uNight);
+        // strop jasu (měkce, se zachovaným odstínem): mrak u slunce nesmí přes práh záře (bloom), jinak má tvrdý svítící okraj
+        float mx = max(max(col.r, col.g), col.b);
+        if (mx > 0.8) col *= (0.8 + (mx - 0.8) / (1.0 + (mx - 0.8) / 0.35)) / mx;
         float a = c * smoothstep(0.01, 0.18, d.y) * mix(0.95, 0.8, uNight);
         gl_FragColor = vec4(col, min(a + uRain * 0.3 * c, 1.0));
       }`,
