@@ -4,7 +4,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import * as THREE from 'three';
 import { rng } from '../../../shared/util.js';
 import { FX, LK } from './look.js';
-import { renderer, scene } from './renderer.js';
+import { U, renderer, scene } from './renderer.js';
 
 // ============================================================ obloha, slunce, měsíc, hvězdy
 export const sky = new Sky();
@@ -102,4 +102,5 @@ export function updateEnvironment() {
   if (envRT) envRT.dispose();
   envRT = rt;
   scene.environment = rt.texture;
+  U.env.value = rt.texture; U.envOn.value = rt.texture.image?.height === 1024 ? 1 : 0;
 }
