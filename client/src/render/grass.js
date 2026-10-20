@@ -88,6 +88,16 @@ function makeGrass(layer) {
       void main() {
         vec2 wp = uCam.xz + mod(aOffset - uCam.xz + uSize * 0.5, uSize) - uSize * 0.5;
         float t = position.y;
+        // Stébla mimo záběr (za zády a daleko do stran) a ta, co se v dálce řídnou, se vůbec nepočítají: ušetří to
+        // výšku terénu, biomy, stín i světla pro většinu stébel. Při pohledu prudce dolů se nevynechává nic.
+        float dist = length(wp - uCam.xz);
+        float keep = 1.0 - smoothstep(uFade.z, uFade.w, dist);
+        if (uFade.y > 0.0) keep *= smoothstep(uFade.x, uFade.y, dist);
+        vec3 fwd = -vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
+        float side = dot((wp - uCam.xz) / max(dist, 1e-3), normalize(fwd.xz + 1e-5));
+        if (step(fract(aExtra.x * 7.31), keep) < 0.5 || (dist > 3.0 && fwd.y > -0.75 && side < 0.6 - 0.75 * max(-fwd.y, 0.0) - 1.5 / dist)) {
+          gl_Position = vec4(2.0, 2.0, 2.0, 1.0); vT = 0.0; vShadow = 1.0; vPoint = vec3(0.0); return;
+        }
         float m = meadow(wp);
         vec4 wa, wb;
         biomeWeights(wp, wa, wb);
@@ -95,16 +105,12 @@ function makeGrass(layer) {
         // poušť, tundra a sopka jsou bez trávy; savana a džungle mají vysokou trávu, houbový les nízkou
         float tall = dot(wa, vec4(1.0, 1.0, 0.0, 1.5)) + dot(wb, vec4(0.0, 1.35, 0.0, 0.55));
         float h = aParams.x * (0.45 + 0.95 * m) * tall;
-        float dist = length(wp - uCam.xz);
-        float keep = 1.0 - smoothstep(uFade.z, uFade.w, dist);
-        if (uFade.y > 0.0) keep *= smoothstep(uFade.x, uFade.y, dist);
-        h *= step(fract(aExtra.x * 7.31), keep);
         h *= smoothstep(9.7, 10.4, shrineDist(wp));
         h *= 1.0 - smoothstep(0.3, 0.55, texture2D(uCut, wp / ${CUT_WORLD.toFixed(1)}).r); // posekaná tráva
         if (texture2D(uDig, (floor(wp) + 0.5) / ${DIG_N.toFixed(1)}).r > 0.5) h = 0.0;      // vykopaná díra
         if (uWet > 0.01) h *= 1.0 - smoothstep(0.66, 0.74, vnoise(wp * 0.13) * 0.75 + vnoise(wp * 1.7) * 0.3) * smoothstep(0.2, 0.6, uWet); // v louži tráva není
         vec2 dir = vec2(cos(aParams.y), sin(aParams.y));
-        vec2 side = vec2(-dir.y, dir.x);
+        vec2 sideV = vec2(-dir.y, dir.x);
         // společný vítr (renderer.js U.wind): poryvy se valí krajinou jako vlny přes trávu i stromy
         vec2 windDir = uWind.xy;
         float gust = vnoise(wp * 0.045 - windDir * uTime * 0.8) * (0.75 + 0.5 * uWind.z);
@@ -112,7 +118,7 @@ function makeGrass(layer) {
         vec2 bend = dir * aParams.z + windDir * (gust * gust * 1.3 + sway) * min(uWind.w, 2.2);
         float k = t * t;
         vec3 local;
-        local.xz = side * position.x * aParams.w + bend * k * h;
+        local.xz = sideV * position.x * aParams.w + bend * k * h;
         local.y = t * h * (1.0 - 0.3 * k * min(length(bend), 1.0));
         vec3 world = vec3(wp.x, terrainHW(wp, wa, wb), wp.y) + local;
         vNormal = normalize(vec3(dir.x, 0.35 + t * 0.6, dir.y));
