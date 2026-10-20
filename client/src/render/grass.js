@@ -8,7 +8,8 @@ import { GRASS_LAYERS } from '../game/prefs.js';
 import { digTex } from '../world/dig.js';
 import { NOISE_GLSL, TERRAIN_GLSL } from './glsl.js';
 import { AMBIENT_GLSL, POINT_GLSL, SHADOW_PARS_GLSL } from './light-glsl.js';
-import { scene, shaderUniforms } from './renderer.js';
+import { U, camera, scene, shaderUniforms } from './renderer.js';
+import { GRASS_LAYER } from './water.js';
 
 // ============================================================ tráva
 // Maska posekané trávy: 0,5 m na pixel, opakuje se po 128 m. Tráva postupně doroste.
@@ -66,7 +67,7 @@ function makeGrass(layer) {
   const mat = new THREE.ShaderMaterial({
     fog: true,
     side: THREE.DoubleSide,
-    uniforms: shaderUniforms({ uSize: { value: area }, uFade: { value: new THREE.Vector4(...layer.fadeIn, ...layer.fadeOut) }, uCut: { value: cutTex }, uDig: { value: digTex } }),
+    uniforms: shaderUniforms({ uSize: { value: area }, uFade: { value: new THREE.Vector4(...layer.fadeIn, ...layer.fadeOut) }, uCut: { value: cutTex }, uDig: { value: digTex }, uPond: U.ponds }),
     vertexShader: /* glsl */`
       #include <fog_pars_vertex>
       uniform float uTime, uSize;
@@ -75,6 +76,7 @@ function makeGrass(layer) {
       uniform float uWet;
       uniform vec4 uFade;
       uniform sampler2D uCut, uDig;
+      uniform vec4 uPond[6]; // blízké rybníky: x, z, poloměr, výška hladiny
       attribute vec2 aOffset, aExtra;
       attribute vec4 aParams;
       varying float vT, vVar, vFlower, vMeadow, vShadow, vPatch;
@@ -109,6 +111,12 @@ function makeGrass(layer) {
         h *= 1.0 - smoothstep(0.3, 0.55, texture2D(uCut, wp / ${CUT_WORLD.toFixed(1)}).r); // posekaná tráva
         if (texture2D(uDig, (floor(wp) + 0.5) / ${DIG_N.toFixed(1)}).r > 0.5) h = 0.0;      // vykopaná díra
         if (uWet > 0.01) h *= 1.0 - smoothstep(0.66, 0.74, vnoise(wp * 0.13) * 0.75 + vnoise(wp * 1.7) * 0.3) * smoothstep(0.2, 0.6, uWet); // v louži tráva není
+        // v rybníce tráva neroste (dno je bahno a písek), na mokrém břehu je nižší
+        float gy = terrainHW(wp, wa, wb);
+        for (int i = 0; i < 6; i++) {
+          vec4 P = uPond[i];
+          if (P.z > 0.0 && length(wp - P.xy) < P.z * 1.25) { float a = gy - P.w; h *= step(0.02, a) * mix(0.45, 1.0, clamp(a / 0.3, 0.0, 1.0)); }
+        }
         vec2 dir = vec2(cos(aParams.y), sin(aParams.y));
         vec2 sideV = vec2(-dir.y, dir.x);
         // společný vítr (renderer.js U.wind): poryvy se valí krajinou jako vlny přes trávu i stromy
@@ -120,7 +128,7 @@ function makeGrass(layer) {
         vec3 local;
         local.xz = sideV * position.x * aParams.w + bend * k * h;
         local.y = t * h * (1.0 - 0.3 * k * min(length(bend), 1.0));
-        vec3 world = vec3(wp.x, terrainHW(wp, wa, wb), wp.y) + local;
+        vec3 world = vec3(wp.x, gy, wp.y) + local;
         vNormal = normalize(vec3(dir.x, 0.35 + t * 0.6, dir.y));
         vT = t; vVar = aExtra.x; vFlower = aExtra.y; vMeadow = m; vWorld = world;
         vPatch = vnoise(wp * 0.06 + 13.0) * 0.6 + vnoise(wp * 0.21) * 0.4; // skvrny žlutozelené a sytě zelené trávy
@@ -182,4 +190,5 @@ function makeGrass(layer) {
   return mesh;
 }
 export const grassLayers = GRASS_LAYERS.map(makeGrass);
-grassLayers.forEach((g) => scene.add(g));
+grassLayers.forEach((g) => { g.layers.set(GRASS_LAYER); scene.add(g); });
+camera.layers.enable(GRASS_LAYER); // tráva má vlastní vrstvu: zrcadlení hladiny (render/water.js) ji vynechá

@@ -120,8 +120,14 @@ export function applyUnderground(dt = 0.016) {
   FOG.color.lerp(CAVE_FOG, u);
   FOG.density = lerp(FOG.density, 0.028, u);
   // kamera pod hladinou rybníka
-  post.water = waterLevelAt(camera.position);
-  if (!FX.post) { renderer.toneMappingExposure = lerp(renderer.toneMappingExposure, 1.58 * 0.6, u); post.under = u; return; }
+  const wl = waterAt(camera.position.x, camera.position.y, camera.position.z);
+  post.water = wl !== null ? 1 : 0;
+  post.waterLevel = wl ?? -1e9;
+  if (!FX.post) {
+    renderer.toneMappingExposure = lerp(renderer.toneMappingExposure, 1.58 * 0.6, u); post.under = u;
+    if (post.water) { FOG.color.setRGB(0.03, 0.16, 0.17); FOG.density = 0.16; } // pod vodou krátký modrozelený dohled
+    return;
+  }
   // přizpůsobení oka: v noci až +0,8 EV, v jeskyni až +1,2 EV, plynule za ~1,5 s (jako když si oči zvyknou na tmu).
   // Svítí-li blízko pochodně nebo lampy, oko se tolik nepřizpůsobí (jinak by osvětlený kámen zblízka přepálilo do béžova).
   const A = LK.adapt, near = nearLight(camera.position);
@@ -130,8 +136,6 @@ export function applyUnderground(dt = 0.016) {
   post.exposure = adapt;
   post.under = u;
 }
-// 1 = oči kamery jsou pod vodou (rybník)
-function waterLevelAt(p) { return waterAt(p.x, p.y, p.z) !== null ? 1 : 0; }
 // Kolik světla pochodní a lamp dopadá na místo (stejný útlum jako v POINT_GLSL), pro přizpůsobení oka
 function nearLight(p) {
   let sum = 0;

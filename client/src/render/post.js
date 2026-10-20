@@ -15,6 +15,7 @@ export const post = {
   composer: null, ao: null, bloom: null, scale: 1,
   under: 0,      // jak moc je hráč pod zemí (0–1)
   water: 0,      // kamera pod hladinou (0–1)
+  waterLevel: -1e9, // výška té hladiny
   exposure: 1,   // přizpůsobení oka (násobek jasu, render/daylight.js)
   night: 0,      // noc pro barevné ladění (měsíční modř)
   weather: 0,    // déšť / mlha: šedší a hustší vzduch
@@ -27,7 +28,7 @@ export const post = {
 const ATMOS_GLSL = /* glsl */`
   uniform mat4 uInvProj, uCamWorld;
   uniform vec3 uCamPos, uFogColor, uSunDir, uSunCol, uWaterCol;
-  uniform float uDensity, uFalloff, uScatter, uSkyHaze, uUnder, uShafts, uNight, uEnvOn, uEnvGain, uSkyFog, uWater, uFlash;
+  uniform float uDensity, uFalloff, uScatter, uSkyHaze, uUnder, uShafts, uNight, uEnvOn, uEnvGain, uSkyFog, uWater, uFlash, uWaterLevel;
   uniform sampler2D uEnv;
   // konstanty pro odlesky oblohy (PMREM 256 px → výška 1024; v textu shaderu, protože postprocessing přejmenovává defines efektů)
   #define ENVMAP_TYPE_CUBE_UV
@@ -45,6 +46,8 @@ const ATMOS_GLSL = /* glsl */`
     float dist = sky ? 3.0 / max(uDensity, 1e-4) : length(wp - uCamPos);
     // pod vodou: krátký modrozelený dohled
     if (uWater > 0.0) {
+      // hloubka v bufferu průhlednou hladinu nezná: paprsek vzhůru končí na hladině (ta se kreslí zespodu jako strop)
+      if (rd.y > 1e-3) dist = min(dist, (uWaterLevel - uCamPos.y) / rd.y);
       float wf = 1.0 - exp(-dist * 0.22);
       vec3 col = mix(inputColor.rgb * vec3(0.55, 0.85, 0.9), uWaterCol, wf);
       outputColor = vec4(mix(inputColor.rgb, col, uWater), inputColor.a);
@@ -101,7 +104,7 @@ class AtmosphereEffect extends Effect {
         ['uFogColor', u(new THREE.Vector3())], ['uSunDir', U.sunDir], ['uSunCol', u(new THREE.Vector3())], ['uWaterCol', u(new THREE.Vector3(0.02, 0.09, 0.1))],
         ['uDensity', u(0)], ['uFalloff', u(LK.fog.falloff)], ['uScatter', u(LK.fog.scatter)], ['uSkyHaze', u(LK.fog.skyHaze)],
         ['uUnder', u(0)], ['uShafts', u(LK.shafts)], ['uNight', U.night], ['uEnv', u(null)], ['uEnvOn', u(0)], ['uEnvGain', u(1)], ['uSkyFog', u(0.85)],
-        ['uWater', u(0)], ['uFlash', u(0)],
+        ['uWater', u(0)], ['uFlash', u(0)], ['uWaterLevel', u(0)],
         ['uShadowMap', U.shadowMap], ['uShadowMatrix', U.shadowMatrix], ['uShadowP', U.shadowP], ['uShadowStrength', U.shadowStrength],
       ]),
     });
@@ -117,6 +120,7 @@ class AtmosphereEffect extends Effect {
     g('uDensity').value = FOG.density * LK.fog.density;
     g('uUnder').value = post.under;
     g('uWater').value = post.water;
+    g('uWaterLevel').value = post.waterLevel;
     g('uFlash').value = post.flash;
     // vzhled se dá ladit za běhu (game.LK v konzoli)
     g('uFalloff').value = LK.fog.falloff * (1 - 0.6 * post.weather);

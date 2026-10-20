@@ -63,6 +63,17 @@ const groundMat = new THREE.ShaderMaterial({
     ${SHADOW_PARS_GLSL}
     ${AMBIENT_GLSL}
     ${POINT_GLSL}
+    // síťka kaustik: dvě vrstvy zkroucených vln, jasné tenké čáry tam, kde se vlny potkávají
+    float caustic(vec2 p, float t) {
+      float c = 0.0;
+      for (int i = 0; i < 2; i++) {
+        vec2 q = p * (1.0 + float(i) * 0.6) + vec2(t * 0.35, -t * 0.27) * (1.0 - float(i) * 1.8);
+        q += vec2(sin(q.y * 1.3 + t * 0.8), cos(q.x * 1.1 - t * 0.6)) * 0.7;
+        float v = abs(sin(q.x * 1.7) * sin(q.y * 1.9));
+        c += pow(1.0 - v, 9.0);
+      }
+      return c * 0.5;
+    }
     void main() {
       vec2 p = vWorld.xz;
       // Vykopaný sloupec: povrch se nekreslí, je vidět díra do podzemí.
@@ -79,15 +90,21 @@ const groundMat = new THREE.ShaderMaterial({
       vec3 col = mix(near, far, smoothstep(8.0, 45.0, length(p - uCam.xz)));
       col = foliage(col);
       vec3 n = normalize(vN);
-      // břeh rybníka: pás tmavé mokré hlíny nad hladinou (okraj zvlněný šumem)
-      float shore = 0.0;
+      // břeh rybníka: pás tmavé mokré hlíny nad hladinou (okraj zvlněný šumem); pod hladinou dno z bahna a písku
+      float shore = 0.0, bed = 0.0, bedDepth = 0.0;
       for (int i = 0; i < 6; i++) {
         if (uPond[i].z <= 0.0) continue;
         float dp = length(p - uPond[i].xy);
         if (dp > uPond[i].z + 4.0) continue;
         float above = vWorld.y - uPond[i].w;
         float wob = (fine - 0.5) * 0.25 + (coarse - 0.5) * 0.3;
-        shore = max(shore, smoothstep(0.55 + wob, 0.05, above) * step(-0.4, above));
+        shore = max(shore, (1.0 - smoothstep(0.05, 0.55 + wob, above)) * step(-0.4, above));
+        if (above < 0.0) { bed = 1.0; bedDepth = -above; }
+      }
+      if (bed > 0.0) {
+        vec3 mud = mix(vec3(0.075, 0.06, 0.035), vec3(0.2, 0.17, 0.1), smoothstep(0.35, 0.8, fine)); // bahno se světlými písčitými skvrnami
+        mud = mix(mud, vec3(0.3, 0.26, 0.17), (1.0 - smoothstep(0.0, 0.6, bedDepth)) * 0.6);                // u břehu písek
+        col = mix(col, mud * (0.75 + coarse * 0.5), smoothstep(0.0, 0.08, bedDepth));
       }
       // mokrá zem po dešti: tmavší, v rovných místech louže, které odrážejí oblohu
       float wet = max(uWet, shore * 0.85);
@@ -107,6 +124,8 @@ const groundMat = new THREE.ShaderMaterial({
       float shadow = diff > 0.0 ? sunShadow(vWorld, n, ign(gl_FragCoord.xy)) : 1.0;
       diff *= shadow;
       vec3 lit = col * (hemiLight(n, uAmbient) * 0.9 + uSunColor * diff + pointLights(vWorld, n, 0.0));
+      // kaustiky: světlo zvlněné hladinou se na dně rybníka vlní v jasných síťkách
+      if (bed > 0.0 && uSunDir.y > 0.0) lit += col * uSunColor * caustic(p * 1.4, uTime) * 2.2 * smoothstep(0.05, 0.4, bedDepth) * exp(-bedDepth * 0.35) * shadow;
       if (pud > 0.01 || wet > 0.3) {
         vec3 V = normalize(cameraPosition - vWorld);
         float F = 0.03 + 0.97 * pow(1.0 - max(dot(nn, V), 0.0), 5.0);
