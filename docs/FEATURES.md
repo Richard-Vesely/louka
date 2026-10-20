@@ -304,7 +304,12 @@ attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit
 
 ## 7. Technology
 - **Furnace** (*Pec*): ores → ingots (iron, copper, gold), quartz → silicon, iron → steel, resin → rubber,
-  glass → lens, logs → charcoal; needs fuel.
+  glass → lens, logs → charcoal; needs fuel. Works like Minecraft's: the top slot takes only things that smelt and the
+  bottom only fuel (Shift+click sorts them; wood with no room on top goes to fuel). One fuel item burns out fully, no
+  new fuel is lit while there is nothing to smelt or the output is full or holds something else. Without fuel the
+  progress runs back, and a different input starts from zero. The window says why it stopped and how many items the
+  fuel still smelts. A burning furnace **lights its surroundings**, smokes from the chimney and spits sparks from the
+  mouth. The recipe book adds only as much fuel as needed (coal first, then wood; never ethanol).
 - **Parts chain**: plates, rods, screws, gears, springs, wires, coils, magnets, LEDs, transistors, chips, CPU,
   engines, gearbox… (categories *Stroje, Elektro, Elektronika, Motory, Vozidla, Letadla, Počítače, Kancelář*).
 - **Electricity** (*Elektrická síť*): copper and gold cables, coal generator, solar panel, battery block, switch;

@@ -8,7 +8,7 @@ import { BLOCKS, CROPS, ITEMS, SHAPES } from '../../../shared/data/index.js';
 import { on } from '../../../shared/events.js';
 import { isPowered, markPowerDirty } from '../../../shared/sim/power.js';
 import { solidAt } from '../../../shared/world/collision.js';
-import { blockMeta, blocks, chairRot, crops, tableItems } from '../../../shared/world/state.js';
+import { blockMeta, blocks, chairRot, crops, furnaces, tableItems } from '../../../shared/world/state.js';
 import { groundHeight, solidVox } from '../../../shared/world/voxels.js';
 import { DINE_STYLE } from '../dining/dine-view.js';
 import { buildFoodInto } from '../dining/food-models.js';
@@ -405,7 +405,8 @@ const FIRE_COL = new THREE.Color(...LK.torch), ELEC_COL = new THREE.Color(0.86, 
 const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(FIRE_COL, 0, 16, 1.7); scene.add(l); return l; });
 export function updateLights(time) {
   // elektrická světla svítí jen napájená
-  const list = [...specials.entries()].filter(([k, s]) => BLOCKS[s.type].light && (!BLOCKS[s.type].elec || isPowered(k))).map(([, s]) => s).concat(litBlocks);
+  // hořící pec svítí jako v Minecraftu (o něco slaběji než pochodeň)
+  const list = [...specials.entries()].filter(([k, s]) => (s.type === 'furnace' ? furnaces.get(k)?.burn > 0 : BLOCKS[s.type].light && (!BLOCKS[s.type].elec || isPowered(k)))).map(([, s]) => s).concat(litBlocks);
   const p = player.pos;
   const d2 = (s) => (s.x + 0.5 - p.x) ** 2 + (s.ry - p.y) ** 2 + (s.z + 0.5 - p.z) ** 2;
   list.sort((a, b) => d2(a) - d2(b));
@@ -418,9 +419,10 @@ export function updateLights(time) {
     const s = list[heldTorch ? i - 1 : i];
     if (!s) { l.intensity = 0; return; }
     const elec = BLOCKS[s.type].elec;
-    l.position.set(s.x + 0.5, s.ry + (s.type === 'campfire' ? 0.6 : s.type === 'electric_lamp' ? 1.2 : s.type === 'bulb_lamp' ? 0.45 : 0.85), s.z + 0.5);
+    const fur = s.type === 'furnace', fy = fur ? s.obj.rotation.y : 0; // pec: světlo kousek před otvorem
+    l.position.set(s.x + 0.5 + (fur ? Math.sin(fy) * 0.8 : 0), s.ry + (s.type === 'campfire' ? 0.6 : s.type === 'electric_lamp' ? 1.2 : s.type === 'bulb_lamp' ? 0.45 : fur ? 0.4 : 0.85), s.z + 0.5 + (fur ? Math.cos(fy) * 0.8 : 0));
     l.color.copy(BLOCKS[s.type].lightColor ? tmpLC.setHex(BLOCKS[s.type].lightColor) : elec ? ELEC_COL : s.type === 'glowshroom' ? GLOWSHROOM_COL : s.type === 'spawner' ? SPAWNER_COL : FIRE_COL);
-    l.intensity = BLOCKS[s.type].light * (elec || BLOCKS[s.type].lightColor ? 1 : flick); // žárovka a neon neblikají
+    l.intensity = (fur ? 6 : BLOCKS[s.type].light) * (elec || BLOCKS[s.type].lightColor ? 1 : flick); // žárovka a neon neblikají
   });
   // stejná světla dostane i terén a tráva (mají vlastní shader, viz POINT_GLSL v light-glsl.js)
   for (let i = 0; i < U.pl.value.length; i++) {

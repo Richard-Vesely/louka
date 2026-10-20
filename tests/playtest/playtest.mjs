@@ -260,6 +260,19 @@ try {
   });
   check('campfire roasts meat', r.fire?.id === 'meat', JSON.stringify(r.fire));
   check('furnace smelts iron ore with coal', r.furnace?.id === 'iron', JSON.stringify(r.furnace));
+  r = await ev(() => { // jako v Minecraftu: dolů jen palivo, Shift+klik pošle uhlí do paliva
+    const g = window.game, k = '44,5,40';
+    g.blocks.set(k, 'furnace'); g.furnaces.delete(k); g.rebuildBlocks();
+    g.openInventory('furnace', k);
+    g.inv.cursor = { id: 'stone_sword', n: 1 }; g.slotClick('furnace', 1, 0, false);
+    const refused = !g.furnaces.get(k).slots[1] && g.inv.cursor?.id === 'stone_sword';
+    g.inv.cursor = null;
+    const keep = g.inv.slots[20]; g.inv.slots[20] = { id: 'coal', n: 5 }; g.slotClick('inv', 20, 0, true);
+    const fuel = g.furnaces.get(k).slots[1];
+    g.inv.slots[20] = keep; g.closeInventory();
+    return { refused, fuel };
+  });
+  check('furnace: fuel slot refuses a sword, Shift+click puts coal into fuel', r.refused && r.fuel?.id === 'coal' && r.fuel.n === 5, JSON.stringify(r));
   r = await ev(() => {
     const g = window.game, gen = '50,5,50', cab = '51,5,50', lamp = '52,5,50';
     g.blocks.set(gen, 'coal_generator'); g.blocks.set(cab, 'cable_copper'); g.blocks.set(lamp, 'electric_lamp');
