@@ -3,13 +3,16 @@ import '../player/player.js'; // pořadí spouštění: nejdřív předchozí mo
 import * as THREE from 'three';
 import { GLOW } from './look.js';
 import { ITEMS } from '../../../shared/data/index.js';
+import { NET } from '../../../shared/net/net.js';
 import { lerp, smoothstep, wrapAngle } from '../../../shared/util.js';
 import { WALK } from '../../../shared/world/constants.js';
 import { toolSound } from '../audio/tool-sounds.js';
 import { iconVoxels } from '../dining/food-models.js';
+import { loadCostume } from '../menu/costume.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { blockMat } from './blocks.js';
+import { buildFPArm, disposeCharacter, suitPalette } from './character.js';
 import { ICONS } from './icons.js';
 import { camera } from './renderer.js';
 import { glowTex } from './sky.js';
@@ -85,7 +88,7 @@ function toolModel(d, mesh) {
   }
 }
 const heldCache = {};
-function buildHeld(id) {
+export function buildHeld(id) { // používají ho i postavičky ostatních hráčů (net/avatars.js)
   const d = ITEMS[id], g = new THREE.Group();
   const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
   if (d.tool === 'sword') {
@@ -114,6 +117,7 @@ function buildHeld(id) {
   return g;
 }
 // Prázdná ruka: rukáv skafandru s rukavicí, kovovým chráničem a svítícím proužkem (jde vidět, jak máchá a těží).
+// Barvy rukávu, plátů a světla jsou z obleku hráče (Můj oblek, menu/costume.js).
 export const SUIT = {
   suit: new THREE.MeshStandardMaterial({ color: 0xe4e9f0, roughness: 0.42, metalness: 0.15 }), // bílé panely
   dark: new THREE.MeshStandardMaterial({ color: 0x323844, roughness: 0.6, metalness: 0.3 }), // grafitové spoje
@@ -141,6 +145,27 @@ function buildHand() {
   g.scale.setScalar(0.85);
   return g;
 }
+function paintSuit() {
+  const P = suitPalette(loadCostume(NET.name));
+  SUIT.suit.color.copy(P.fabric);
+  SUIT.dark.color.copy(P.dark);
+  SUIT.plate.color.copy(P.plate);
+  SUIT.neon.emissive.copy(P.light);
+  SUIT.neon.color.copy(P.light).multiplyScalar(0.15);
+}
+paintSuit();
+// S předmětem v ruce: rukavice a předloktí obleku svírají rukojeť (předloktí míří dolů doprava ke kameře).
+const ARM_HOLD = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0.3, -0.72, 0.62).normalize());
+let grip = null;
+function buildGrip() {
+  if (grip) { grip.parent?.remove(grip); disposeCharacter(grip); }
+  grip = buildFPArm(loadCostume(NET.name));
+  grip.scale.setScalar(0.72);
+  grip.quaternion.copy(ARM_HOLD);
+  grip.position.set(0, -0.035, 0.015);
+}
+buildGrip();
+addEventListener('rise-costume', () => { paintSuit(); const shown = !!grip.parent; buildGrip(); if (shown) holder.add(grip); });
 let heldId = undefined, equipT = 1;
 export function updateHeldModel() {
   const s = heldStack();
@@ -150,6 +175,7 @@ export function updateHeldModel() {
   heldId = id;
   holder.clear();
   holder.add(heldCache[id || '#hand'] ||= id ? buildHeld(id) : buildHand());
+  if (id) holder.add(grip);
 }
 /** Ruka se rychle schová a vrátí (rozbitý nástroj, výměna předmětu). */
 export const equipDip = () => { equipT = 0; };
@@ -170,9 +196,10 @@ let swingDur = 0.3, swingPow = 1;
 /** Začne máchnutí (dur = délka v s, pow = síla 0–1: slabý úder má menší oblouk). Běžící máchnutí se nepřeruší. */
 export const startSwing = (dur = 0.3, pow = 1) => { if (swingT < 0) { swingT = 0; swingDur = dur; swingPow = 0.45 + 0.55 * pow; } };
 const arcOf = (id) => { const d = id && ITEMS[id]; return !id ? 'hand' : id === 'hoe' ? 'axe' : d?.tool && ARCS[d.tool] ? d.tool : 'item'; };
-let lastYaw = 0, lastPitch = 0, lagYaw = 0, lagPitch = 0;
+let lastYaw = 0, lastPitch = 0, lagYaw = 0, lagPitch = 0, hurtSeen = null, hurtT = 0;
 export function updateSwing(dt, moving) {
   const p = [...REST.p], r = [...REST.r];
+  if (heldId) { p[0] -= 0.01; p[1] += 0.05; p[2] += 0.02; } // s předmětem trochu výš, ať je vidět rukavice
   if (swingT >= 0) {
     swingT += dt / swingDur;
     const t = Math.min(swingT, 1), keys = ARCS[arcOf(heldId)];
@@ -207,6 +234,10 @@ export function updateSwing(dt, moving) {
   p[0] += Math.sin(d) * 0.018 * sway;
   p[1] += -Math.abs(Math.cos(d)) * 0.022 * sway + 0.011 * sway;
   r[2] += Math.sin(d) * 0.03 * sway;
+  // zásah: ruka sebou trhne
+  if (player.lastHurt !== hurtSeen) { if (hurtSeen !== null) hurtT = 1; hurtSeen = player.lastHurt; }
+  hurtT = Math.max(0, hurtT - dt * 4);
+  p[1] -= hurtT * 0.05; r[2] += hurtT * 0.15;
   holder.position.set(p[0], p[1], p[2]);
   holder.rotation.set(r[0], r[1], r[2]);
 }

@@ -1,7 +1,7 @@
 // Stav hráče, který posílá prohlížeč (['me', stav]): batoh, brnění, pozice, zdraví… Server ho drží u světa
 // (world.json → players[id profilu]). Tady se kontroluje tvar a velikost, aby se do uložení nedostal nesmysl.
 // Pořád platí, že hráči se věří (KNOWN-ISSUES.md): upravený prohlížeč může poslat jiné předměty, ale ne rozbitý soubor.
-import { ITEMS } from '../shared/data/index.js';
+import { ITEMS, cleanCostume } from '../shared/data/index.js';
 import { maxDur } from '../shared/tools.js';
 
 export const ME_MAX_BYTES = 64 * 1024;
@@ -34,7 +34,7 @@ function flags(o) {
  * Zkontroluje a uklidí stav hráče. Vrátí čistou kopii, nebo null (nesmysl: ignorovat).
  * @param {unknown} me
  * @param {number} [bytes] délka zprávy (JSON), když je známá
- * @returns {{ inv: ({id: string, n: number, w?: number}|null)[], armor: ({id: string, n: number, w?: number}|null)[], pos: number[], yaw: number, hp: number, hunger: number, crafted: object, placedAny: object, creative: boolean, flying: boolean, flyT: number } | null}
+ * @returns {{ inv: ({id: string, n: number, w?: number}|null)[], armor: ({id: string, n: number, w?: number}|null)[], pos: number[], yaw: number, hp: number, hunger: number, crafted: object, placedAny: object, creative: boolean, flying: boolean, flyT: number, look?: object } | null}
  */
 export function cleanMe(me, bytes = 0) {
   if (bytes > ME_MAX_BYTES || !me || typeof me !== 'object' || Array.isArray(me)) return null;
@@ -56,6 +56,8 @@ export function cleanMe(me, bytes = 0) {
       flying: me.flying === true,
       flyT: num(me.flyT, 0, 1e5) ? me.flyT : 0,
     };
+    if (me.look != null && typeof me.look === 'object') out.look = cleanCostume(me.look); // oblek (jen vzhled), nepovinný
+
     if (!bytes && JSON.stringify(out).length > ME_MAX_BYTES) return null;
     return out;
   } catch {

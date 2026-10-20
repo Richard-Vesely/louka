@@ -8,6 +8,7 @@ import { dining } from '../dining/dining.js';
 import { MP } from '../game/boot.js';
 import { TOUCH, lookSens, prefNum } from '../game/prefs.js';
 import { saveGame } from '../game/save.js';
+import { toggleView } from '../net/avatars.js';
 import { chatOpen, openChat, pauseOpen } from '../net/mp-ui.js';
 import { resetUseCd, target } from '../player/interaction.js';
 import { heldStack, inv } from '../player/inventory.js';
@@ -38,6 +39,7 @@ export const touchUI = (() => {
       <div class="tbtn small" data-act="craft"><span>🔨</span><small>Výroba</small></div>
       <div class="tbtn small" data-act="drop"><span>⇣</span><small>Hodit</small></div>
       <div class="tbtn small" data-act="guide"><span>📖</span><small>Návod</small></div>
+      <div class="tbtn small" data-act="view"><span>👁</span><small>Pohled</small></div>
       ${MP ? '<div class="tbtn small" data-act="chat"><span>💬</span><small>Chat</small></div>' : ''}
       <div class="tbtn small" data-act="menu"><span>⏸</span><small>${MP ? 'Menu' : 'Pauza'}</small></div>
     </div>
@@ -86,6 +88,7 @@ export const touchUI = (() => {
     else if (a === 'craft') { const k = nearBench(); openInventory(k ? (blocks.get(k) === 'adv_bench' ? 'adv' : 'bench') : 'inv', k); if (!k) toast('Velký recept 3×3 vyrobíš u pracovního stolu'); }
     else if (a === 'drop') dropHeld(false);
     else if (a === 'guide') toggleGuide();
+    else if (a === 'view') toggleView(); // z první osoby / zezadu / zepředu
     else if (a === 'chat') openChat();
     else if (a === 'menu') unlockPointer();
     else if (a === 'vexit') exitVehicle();

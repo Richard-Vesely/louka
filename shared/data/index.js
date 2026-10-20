@@ -8,6 +8,7 @@ import { ITEMS, RECIPES } from './items.js';
 export * from './items.js';
 export * from './blocks.js';
 export * from './tech.js';
+export * from './costumes.js';
 
 // Dokončení receptů (jednou, až jsou všechny přidané):
 // - kategorie starších receptů: bloky = stavební, nástroje a zbroj zvlášť, ostatní základní,

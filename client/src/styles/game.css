@@ -117,6 +117,7 @@ img.sm { image-rendering: auto !important; } /* 3D ikony bloků a strojů jsou h
 .mc-btn[disabled] { opacity: 0.5; cursor: default; }
 #dineHint { position: fixed; left: 50%; top: 104px; transform: translateX(-50%); display: none; padding: 6px 14px; background: rgba(16, 2, 16, 0.8); border: 2px solid #25084f; font: 15px 'Pixelify Sans', monospace; color: #fff; text-align: center; text-shadow: 2px 2px 0 #3a3a3a; pointer-events: none; }
 .armor-col { display: flex; flex-direction: column; gap: 2px; margin-right: 26px; }
+.armor-col .cos-open { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
 .armor-pts { margin-top: 4px; text-align: center; font-size: 14px; color: #cfe3ff; text-shadow: 2px 2px 0 #18181b; }
 .cgrid { display: grid; gap: 2px; }
 .carrow { font-size: 30px; color: #8a8a94; text-shadow: 2px 2px 0 #1a1a1e; }
@@ -390,6 +391,44 @@ body.touch #netbox { z-index: 5; }
 #rotate { display: none; position: fixed; inset: 0; z-index: 50; place-items: center; text-align: center; background: #0b0f16; color: #f3ead2; font: 20px 'Pixelify Sans', monospace; }
 @media (orientation: portrait) { body.touch #rotate { display: grid; } }
 #error { position: fixed; inset: 0; z-index: 40; display: none; place-items: center; padding: 16px; background: #223; text-align: center; }
+
+/* ============================================================ výběr obleku (Můj oblek): skleněný panel */
+#costume { position: fixed; inset: 0; z-index: 36; display: grid; place-items: center; padding: 16px; background: rgba(4, 8, 14, 0.62); backdrop-filter: blur(6px); font-family: 'Exo 2', system-ui, 'Segoe UI', sans-serif; }
+.glass { background: rgba(15, 20, 28, 0.88); border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(56, 232, 255, 0.45), 0 18px 60px rgba(0, 0, 0, 0.55); color: #e8eef6; }
+.cos-panel { width: min(860px, 100%); max-height: calc(100vh - 32px); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+.cos-head { display: flex; align-items: baseline; gap: 12px; padding: 14px 18px 10px; border-bottom: 1px solid rgba(56, 232, 255, 0.18); }
+.cos-head b { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }
+.cos-head span { color: #8fd8e8; font-size: 15px; }
+.cos-body { display: flex; gap: 18px; padding: 14px 18px; overflow: auto; min-height: 0; }
+.cos-stage { position: relative; flex: 0 0 300px; height: 380px; border-radius: 6px; background: radial-gradient(ellipse at 50% 85%, rgba(56, 232, 255, 0.22), transparent 60%), linear-gradient(#1b2534, #0c1118); box-shadow: inset 0 0 0 1px rgba(56, 232, 255, 0.2); }
+.cos-stage canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.cos-stage.nogl::after { content: 'Náhled tady nejde zobrazit'; position: absolute; inset: 0; display: grid; place-items: center; color: #8a96a8; }
+.cos-hint { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font-size: 12px; color: rgba(200, 230, 240, 0.65); pointer-events: none; }
+.cos-opts { flex: 1; min-width: 0; }
+.cos-label { margin: 10px 0 6px; font-size: 13px; font-weight: 700; color: #9fb3c8; text-transform: uppercase; letter-spacing: 0.08em; }
+.cos-label:first-child { margin-top: 0; }
+.cos-suits { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; }
+.cos-suit, .cos-btn { font: inherit; font-size: 15px; font-weight: 700; color: #e8eef6; background: rgba(255, 255, 255, 0.05); border: 0; border-radius: 6px; padding: 9px 10px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); transition: background 0.15s, box-shadow 0.15s, transform 0.1s; }
+.cos-suit:hover, .cos-btn:hover { background: rgba(56, 232, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(56, 232, 255, 0.55); }
+.cos-suit:active, .cos-btn:active { transform: scale(0.97); }
+.cos-suit.on { background: rgba(56, 232, 255, 0.18); box-shadow: inset 0 0 0 2px #38e8ff, 0 0 14px rgba(56, 232, 255, 0.35); }
+.cos-desc { margin-top: 6px; min-height: 18px; font-size: 14px; color: #b6c4d4; }
+.cos-sw { display: flex; flex-wrap: wrap; gap: 7px; }
+.cos-dot { width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: var(--c); box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15); transition: transform 0.12s, box-shadow 0.12s; }
+.cos-dot:hover { transform: scale(1.12); }
+.cos-dot.on { box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 0 3px #0f141c, 0 0 0 5px #38e8ff; }
+.cos-dot.glow { box-shadow: 0 0 12px var(--c), inset 0 0 0 2px rgba(255, 255, 255, 0.35); }
+.cos-dot.glow.on { box-shadow: 0 0 14px var(--c), 0 0 0 3px #0f141c, 0 0 0 5px #38e8ff; }
+.cos-e { width: 38px; height: 38px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); color: #9fb3c8; font-size: 18px; display: grid; place-items: center; }
+.cos-e img { width: 26px; height: 26px; filter: drop-shadow(0 0 4px var(--c)); }
+.cos-foot { display: flex; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid rgba(56, 232, 255, 0.18); }
+.cos-foot span { flex: 1; }
+.cos-btn.main { background: linear-gradient(#1fb8d0, #138aa0); box-shadow: inset 0 0 0 1px #6ff0ff, 0 0 16px rgba(56, 232, 255, 0.35); color: #fff; padding: 9px 22px; }
+@media (max-width: 680px) {
+  .cos-body { flex-direction: column; }
+  .cos-stage { flex: 0 0 auto; height: 240px; }
+  .cos-head b { font-size: 19px; }
+}
 
 /* ---------- nástroje a boj: nabití úderu, oprava (client/src/player/interaction.js); proužek odolnosti je v inventory.css */
 #atkMeter { position: fixed; left: 50%; top: calc(50% + 11px); width: 30px; height: 4px; margin-left: -15px; border-radius: 2px; overflow: hidden; pointer-events: none;

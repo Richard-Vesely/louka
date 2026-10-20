@@ -57,6 +57,11 @@ try {
   await waitGame(B, 60000);
   check('Bára joins the server', await B.evaluate(() => window.game.NET.client === true));
   check('both see each other', await until(A, () => [...window.game.others.values()].some((P) => P.name === 'Bára' && P.pose)) && await until(B, () => [...window.game.others.values()].some((P) => P.name === 'Ája' && P.pose)));
+  // Můj oblek: Ája si klávesou O vybere Inženýra, Bára ho na ní uvidí (pozice nese oblek, lk)
+  await A.evaluate(() => window.game.openCostume());
+  await A.click('#costume .cos-suit[data-s="engineer"]');
+  await A.click('#costume [data-act="ok"]');
+  check('costume: Bára sees Ája in the suit she picked, with a name tag', await until(B, () => { const P = [...window.game.others.values()].find((p) => p.name === 'Ája'); return P?.avatar?.costume.s === 'engineer' && P.avatar.tag?.userData.tag.name === 'Ája' && P.avatar.group.visible; }));
   check('info box shows the server and player count', await until(B, () => document.getElementById('netbox').textContent.includes('2/8')), await B.textContent('#netbox'));
 
   await A.evaluate(() => { window.game.blocks.set('4,2,30', 'bricks'); });

@@ -88,7 +88,7 @@ export function renderCraftArea() {
   // Brnění (jen v inventáři): 4 políčka, prázdná ukazují obrys.
   const armorCol = ui.mode !== 'inv' ? '' : `<div class="armor-col">${armor.map((s, i) => s ? slotHTML(s, i, '', 'armor')
     : `<div class="slot ghost" data-c="armor" data-i="${i}" title="${ARMOR_SLOT_NAMES[i]}">${iconImg(`iron_${ARMOR_SLOTS[i]}`)}</div>`).join('')}
-    <div class="armor-pts">🛡 ${armorPoints()}</div></div>`;
+    <div class="armor-pts">🛡 ${armorPoints()}</div><button class="mc-btn cos-open" id="costumeBtn" title="Můj oblek (O)">Oblek</button></div>`;
   area.innerHTML = `<div class="mc-title">${ui.mode === 'adv' ? 'Dílna (pokročilý pracovní stůl)' : ui.mode === 'bench' ? 'Pracovní stůl' : 'Brnění a výroba'}</div>
     <div class="craft-ui">${armorCol}
       <div class="cgrid" style="grid-template-columns: repeat(${n}, 40px)">${cells}</div>

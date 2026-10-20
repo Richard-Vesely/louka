@@ -45,6 +45,7 @@ const needPeer = async () => {
 
 $m('mSolo').addEventListener('click', () => finish({ mode: 'sp' }));
 $m('mSettings').addEventListener('click', () => window.RiseSettings.open());
+$m('mCostume').addEventListener('click', () => window.RiseCostume.open({ name: profileOf()?.name || myName() }));
 $m('mMore').addEventListener('click', () => { msg(''); show('pgMore'); });
 $m('mHost').addEventListener('click', () => { msg(''); show('pgHost'); });
 $m('mJoin').addEventListener('click', () => { msg(''); show('pgJoin'); setTimeout(() => $m('mCode').focus(), 0); });

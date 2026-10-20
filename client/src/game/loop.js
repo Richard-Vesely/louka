@@ -15,6 +15,7 @@ import { refreshFurnaceUI, updateFurnaceGlow } from '../machines/furnace.js';
 import { stoveVisuals } from '../machines/kitchen.js';
 import { updatePowerVisuals } from '../machines/power.js';
 import { animateMobs, syncMobViews } from '../mobs/mobs.js';
+import { updateLocalBody } from '../net/avatars.js';
 import { updatePuppets } from '../net/multiplayer.js';
 import { pcOpen, updatePC } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
@@ -91,6 +92,7 @@ export function tick(realDt) {
   updateVehicles(realDt);
   updateHeldModel();
   updateSwing(dt, moving);
+  updateLocalBody(realDt, moving); // vlastní postava (pohled ze třetí osoby, klávesa V)
 
   const W = MP ? realDt : dt;
   updateWeather(realDt, gameClock, underground); // počasí podle dne a času (stejné u všech hráčů)
@@ -159,7 +161,7 @@ export function tick(realDt) {
   touchUI.update(realDt);
   NET.update(realDt);
   if (performance.now() - lastFrameAt < 300) { // na pozadí se nevykresluje
-    post.menu = invOpen || pcOpen || docOpen || guideOpen; // svět za oknem stačí v polovičním rozlišení
+    post.menu = invOpen || pcOpen || docOpen || guideOpen || !!document.getElementById('costume'); // svět za oknem (i za výběrem obleku) stačí v polovičním rozlišení
     updateShadows(realDt, underground);
     updateWater();
     renderFrame(realDt);

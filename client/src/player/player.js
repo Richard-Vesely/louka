@@ -15,6 +15,7 @@ import { MP } from '../game/boot.js';
 import { game } from '../game/debug.js';
 import { TOUCH, lookSens } from '../game/prefs.js';
 import { save } from '../game/save-load.js';
+import { toggleView } from '../net/avatars.js';
 import { openChat } from '../net/mp-ui.js';
 import { pcOpen } from '../pc/computer.js';
 import { docOpen } from '../pc/doc-view.js';
@@ -66,6 +67,14 @@ export function toggleGuide() {
   if (guideOpen) unlockPointer(); else lockPointer();
 }
 $('guideBtn').addEventListener('click', toggleGuide);
+// Výběr obleku (klávesa O nebo tlačítko v batohu): okno je v client/src/menu/costume.js
+export function openCostume() {
+  if (invOpen) closeInventory();
+  unlockPointer();
+  window.RiseCostume?.open({ name: NET.name, onClose: () => lockPointer() });
+}
+// tlačítko Oblek je pod brněním v batohu (ui/inventory-ui.js překresluje okno, proto delegace)
+$('inventory').addEventListener('click', (e) => { if (e.target.closest('#costumeBtn')) openCostume(); });
 $('modeBtn').textContent = `Režim: ${creative ? 'Kreativní' : 'Přežití'}`;
 export function setCreative(on) {
   if (on && !NET.perm) { toast('Kreativní režim zakázal hostitel'); return; }
@@ -97,6 +106,8 @@ addEventListener('keydown', (e) => {
     if (e.code === 'KeyB' && v?.type !== 'plane') { honk(); return; }
     if (e.code === 'KeyV') { toggleCarCam(); player.yaw = 0; return; }
   }
+  if (e.code === 'KeyV' && !e.repeat && !invOpen && !player.vehicle) { toggleView(); return; } // pohled z první / třetí osoby
+  if (e.code === 'KeyO' && !e.repeat && !invOpen && (isLocked() || game.testMode)) { openCostume(); return; }
   // Nebeská sada: dvojitý skok
   if (e.code === 'Space' && !e.repeat && !creative && fullSet() === 'sky' && !player.onGround && !player.doubleUsed && !(player.flyT > 0)) {
     player.vel.y = JUMP; player.doubleUsed = true; sparks.emit(player.pos.x, player.pos.y, player.pos.z, [1, 0.9, 0.6], 20, 2, 0);

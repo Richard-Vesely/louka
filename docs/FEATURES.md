@@ -40,10 +40,20 @@ When you add or change a feature, update this file in the same pull request.
 - After leaving a multiplayer game the menu shows why (e.g. *Spojení se přerušilo. Zkus se připojit znovu.*).
 - **Nastavení**: graphics quality (auto by graphics card/low/medium/high), controls (auto/touch/mouse), touch button size, mouse sensitivity,
   and the sound sliders **Hlasitost** (80 %), **Zvuky** (100 %) and **Hudba** (60 %); they apply at once (a short click plays at the new volume).
+- **Můj oblek** (link in the main menu, **O** or the *Oblek* button under the armor slots in the backpack): pick a futuristic suit
+  with a live 3D preview on a holographic stand (drag to turn it; the model walks and swings to show off). Suits:
+  *Průzkumník* (backpack with a blinking antenna), *Inženýr* (headlamp, glowing power cell, tool belt), *Pilot* (big
+  visor, jet pack), *Strážce* (heavy shoulder plates, a cape that flutters), *Vědec* (lab coat whose flaps swing,
+  a hologram next to the head), *Stínový* (dark hood, torn cape) and *Nebeský* (white and gold, halo, small jets).
+  Then **Barva obleku** (12), **Světla** (only the game's glow colours: azurová, jantarová, zelená, purpurová),
+  **Hledí** (5 tinted visors) and **Znak na hrudi** (8 emblems, glowing in the light colour). *Náhodně*, *Zrušit*,
+  *Hotovo* (Enter / Esc work too). Every new name starts in its own colour. The suit is saved in the browser per
+  player name (`rise-obleky`) and, on the club server, in the player's profile, so it comes back on any computer.
+  In the game a toast says *Nový oblek je na tobě!*
 - **Intro screen** on the very first start; **Návod** (H) is a long in-game help text that explains every system.
 - **Tips** (*Rada*, 14 steps) guide a new player: chop a tree, craft, build, find shards, wake the shrine…
 
-*Kód:* `index.html` (menu, Návod text), `client/src/menu/menu.js`, `client/src/menu/settings.js`, tips in `client/src/ui/hud.js`.
+*Kód:* `index.html` (menu, Návod text), `client/src/menu/menu.js`, `client/src/menu/settings.js`, costume picker `client/src/menu/costume.js` (data and checks `shared/data/costumes.js`), tips in `client/src/ui/hud.js`.
 
 ## 2. World
 - **Endless terrain** with smooth hills and a **voxel underground** (1 m blocks down to bedrock at y = −48).
@@ -117,7 +127,7 @@ When you add or change a feature, update this file in the same pull request.
       occlusion** (N8AO, half resolution) on a separate graphics card; 1024 px shadows and no AO on integrated graphics.
     - *střední* (the club laptops): 1024 px shadows, no AO or shafts, FXAA instead of MSAA.
     - **Dynamic resolution** drops to 60–70 % when a frame takes over ~18 ms and comes back when there is headroom.
-      With a window open (backpack, computer, guide) the world behind it renders at half resolution without AO.
+      With a window open (backpack, computer, guide, *Můj oblek*) the world behind it renders at half resolution without AO.
   - **Grafika: nízká** stays as cheap as before (no composer, no shadows, ACES); it still gets the warm-white fire light,
     wind, weather, dusk sky, simple water, reeds, embers, cave edges and ore light. CI renders with it.
   - Screenshots for comparing graphics: `node tests/playtest/shots.mjs dist <out> [--quality low|medium|high|auto]
@@ -138,8 +148,27 @@ When you add or change a feature, update this file in the same pull request.
 - **Getting hurt**: the camera tilts away from the hit, the screen edge flashes red and the heart bar blinks.
 - **View bobbing**: the camera dips and sways a little with every step (not while flying).
 - **Mark apple** (*Markojablko*) lets you fly for 10 s.
+- **Your character** is a kid in a futuristic suit (see *Můj oblek*): bevelled parts that catch the light, fabric,
+  painted shell, metal plates, a reflective visor with glowing eyes behind it (they blink), glowing strips in the
+  light colour that stand out at night, an emblem on the chest and a soft shadow under the feet. **Armor shows on
+  the model** as plates on the helmet, chest, shoulders, thighs and boots: iron is steel, crystal is icy with glowing
+  cyan cracks, markorite is violet metal with a purple glow, *Stínové* is dark with magenta seams, *Nebeské* is white
+  enamel with gold trim. Putting on a piece clicks. White and light suits are never pure white, so they don't glare
+  or blur into a glow in the sun with Grafika střední/vysoká.
+- **Animations** (procedural, also on other players): walk and run (longer stride, leaning forward, knees bend),
+  idle breathing and looking around now and then, the head follows where you look (the body turns after 75°),
+  swings that depend on the tool (pick and axe chop, sword sweeps, shovel scoops, hand and blocks punch), eating
+  (hand to the mouth, crumbs fly), flying (legs back, jets glow and spark), sitting, a short squash when landing,
+  red flash when hurt; capes, coat flaps and the halo move on their own. Sneaking is supported by the model (pose
+  `sn`) but has no key yet.
+- **First-person hand**: a gloved suit sleeve (your colours, glowing cuff) holds the item. It sways with your steps,
+  lags a little behind fast turns, dips and comes back up when you switch items, jolts when you get hurt, and swings
+  with the same tool arcs.
+- **V** (touch: *Pohled*) switches the view: *Pohled z první osoby*, *Pohled zezadu*, *Pohled zepředu* (in a vehicle V
+  still switches the car camera). The camera stops in front of walls (with a wall right behind you the head hides so it
+  doesn't block the view); aiming still works from the eyes.
 
-*Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`.
+*Kód:* movement, flying, creative `client/src/player/player.js`, health and hunger `client/src/player/survival.js`, armor data `shared/data/items.js`, armor slots `client/src/ui/inventory-ui.js`; character model, armor plates and animation `client/src/render/character.js` (one skinned mesh per material, joints are bones), first-person hand `client/src/render/held-item.js`, own body and third-person view `client/src/net/avatars.js`.
 
 ## 4. Mining, building, items
 - **Mining** with hold-to-break and tool tiers: wood → stone → iron → crystal → markorite.
@@ -239,11 +268,22 @@ mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack
 | Jelen (deer) | 8 | shy, flees; venison |
 | Kanec (boar) | 12 | attacks when hit |
 | Vlk (wolf) | 14 | attacks at night or when hit |
-| Stínožrout (shadow-eater) | 10 | night monster, burns at sunrise, avoids light and the shrine |
+| Stínožrout (shadow-eater) | 10 | night monster, burns at sunrise, avoids light and the shrine; violet veins and a moonlit rim show its outline at night |
 | Markoman | 26 | Mark dimension, always hostile, good loot |
 | Krystalový golem | 60 | Mark dimension, strong, drops shards and markorite |
 
 Monsters stay away from the shrine; light blocks keep shadow-eaters away.
+
+- **Models** (Hytale-like, blocky but detailed): bevelled parts with generated wool, fur, hide and feather textures
+  with normal maps, eyes with a white catchlight, a soft contact shadow. Sheep have a woolly cap, cows spots, horns and
+  a tail tuft, chickens a comb and wings, deer antlers and a white tail, boars tusks and a bristly back, wolves a
+  light mane. Hostile mobs have glowing eyes (wolf amber, shadow-eater magenta slits, Markoman magenta, golem cyan).
+  *Markoman* is a guard suit in iron armor with an iron sword; the *Krystalový golem* is stone with pulsing cyan cracks.
+- **Life**: eyes blink, the head turns to look at a player within 8 m, animals graze, sniff or look around when
+  standing, ears and tails twitch, chickens flap on the run, running kicks up dust, the shadow-eater trails smoke, the
+  golem gives off light motes, hit = short red flash, death = tips over sideways, then a puff of smoke (and a soft
+  sound). At night mobs and players get a faint blue moonlight rim so their outline reads in the dark.
+
 
 **Combat feel**
 - **Attack charge**: every weapon has a speed (fist 4, sword 1.7, pickaxe 1.3, shovel 1.2, axe 1 hits per second). A thin cyan
@@ -254,11 +294,12 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
 - **Hit feedback**: the mob turns red, hops back with knockback, drops blood/crystal chips; the camera kicks up and a strong
   hit freezes the game for ~50 ms (hit-stop). After a hit a mob is invulnerable for 0.5 s (clicking faster does nothing).
 - **Death**: the mob tips over sideways and vanishes in a puff of smoke (0.8 s).
-- **First-person hand**: an empty hand is a white sci-fi suit sleeve with a glowing cyan stripe and an armoured glove.
+- **First-person hand**: an empty hand is the sleeve of your suit (colours and light from *Můj oblek*) with a glowing stripe
+  and an armoured glove; holding an item, the gloved hand grips it.
   Swings differ per tool (sword sweeps sideways, axe and pickaxe chop down, shovel scoops, fist jabs), mining loops the
   swing, a new item slides up from below, and the hand lags a little behind camera turns.
 
-*Kód:* behaviour, spawning, loot, invulnerability `shared/sim/mobs.js`; attack rules `shared/tools.js`; models, animation, sounds, hit effects `client/src/mobs/mobs.js`;
+*Kód:* behaviour, spawning, loot, invulnerability `shared/sim/mobs.js`; attack rules `shared/tools.js`; models `client/src/mobs/mob-models.js`; animation and life (`poseMob`, also for the client's puppets), sounds, hit effects `client/src/mobs/mobs.js`;
 attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit-stop, view bobbing `client/src/player/camera-feel.js`; hand and swings `client/src/render/held-item.js`.
 
 ## 7. Technology
@@ -316,8 +357,10 @@ attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit
   Esc menu show the world name.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
 - **Chat** (T), only to players in the same world.
-- Everyone sees other players (name tag, armor, held item, walking, sitting, eating), their blocks, vehicles,
-  animals, day/night. Only one player can have a chest or machine open at a time.
+- Everyone sees other players in **their own suit** (*Můj oblek*, sent in the position as `lk`), with a modern
+  name tag (dark glass, cyan edge, a dot in their light colour, a health bar when hurt; it fades with distance),
+  armor plates, the held item, and all the animations (walking, running with dust, swinging per tool, eating with
+  crumbs, flying with jet sparks, sitting, red flash when hurt); their blocks, vehicles, animals, day/night. Only one player can have a chest or machine open at a time.
 
 *Kód:* host logic `shared/net/room.js` (browser host and server), world changes `shared/net/ops.js`, `shared/net/net.js`; browser side `client/src/net/` (client messages, avatars, chat and Esc menu, net loop); server `server/` (worlds: `server/worlds.js`, `server/world-worker.js`; profiles: `server/profiles.js`, `server/me.js`; admin: `server/admin-http.js`, `server/admin.js`); menu `client/src/menu/menu.js` (world buttons: `renderWorlds`, login: `askProfile`).
 
@@ -364,7 +407,7 @@ under the feet / being mined), `ambience.js` (ambience beds and one-shots), `hum
 
 ## 12. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
-E inventory · Q / G drop (Ctrl+Q / Shift+G stack) · middle button pick block · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V camera · Esc menu.
-Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba…*), landscape only.
+E inventory · Q / G drop (Ctrl+Q / Shift+G stack) · middle button pick block · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V view (first person / behind / front; car camera in a vehicle) · O suit (*Můj oblek*) · Esc menu.
+Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba, Pohled…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.
