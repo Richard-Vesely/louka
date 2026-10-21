@@ -26,6 +26,7 @@ import { btnOf, fitInventory, shiftOf } from './touch.js';
 import { uiSound } from '../audio/ui-sound.js';
 import { tooltipHTML } from './item-tooltip.js';
 import { iconImg, paintHotbar, slotHTML, slotInner } from './slots.js';
+import { clearBookSearch, filterBook, installBookSearch } from './book-search.js';
 import { afterRender, installInvTricks, previewGhost, previewRecipe, slotDown, sortContainer } from './inv-tricks.js';
 export { iconImg, slotHTML };
 
@@ -162,6 +163,7 @@ export function renderInventory() {
   $('invHot').innerHTML = html;
   renderCraftArea();
   renderBook();
+  filterBook();
   cursorEl.innerHTML = inv.cursor ? slotHTML(inv.cursor, -1, '', 'cursor') : '';
   cursorEl.style.display = inv.cursor ? 'block' : 'none';
   afterRender();
@@ -199,6 +201,7 @@ addEventListener('mousemove', (e) => {
   }
 });
 $('onlyCraftable').addEventListener('change', (e) => { onlyCraftable = e.target.checked; renderInventory(); });
+installBookSearch();
 
 // Rychlý přesun (Shift + klik) hromádky s z políčka (c, i) na „druhou stranu" okna. Vrací, kolik kusů se nevešlo.
 // Truhla, stroj nebo auto → batoh; batoh → otevřená truhla / stroj / brnění; jinak hotbar ↔ batoh.
@@ -402,6 +405,7 @@ export function closeInventory() {
   returnGrid();
   if (inv.cursor) { const c = inv.cursor; inv.cursor = null; giveOrDrop(c.id, c.n, c.w); }
   invOpen = false;
+  clearBookSearch();
   invEl.style.display = 'none';
   cursorEl.style.display = 'none';
   tooltip.style.display = 'none';

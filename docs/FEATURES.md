@@ -238,13 +238,15 @@ When you add or change a feature, update this file in the same pull request.
   machine strips glow); they are drawn in the background right after the start. Items keep their pixel-art icons.
 - **Crafting**: 2×2 in the inventory, 3×3 at the **workbench** (*Pracovní stůl*), advanced recipes at the
   **workshop** (*Dílna*). ~260 recipes in 12 categories with a recipe book and "only what I can make".
+  A **search box** (🔍 *Hledat…*) above the book filters it by item name (accents optional, so *zelezo* finds *Železo*);
+  it works for recipes, the creative item list, the campfire, the furnace and the stove cookbook, and is cleared when the window closes.
 - **Chest** (*Truhla*, 27 slots).
 - **Farm traps**: spikes (*Bodce*) hurt mobs; loot of mobs killed on spikes goes to a chest nearby.
 - **Mob spawner** blocks in dungeons and fortresses.
 
 *Kód:* block textures `client/src/render/textures.js` (helpers `texgen.js`), materials `client/src/render/materials.js`, 3D icons `client/src/render/icon-render.js`, tool rules (durability, mining speed, attack charge, repair) `shared/tools.js`, wear on this screen `client/src/player/durability.js`,
 cracks `client/src/render/crack.js`, chips and crit stars `client/src/render/chips.js`, tool and combat sounds `client/src/audio/tool-sounds.js`,
-mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
+mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (search box `book-search.js`, tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
 
 ## 5. Food and cooking
 - **Campfire** (*Táborák*): roast meat and fish, smelt iron, bake sand into glass, clay into tiles.
