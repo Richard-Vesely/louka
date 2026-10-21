@@ -10,7 +10,7 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, forest, inventory, tech-machines, vehicles;
+// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, forest, inventory, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
@@ -43,7 +43,7 @@ const ev = (fn, arg) => page.evaluate(fn, arg);
 await page.goto(server.url, { waitUntil: 'domcontentloaded' });
 await ev((q) => { localStorage.clear(); localStorage.setItem('rise-nastaveni', JSON.stringify({ ...(q === 'auto' ? {} : { quality: q }), controls: 'mouse' })); localStorage.setItem('rise-jmeno', 'Fotograf'); }, quality);
 await page.goto(server.url + (look ? `?look=${look}` : ''), { waitUntil: 'domcontentloaded' });
-await page.click('#mSolo');
+await page.click('#mSolo', { timeout: 240000, noWaitAfter: true }); // první start na pomalém stroji kompiluje shadery dlouho
 await page.waitForFunction(() => window.gameStarted === true, null, { timeout: 120000 });
 const gpu = await ev(() => { const gl = window.game.renderer.getContext(); const e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); });
 const realQ = await ev(() => window.game.QUALITY);
@@ -115,6 +115,12 @@ const VIEWS = {
     const S = SHOT, g = S.g, p = g.pondOf(-181.5, -48);
     S.place({ x: p.x + p.r + 3, z: p.z + 4, up: 1.2, yaw: 0, time: 0.31 });
     S.lookAt(p.x - p.r * 0.6, g.pondLevel(p), p.z - 2);
+  },
+  // jezero (nejbližší ke svatyni): široká hladina, rovný břeh, rákosí
+  lake: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521);
+    S.place({ x: L.x + L.r * 1.12, z: L.z + L.r * 0.35, up: 2.2, yaw: 0, time: 0.4 });
+    S.lookAt(L.x - L.r * 0.3, L.level, L.z - L.r * 0.2);
   },
   // hustý les odpoledne
   forest: () => { SHOT.place({ x: -120, z: 205, up: 0.1, yaw: 0, time: 0.6 }); SHOT.lookAt(-120, SHOT.g.groundHeight(-120, 185) + 2.5, 185); },

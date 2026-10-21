@@ -53,7 +53,8 @@ test('underground voxels and structures are deterministic', () => {
   assert.equal(naturalAt(0, -48, 0, topY(0, 0)), V.BEDROCK);
   const near = structuresNear(0, 0, 700);
   const count = (t) => near.filter((s) => s.type === t).length;
-  assert.deepEqual([count('camp'), count('dungeon'), count('tower'), count('temple'), count('hut'), count('mushhouse')], [42, 38, 18, 8, 4, 5]);
+  // jezero u (-422, -521) vzalo místo 1 tábora, 1 kobky a 2 houbových domků (stavby v jezeře nejsou)
+  assert.deepEqual([count('camp'), count('dungeon'), count('tower'), count('temple'), count('hut'), count('mushhouse')], [41, 37, 18, 8, 4, 3]);
 });
 
 test('every module in shared/ imports in Node (no DOM, no Three.js)', async () => {

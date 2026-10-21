@@ -4,7 +4,7 @@ import { NET } from '../net/net.js';
 import { spawnMob } from '../sim/mobs.js';
 import { hash2, rng } from '../util.js';
 import { bkey, blockMeta, blocks, chests, ruinsBuilt, spawners } from './state.js';
-import { VOLC_CELL, biomeAt, isMark, regionOf, shrineDist } from './terrain.js';
+import { VOLC_CELL, biomeAt, inLake, isMark, regionOf, shrineDist } from './terrain.js';
 import { V, setVox, surfY, topY } from './voxels.js';
 
 // Kořist: [předmět, min, max, šance]
@@ -68,7 +68,7 @@ function structAt(type, cx, cz) {
   }
   if (hash2(cx + S.salt[0], cz - S.salt[1]) > S.chance) return null;
   const x = Math.floor((cx + 0.3 + hash2(cx, cz + 5) * 0.4) * S.cell), z = Math.floor((cz + 0.3 + hash2(cx + 5, cz) * 0.4) * S.cell);
-  if ((S.mark !== null && isMark(x) !== S.mark) || shrineDist(x, z) < 45) return null;
+  if ((S.mark !== null && isMark(x) !== S.mark) || shrineDist(x, z) < 45 || inLake(x, z, 1.25)) return null; // ne v jezeře
   if (S.biome && biomeAt(x, z) !== S.biome) return null;
   return { type, key: type === 'ruin' ? `ru${cx},${cz}` : `${type}${cx},${cz}`, x, z };
 }

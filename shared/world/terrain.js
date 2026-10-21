@@ -9,19 +9,28 @@ export const shrineOf = (x) => SHRINES[isMark(x) ? 1 : 0];
 export const shrineDist = (x, z) => { const s = shrineOf(x); return Math.hypot(x - s.x, z - s.z); };
 
 // Terén: stejný vzorec v JavaScriptu (fyzika) i v GLSL (vykreslení). Markova dimenze má divočejší kopce.
-// Rybníky: v každé buňce 130×130 m je s pravděpodobností 45 % mělká prohlubeň (stejný výpočet v JS i GLSL).
+// Rybníky: v každé buňce 130×130 m je s pravděpodobností 45 % mělká prohlubeň (stejný výpočet v JS i GLSL). Jezera: níž.
 export const POND_CELL = 130;
-export function pondOf(x, z) {
+// Malý rybník v buňce (nebo null). Uvnitř jezera a na jeho břehu rybníky nejsou.
+function smallPondOf(x, z) {
   const cx = Math.floor(x / POND_CELL), cz = Math.floor(z / POND_CELL);
   if (hash2(cx + 31, cz + 913) >= 0.45) return null;
-  return {
+  const p = {
     key: `p${cx},${cz}`, cx, cz,
     x: (cx + 0.3 + 0.4 * hash2(cx + 2, cz + 9)) * POND_CELL, z: (cz + 0.3 + 0.4 * hash2(cx + 9, cz + 2)) * POND_CELL,
     r: 9 + 5 * hash2(cx + 4, cz + 4),
   };
+  const L = lakeOf(p.x, p.z);
+  return L && Math.hypot(p.x - L.x, p.z - L.z) < L.r * LAKE_EDGE + p.r ? null : p;
+}
+/** Vodní plocha v bodě: jezero (když je bod u něj, do LAKE_EDGE × poloměr) nebo rybník v buňce. Jezero má `lake: true`. */
+export function pondOf(x, z) {
+  const L = lakeOf(x, z);
+  if (L && Math.hypot(x - L.x, z - L.z) < L.r * LAKE_EDGE) return L;
+  return smallPondOf(x, z);
 }
 export function pondDip(x, z) {
-  const p = pondOf(x, z);
+  const p = smallPondOf(x, z);
   if (!p) return 0;
   const d = Math.hypot(x - p.x, z - p.z) / p.r;
   if (d >= 1) return 0;
@@ -70,14 +79,57 @@ function biomeHeight(h0, x, z, w) {
   return w[0] * h0 + w[1] * (h0 * 1.15 + 0.6) + w[2] * (h0 * 0.45 + dune) + w[3] * (h0 * 1.3 + Math.sin(x * 0.043 + 0.4) * Math.sin(z * 0.051 + 1.2) * 2.2)
     + w[4] * (h0 * 0.55 + 0.8) + w[5] * (h0 * 0.7 + 0.4) + w[6] * (h0 * 0.9 + cone) + w[7] * (h0 * 0.8 + 0.5);
 }
-export function terrainH(x, z) {
+// Terén bez rybníků a jezer (z toho se počítá i rovina, na kterou se srovná okolí jezera)
+function baseH(x, z, w) {
   let h = Math.sin(x * 0.011 + 1.3) * Math.cos(z * 0.013 - 0.7) * 6.0
           + Math.sin(x * 0.027 + z * 0.018) * 2.4
           + Math.cos(z * 0.035 - x * 0.021 + 2.0) * 1.4
           + Math.sin(x * 0.071 + 0.5) * Math.sin(z * 0.064 + 1.7) * 0.5;
   if (isMark(x)) h = h * 1.6 + Math.sin(x * 0.0045 + z * 0.006) * 5.0;
-  const w = biomeWeights(x, z);
   h = biomeHeight(h, x, z, w);
-  return h * smoothstep(16, 70, shrineDist(x, z)) - pondDip(x, z) * (1 - w[6]); // v sopce rybníky nejsou
+  return h * smoothstep(16, 70, shrineDist(x, z));
 }
+export function terrainH(x, z) {
+  const w = biomeWeights(x, z);
+  const h = baseH(x, z, w) - pondDip(x, z) * (1 - w[6]); // v sopce rybníky nejsou
+  const L = lakeOf(x, z);
+  if (!L) return h;
+  const d = Math.hypot(x - L.x, z - L.z) / L.r;
+  if (d >= LAKE_EDGE) return h;
+  return h + (L.hc - h) * smoothstep(LAKE_EDGE, 1.15, d) - L.depth * smoothstep(1, 0.55, d); // rovný břeh, pak dno
+}
+// ============================================================ jezera
+// Vzácná velká jezera (průměr 100–240 m, hloubka 6–8 m) v mřížce 1000×1000 m. Jsou dál než 500 m od domovské svatyně
+// (tam stojí stavby hráčů), ne v Markově dimenzi a ne u sopky. Okolí jezera (do LAKE_EDGE × poloměr) se plynule srovná na
+// výšku terénu ve středu jezera (do 1,15 poloměru úplně), takže hladina má rovný břeh; od 0,55 poloměru je ploché dno. Stejný výpočet je v GLSL.
+export const LAKE_CELL = 1000, LAKE_MIN = 500, LAKE_EDGE = 1.45;
+const lakes = new Map();
+export function lakeOf(x, z) {
+  const cx = Math.floor(x / LAKE_CELL), cz = Math.floor(z / LAKE_CELL), key = `l${cx},${cz}`;
+  let L = lakes.get(key);
+  if (L !== undefined) return L;
+  L = null;
+  if (hash2(cx + 57, cz + 311) < 0.42) {
+    const lx = (cx + 0.25 + 0.5 * hash2(cx + 61, cz + 5)) * LAKE_CELL, lz = (cz + 0.25 + 0.5 * hash2(cx + 5, cz + 61)) * LAKE_CELL;
+    const r = 50 + 70 * hash2(cx + 8, cz + 8), e = r * LAKE_EDGE;
+    if (lx + e < MARK_X && Math.hypot(lx, lz) > LAKE_MIN + e && volcanoDist(lx, lz) > VOLC_R * 1.7 + e) {
+      const hc = baseH(lx, lz, biomeWeights(lx, lz));
+      L = { key, cx, cz, x: lx, z: lz, r, depth: 6 + 2 * hash2(cx + 9, cz + 3), hc, level: hc - 0.12, lake: true };
+    }
+  }
+  lakes.set(key, L);
+  return L;
+}
+/** Nejbližší jezero k bodu (prohledá buňky do vzdálenosti R), nebo null. */
+export function nearestLake(x, z, R = 6000) {
+  let best = null, bd = Infinity;
+  for (let cz = Math.floor((z - R) / LAKE_CELL); cz <= Math.floor((z + R) / LAKE_CELL); cz++)
+    for (let cx = Math.floor((x - R) / LAKE_CELL); cx <= Math.floor((x + R) / LAKE_CELL); cx++) {
+      const L = lakeOf((cx + 0.5) * LAKE_CELL, (cz + 0.5) * LAKE_CELL), d = L ? Math.hypot(L.x - x, L.z - z) : Infinity;
+      if (d < bd) { bd = d; best = L; }
+    }
+  return best;
+}
+/** Je bod v jezeře (nebo do `m` × poloměr od středu)? Na stromy, balvany, stavby a tvory. */
+export const inLake = (x, z, m = 1.08) => { const L = lakeOf(x, z); return !!L && Math.hypot(x - L.x, z - L.z) < L.r * m; };
 export const forest = (x, z) => 0.5 + 0.5 * (Math.sin(x * 0.0081 + 0.4) * Math.cos(z * 0.0093 + 1.1) * 0.75 + Math.sin(x * 0.023 - z * 0.017) * 0.3);
