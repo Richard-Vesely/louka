@@ -14,6 +14,7 @@ import { DINE_STYLE } from '../dining/dine-view.js';
 import { buildFoodInto } from '../dining/food-models.js';
 import { GFX } from '../game/prefs.js';
 import { buildCropModel } from '../machines/kitchen.js';
+import { buildGarageModel } from '../machines/garage-model.js';
 import { buildElecModel, rebuildCables } from '../machines/power.js';
 import { heldStack } from '../player/inventory.js';
 import { player } from '../player/player.js';
@@ -345,6 +346,7 @@ export function buildSpecial(type, key) {
     flame(0.55, 0.24);
   }
   if (BLOCKS[type].elec) buildElecModel(type, g); // elektrická zařízení (14c)
+  else if (type === 'garage') buildGarageModel(g); // garáž: přelakování a vylepšení vozidel
   return { obj: g, flames };
 }
 
@@ -434,7 +436,7 @@ export function updateLights(time) {
 
 // 3D ikony bloků a strojů (render/icon-render.js) – až po načtení všech modulů (modely strojů jsou v pozdějších souborech).
 const ICON_3D = ['workbench', 'chest', 'stove', 'furnace', 'adv_bench', 'table', 'chair', 'well', 'spikes', 'spawner', 'coal_generator', 'solar_panel',
-  'battery_block', 'power_switch', 'electric_lamp', 'bulb_lamp', 'motor_block', 'electric_furnace', 'charger', 'computer', 'printer'];
+  'battery_block', 'power_switch', 'electric_lamp', 'bulb_lamp', 'motor_block', 'electric_furnace', 'charger', 'computer', 'printer', 'garage'];
 export function blockIconList() {
   const items = [];
   for (const [id, b] of Object.entries(BLOCKS)) {

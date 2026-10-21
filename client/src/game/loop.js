@@ -86,9 +86,10 @@ export function tick(realDt) {
   U.time.value = gameClock;
 
   let moving = 0;
-  if (playing && player.alive) { moving = player.vehicle ? driveVehicle(dt) : updatePlayer(dt); if (!player.vehicle && !player.sitting) applyCameraFeel(realDt, moving); }
+  // spolujezdec se nehýbe sám: sedí v modelu vozidla (updateVehicles → vehicles/passengers.js)
+  if (playing && player.alive) { moving = player.vehicle ? driveVehicle(dt) : player.riding ? 0 : updatePlayer(dt); if (!player.vehicle && !player.riding && !player.sitting) applyCameraFeel(realDt, moving); }
   else if (player.vehicle && vehicles.has(player.vehicle)) { placeCarCamera(vehicles.get(player.vehicle)); Sound.engine(false, 0); }
-  else { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
+  else if (!player.riding) { camera.rotation.set(player.pitch, player.yaw, 0); camera.position.set(player.pos.x, player.pos.y + EYE, player.pos.z); }
   updateVehicles(realDt);
   updateHeldModel();
   updateSwing(dt, moving);
@@ -104,7 +105,7 @@ export function tick(realDt) {
   updateRuins(realDt);
   if ((playing || MP) && !NET.client) updateSpawners(realDt);
   if (playing) {
-    if (player.alive && !dining && !player.vehicle) updateInteraction(dt); // z auta se netěží
+    if (player.alive && !dining && !player.vehicle && !player.riding) updateInteraction(dt); // z vozidla se netěží
     updateDining(dt);
     updateSurvival(dt);
     if (!MP) { updateMobs(dt, day); animateMobs(dt); updateSpawns(dt, night); }

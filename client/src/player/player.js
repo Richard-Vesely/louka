@@ -25,7 +25,7 @@ import { camera, renderer } from '../render/renderer.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { closeInventory, fullSet, invOpen, openInventory, renderHotbar, renderInventory } from '../ui/inventory-ui.js';
-import { enterVehicle, exitVehicle, honk, toggleCarCam, vehiclePush } from '../vehicles/car.js';
+import { enterVehicle, exitVehicle, honk, setGear, toggleCarCam, toggleLights, useNitro, vehiclePush } from '../vehicles/car.js';
 import { dropHeld } from '../world/ground-items.js';
 import { shrineColliders } from '../world/shrine.js';
 import { resetUseCd, target } from './interaction.js';
@@ -95,24 +95,29 @@ addEventListener('keydown', (e) => {
   if (guideOpen) return;
   if (e.code === 'KeyC' && !e.repeat && !invOpen) { setCreative(!creative); return; }
   if (e.code === 'KeyG' && !e.repeat && !invOpen && (isLocked() || game.testMode)) { dropHeld(e.shiftKey); return; }
-  // Auto: F nastoupit / vystoupit, L světla, B klakson, V kamera (první / třetí osoba)
+  // Vozidla: F nastoupit / vystoupit (i jako spolujezdec), L světla, B klakson (kolo zvonek, loď houkačka), N nitro,
+  // 1/2/3 převod na kole, V kamera (první / třetí osoba)
   if (e.code === 'KeyF' && !e.repeat && !invOpen && (isLocked() || game.testMode)) {
-    if (player.vehicle) exitVehicle(); else if (target?.kind === 'vehicle') enterVehicle(target.id);
+    if (player.vehicle || player.riding) exitVehicle(); else if (target?.kind === 'vehicle') enterVehicle(target.id);
     return;
   }
+  if (player.riding && !e.repeat && ['KeyL', 'KeyB', 'KeyN', 'KeyV'].includes(e.code)) return; // spolujezdec neřídí
   if (player.vehicle && !e.repeat && !invOpen) {
     const v = vehicles.get(player.vehicle);
-    if (e.code === 'KeyL' && v) { if (v.type !== 'plane' && !v.lights && !v.engine && !(v.slots[0]?.id === 'car_battery' && v.bat > 0)) toast('Světla nesvítí – vybitá autobaterie'); else v.lights = !v.lights; return; }
-    if (e.code === 'KeyB' && v?.type !== 'plane') { honk(); return; }
+    if (e.code === 'KeyL' && v) { toggleLights(v); return; }
+    if (e.code === 'KeyB') { honk(); return; }
+    if (e.code === 'KeyN') { useNitro(); return; }
     if (e.code === 'KeyV') { toggleCarCam(); player.yaw = 0; return; }
+    const gear = e.code.match(/^Digit([1-3])$/);
+    if (gear && v?.type === 'bike') { setGear(v, Number(gear[1])); return; }
   }
-  if (e.code === 'KeyV' && !e.repeat && !invOpen && !player.vehicle) { toggleView(); return; } // pohled z první / třetí osoby
+  if (e.code === 'KeyV' && !e.repeat && !invOpen && !player.vehicle && !player.riding) { toggleView(); return; } // pohled z první / třetí osoby
   if (e.code === 'KeyO' && !e.repeat && !invOpen && (isLocked() || game.testMode)) { openCostume(); return; }
   // Nebeská sada: dvojitý skok
   if (e.code === 'Space' && !e.repeat && !creative && fullSet() === 'sky' && !player.onGround && !player.doubleUsed && !(player.flyT > 0)) {
     player.vel.y = JUMP; player.doubleUsed = true; sparks.emit(player.pos.x, player.pos.y, player.pos.z, [1, 0.9, 0.6], 20, 2, 0);
   }
-  if (e.code === 'Space' && !e.repeat && creative && !player.vehicle) {
+  if (e.code === 'Space' && !e.repeat && creative && !player.vehicle && !player.riding) {
     const now = performance.now();
     if (now - lastSpace < 300) { player.flying = !player.flying; player.vel.y = 0; toast(player.flying ? 'Létání zapnuto' : 'Létání vypnuto'); }
     lastSpace = now;

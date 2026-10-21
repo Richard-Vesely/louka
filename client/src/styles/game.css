@@ -141,6 +141,16 @@ img.sm { image-rendering: auto !important; } /* 3D ikony bloků a strojů jsou h
 #vehHud .warn { color: #ff6a5a; }
 body.touch #vehHud { bottom: 92px; font-size: 13px; }
 .car-ui { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+/* garáž: barvy laku a vylepšení */
+.garage-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.garage-tabs .on { outline: 2px solid #38e8ff; }
+.garage-paints { display: grid; grid-template-columns: repeat(8, 30px); gap: 6px; margin: 4px 0 10px; }
+.garage-paint { width: 30px; height: 30px; border: 2px solid #1a1a1e; border-radius: 6px; cursor: pointer; box-shadow: inset 0 -6px 10px rgba(0,0,0,.25); }
+.garage-paint.on { outline: 3px solid #38e8ff; outline-offset: 1px; }
+.garage-mod { margin: 6px 0; line-height: 1.6; }
+.garage-mod .mc-btn { margin-left: 8px; padding: 2px 10px; }
+.garage-mod .mc-btn[disabled] { opacity: .45; cursor: default; }
+
 .power-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; padding: 8px; font-size: 14px; color: #e8e2d0; background: #2a2a30; box-shadow: inset 2px 2px 0 #18181c, inset -2px -2px 0 #4a4a54; }
 .power-stats b { color: #ffe08a; font-weight: 600; }
 .parrow.fuelbar i { background: #ff8a2a; }
@@ -369,6 +379,7 @@ body.touch canvas { touch-action: none; }
 .tcar { position: absolute; left: calc(10px + env(safe-area-inset-left)); top: calc(50px + env(safe-area-inset-top)); display: none; gap: 6px; }
 #touch.incar .tcar { display: flex; }
 #touch.incar #tLmb, #touch.incar #tRmb, #touch.incar #tSprint, #touch.incar:not(.inplane) #tDown, #touch.inplane [data-act=vhorn] { display: none; }
+#touch.inboat #tJump, #touch.riding .tcar .tbtn:not([data-act=vexit]):not([data-act=vcam]), #touch.riding #tJump, #touch .tcar .tbtn[hidden] { display: none; }
 #tEnter { right: calc(16px + var(--tb) * 1.45 + env(safe-area-inset-right)); bottom: calc(24px + var(--tb) * 1.95); }
 #tJoy { position: absolute; left: calc(26px + env(safe-area-inset-left)); bottom: 26px; width: calc(var(--tb) * 2); height: calc(var(--tb) * 2); border-radius: 50%;
   background: rgba(20, 20, 26, 0.3); border: 2px solid rgba(255, 255, 255, 0.25); opacity: 0.55; pointer-events: none; }
