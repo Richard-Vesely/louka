@@ -152,7 +152,7 @@ function buildSailboat(color) {
   const m = { group: g, wheels: [], pivots: [pivot], head: null, tail: null, boat: B, boom, main, jib, flagG };
   m.update = (src, dt, v) => {
     const t = performance.now() / 1000, up = clamp(src.thr ?? 0, 0, 1), luff = src.lf ? 1 : 0;
-    boom.rotation.y += ((src.bm || 0) - boom.rotation.y) * Math.min(1, dt * 3);
+    boom.rotation.y += ((src.bm ?? src.boom ?? 0) - boom.rotation.y) * Math.min(1, dt * 3); // bm = z pozice řidiče, boom = vlastní stav
     const side = Math.sign(boom.rotation.y || 1), b = (0.35 + 0.15 * up) * side * (1 - luff * 0.8);
     shapeSail(main.geometry, [0, 0.15 + 4.9 * up, 0.05], [0, 0.1, 0.05], [0, 0.1, 2.55], up > 0.02 ? b : 0, luff * 0.12 * up, t);
     main.visible = up > 0.02;

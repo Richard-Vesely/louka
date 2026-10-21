@@ -23,7 +23,7 @@ import { debris, sparks } from '../render/particles.js';
 import { camera, scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { armor, fullSet, invOpen, ui } from '../ui/inventory-ui.js';
-import { hornN, seatWorld, vehMeshes, vehPose } from '../vehicles/car.js';
+import { carCam, hornN, seatWorld, vehMeshes, vehPose } from '../vehicles/car.js';
 import { kindOf } from '../vehicles/kinds.js';
 
 // ---------- můj oblek: z prohlížeče (podle jména), na serveru kroužku novější verze z profilu
@@ -149,7 +149,7 @@ export function updateAvatars(dt) {
     const vid = q.veh?.id ?? q.rd?.id, vt = vid !== undefined && vehicles.get(vid)?.type, inVeh = vid !== undefined;
     A.group.visible = q.alive !== false && (!inVeh || (!!vt && kindOf(vt).open));
     const pos = A.group.position;
-    if (inVeh && seatWorld(vid, q.veh ? 0 : q.rd.s, seatPos)) { pos.copy(seatPos); pos.y -= 0.42; A.anim.bodyYaw = (vehMeshes.get(vid)?.yaw ?? 0) + (q.yaw || 0); A.init = true; }
+    if (inVeh && seatWorld(vid, q.veh ? 0 : q.rd.s, seatPos)) { pos.copy(seatPos); pos.y -= 0.42; A.anim.bodyYaw = vehMeshes.get(vid)?.yaw ?? 0; A.init = true; } // sedí čelem po směru jízdy
     else {
       const tx = q.x, ty = q.y - (q.sit ? 0.42 : 0), tz = q.z;
       if (!A.init || Math.hypot(pos.x - tx, pos.z - tz) > 12) { pos.set(tx, ty, tz); A.anim.bodyYaw = q.yaw; A.init = true; }
@@ -190,7 +190,7 @@ function blocked(x, y, z) {
   return y < terrainH(x, z) + 0.15 && y > topY(fx, fz) - 0.5 && !columnDug(fx, fz);
 }
 function thirdPersonCamera() {
-  if (!(viewMode > 0 && me?.group.visible)) { camDist = 0; return; }
+  if (!(viewMode > 0 && me?.group.visible) || player.vehicle) { camDist = 0; return; } // ve vozidle má kameru vozidlo
   if (camera.position.distanceToSquared(applied) < 1e-8) return; // v tomhle snímku už posunutá (scéna se kreslí víckrát)
   eye.copy(camera.position); // hra kameru každý snímek vrací do očí
   dir.set(0, 0, viewMode === 1 ? 1 : -1).applyQuaternion(camera.quaternion);
@@ -216,7 +216,9 @@ export function updateLocalBody(dt, moving) {
     Sound.mat?.('metal', 'place', 0.9); Sound.burst({ dur: 0.12, f0: 3200, f1: 1200, q: 2, vol: 0.08, delay: 0.04 }); // cvak plátu
   }
   myArmorKey = key;
-  const show = viewMode > 0 && player.alive && !player.vehicle && !player.riding;
+  // na kole, v lodi a v kokpitu je vidět i vlastní postava, když je kamera vozidla zezadu (V)
+  const veh = vehicles.get(player.vehicle), onSeat = !!veh && carCam === 1 && kindOf(veh.type).open && player.alive;
+  const show = (viewMode > 0 && player.alive && !player.vehicle && !player.riding) || onSeat;
   holder.visible = !show;
   if (!show) { if (me) me.group.visible = false; return; }
   if (!me) { me = buildCharacter(myCostume); scene.add(me.group); me.anim.bodyYaw = player.yaw; myHeld = undefined; me.armorKey = null; }
@@ -224,8 +226,9 @@ export function updateLocalBody(dt, moving) {
   if (me.armorKey !== key) setCharacterArmor(me, ids);
   const held = player.eating?.id || heldStack()?.id || null;
   if (held !== myHeld) { myHeld = held; setHeld(me, held); }
-  me.group.position.set(player.pos.x, player.pos.y - (player.sitting ? 0.42 : 0), player.pos.z);
-  const s = { speed: moving, yaw: player.yaw, pitch: player.pitch, run: !!player.sprinting, sneak: !!player.sneaking, fly: !!player.flying || player.flyT > 0, sit: !!player.sitting,
+  if (onSeat && seatWorld(player.vehicle, 0, seatPos)) me.group.position.set(seatPos.x, seatPos.y - 0.42, seatPos.z);
+  else me.group.position.set(player.pos.x, player.pos.y - (player.sitting ? 0.42 : 0), player.pos.z);
+  const s = { speed: onSeat ? 0 : moving, yaw: onSeat ? (vehMeshes.get(player.vehicle)?.yaw ?? veh.yaw) : player.yaw, pitch: onSeat ? 0 : player.pitch, run: !onSeat && !!player.sprinting, sneak: !!player.sneaking, fly: !onSeat && (!!player.flying || player.flyT > 0), sit: !!player.sitting || onSeat,
     swing: swingT >= 0 || (input.lmb && isLocked()), eat: !!player.eating || !!dining, held, y: player.pos.y, hurt: me.anim.hurtSeen !== undefined && me.anim.hurtSeen !== player.lastHurt };
   me.anim.hurtSeen = player.lastHurt;
   animateCharacter(me, s, dt);

@@ -50,7 +50,7 @@ import { camera, renderer, scene } from '../render/renderer.js';
 import { voxChunks } from '../render/vox-mesh.js';
 import { invTricks } from '../ui/inv-tricks.js';
 import { armor, armorPoints, closeInventory, fillCooking, fillRecipe, fullSet, openInventory, renderHotbar, slotClick, takeResult, ui } from '../ui/inventory-ui.js';
-import { CAR, enterVehicle, exitVehicle, nitro, seatWorld, spawnVehicle, useNitro, vehMeshes } from '../vehicles/car.js';
+import { CAR, enterVehicle, exitVehicle, nitro, seatWorld, spawnVehicle, toggleCarCam, useNitro, vehMeshes } from '../vehicles/car.js';
 import { BIKE } from '../vehicles/bike.js';
 import { BOATS, levelAt, sailEff, windRel } from '../vehicles/boat.js';
 import { KINDS } from '../vehicles/kinds.js';
@@ -91,7 +91,7 @@ export const game = window.game = {
   NET, others, worldState, saveGame, renderer, pc, openPC, closePC, pcPower, openApp, papers, pcDisks, paperSpots, openDoc, closeDoc, useDocs, newPaper, printJob, ensureDoc, vehicles, spawnVehicle, enterVehicle, exitVehicle, CAR, PLANE, planeHits, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => setDay(t), get target() { return target; }, mineState, crackStage, wearHeld, renderHotbar, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite, LK, FX, post, weather, setWeather, vis,
   toggleView, get viewMode() { return viewMode; }, openCostume, myPose, updateAvatars, localBody, mobView: viewOf, // pohled ze třetí osoby (V), výběr obleku (O), postavičky
   lakeOf, nearestLake, toLake, // jezera: game.toLake() = na břeh nejbližšího jezera
-  KINDS, BIKE, BOATS, windAt, windRel, sailEff, levelAt, spawnOnLake, nitro, useNitro, vehMeshes, seatWorld, // vozidla: game.spawnOnLake('sailboat')
+  KINDS, BIKE, BOATS, windAt, windRel, sailEff, levelAt, spawnOnLake, nitro, useNitro, vehMeshes, seatWorld, toggleCarCam, // vozidla: game.spawnOnLake('sailboat')
   Sound, soundEnv, materialAt, targetMaterial, // zvuky: game.Sound.music.start('night'), game.soundEnv, game.materialAt(x, y, z)
 };
 window.gameStarted = true;

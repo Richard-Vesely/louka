@@ -10,7 +10,7 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, forest, inventory, tech-machines, vehicles;
+// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, seaplane, garage, forest, inventory, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
@@ -144,6 +144,50 @@ const VIEWS = {
     S.place({ x: X - 4, z: Z + 9, up: 2.4, yaw: 0, time: 0.4 });
     S.lookAt(X + 3, g.groundHeight(X, Z) + 0.8, Z - 1);
   },
+  // jízdní kolo na louce a cyklista zezadu (kamera vozidla, V)
+  bike: () => {
+    const S = SHOT, g = S.g, X = -60, Z = -20;
+    S.place({ x: X, z: Z + 3, up: 0, yaw: 0, time: 0.42 });
+    g.player.flyT = 0;
+    if (!S.bike) { S.bike = g.spawnVehicle('bike', X, Z, 0.5); g.vehicles.get(S.bike).y = g.groundHeight(X, Z); S.bike2 = g.spawnVehicle('bike', X + 2.5, Z - 1.5, -0.4); g.vehicles.get(S.bike2).y = g.groundHeight(X + 2.5, Z - 1.5); }
+    g.enterVehicle(S.bike); g.toggleCarCam(); g.player.yaw = 0.7; g.player.pitch = -0.05; g.tick(0.0001);
+  },
+  // motorový člun a plachetnice na jezeře (nejbližší ke svatyni)
+  boats: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521);
+    if (S.bike && g.player.vehicle) { g.exitVehicle(); g.toggleCarCam(); }
+    const at = (a, r) => [L.x + Math.cos(a) * L.r * r, L.z + Math.sin(a) * L.r * r];
+    if (!S.boats) {
+      const [mx, mz] = at(0.15, 0.62), [sx, sz] = at(-0.12, 0.5);
+      const m = g.spawnVehicle('motorboat', mx, mz, 2.2), s = g.spawnVehicle('sailboat', sx, sz, 1.2);
+      g.vehicles.get(m).y = g.levelAt(mx, mz); g.vehicles.get(s).y = g.levelAt(sx, sz);
+      Object.assign(g.vehicles.get(s), { thr: 1, boom: -0.7 });
+      S.boats = [m, s];
+    }
+    const [cx, cz] = at(0, 1.12);
+    S.place({ x: cx, z: cz, up: 2.4, yaw: 0, time: 0.4 });
+    const [tx, tz] = at(0, 0.55);
+    S.lookAt(tx, L.level + 1.6, tz);
+  },
+  // hydroplán na jezeře
+  seaplane: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521), a = 1.9;
+    if (!S.sea) { const x = L.x + Math.cos(a) * L.r * 0.6, z = L.z + Math.sin(a) * L.r * 0.6; S.sea = g.spawnVehicle('seaplane', x, z, 0.9); g.vehicles.get(S.sea).y = g.levelAt(x, z) - 0.18; }
+    const v = g.vehicles.get(S.sea);
+    S.place({ x: L.x + Math.cos(a) * L.r * 1.1, z: L.z + Math.sin(a) * L.r * 1.1, up: 3, yaw: 0, time: 0.6 });
+    S.lookAt(v.x, v.y + 1.2, v.z);
+  },
+  // garáž: okno s lakem a vylepšeními pro auto
+  garage: () => {
+    const S = SHOT, g = S.g, X = -70, Z = -30;
+    if (!S.veh) S.veh = [g.spawnVehicle('car', X, Z, 0.6)];
+    const y = S.cell(X - 4, Z + 2), key = `${X - 4},${y + 1},${Z + 2}`;
+    g.blocks.set(key, 'garage'); g.rebuildBlocks();
+    g.addItem('nitro', 3, true); g.addItem('turbocharger', 1, true);
+    S.place({ x: X - 4, z: Z + 9, up: 2.4, yaw: 0, time: 0.4 });
+    S.lookAt(X - 2, g.groundHeight(X, Z) + 0.8, Z);
+    g.openInventory('garage', key);
+  },
   // otevřený batoh s věcmi
   inventory: () => {
     const S = SHOT, g = S.g;
@@ -214,7 +258,7 @@ for (const [name, setup] of Object.entries(VIEWS)) {
         requestAnimationFrame(f);
       }));
     }
-    if (name === 'inventory') await ev(() => { window.game.closeInventory(); window.SHOT.clearInv(); });
+    if (name === 'inventory' || name === 'garage') await ev(() => { window.game.closeInventory(); window.SHOT.clearInv(); });
     console.log(`shot  ${name}${perf[name] ? `  ${perf[name]} ms/frame` : ''}`);
   } catch (e) {
     console.log(`FAIL  ${name}: ${String(e.message || e).split('\n')[0]}`);
