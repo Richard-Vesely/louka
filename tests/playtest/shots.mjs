@@ -10,7 +10,7 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, seaplane, garage, forest, inventory, tech-machines, vehicles;
+// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
@@ -150,28 +150,42 @@ const VIEWS = {
     S.place({ x: X, z: Z + 3, up: 0, yaw: 0, time: 0.42 });
     g.player.flyT = 0;
     if (!S.bike) { S.bike = g.spawnVehicle('bike', X, Z, 0.5); g.vehicles.get(S.bike).y = g.groundHeight(X, Z); S.bike2 = g.spawnVehicle('bike', X + 2.5, Z - 1.5, -0.4); g.vehicles.get(S.bike2).y = g.groundHeight(X + 2.5, Z - 1.5); }
-    g.enterVehicle(S.bike); g.toggleCarCam(); g.player.yaw = 0.7; g.player.pitch = -0.05; g.tick(0.0001);
+    g.enterVehicle(S.bike); g.toggleCarCam(); g.player.yaw = 1.2; g.player.pitch = -0.12; g.tick(0.0001);
   },
-  // motorový člun a plachetnice na jezeře (nejbližší ke svatyni)
+  // motorový člun a plachetnice zblízka u břehu jezera (nejbližší ke svatyni)
   boats: () => {
     const S = SHOT, g = S.g, L = g.lakeOf(-422, -521);
     if (S.bike && g.player.vehicle) { g.exitVehicle(); g.toggleCarCam(); }
     const at = (a, r) => [L.x + Math.cos(a) * L.r * r, L.z + Math.sin(a) * L.r * r];
     if (!S.boats) {
-      const [mx, mz] = at(0.15, 0.62), [sx, sz] = at(-0.12, 0.5);
-      const m = g.spawnVehicle('motorboat', mx, mz, 2.2), s = g.spawnVehicle('sailboat', sx, sz, 1.2);
+      const [mx, mz] = at(0.07, 0.86), [sx, sz] = at(-0.08, 0.8);
+      const m = g.spawnVehicle('motorboat', mx, mz, 2.0), s = g.spawnVehicle('sailboat', sx, sz, 0.9);
       g.vehicles.get(m).y = g.levelAt(mx, mz); g.vehicles.get(s).y = g.levelAt(sx, sz);
       Object.assign(g.vehicles.get(s), { thr: 1, boom: -0.7 });
       S.boats = [m, s];
     }
-    const [cx, cz] = at(0, 1.12);
-    S.place({ x: cx, z: cz, up: 2.4, yaw: 0, time: 0.4 });
-    const [tx, tz] = at(0, 0.55);
-    S.lookAt(tx, L.level + 1.6, tz);
+    const [cx, cz] = at(0.01, 1.04);
+    S.place({ x: cx, z: cz, up: 1.9, yaw: 0, time: 0.4 });
+    const [tx, tz] = at(0, 0.8);
+    S.lookAt(tx, L.level + 1.3, tz);
+  },
+  // plachtění: hráč kormidluje plachetnici, kamera zezadu (V) – je vidět postava, plachta a vlaječka
+  sailing: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521), w = g.windAt(1, 0.45);
+    if (!S.sail) { S.sail = g.spawnOnLake('sailboat'); }
+    const v = g.vehicles.get(S.sail);
+    S.place({ x: v.x + 3, z: v.z + 3, up: 0, yaw: 0, time: 0.45 });
+    g.player.flyT = 0;
+    g.enterVehicle(S.sail); g.toggleCarCam();
+    v.yaw = Math.atan2(w.z, -w.x) + 0.3; // vítr zboku
+    g.keys.add('KeyW'); for (let i = 0; i < 40; i++) g.tick(0.05); g.keys.delete('KeyW');
+    for (let i = 0; i < 40; i++) g.tick(0.05);
+    g.player.yaw = 0.5; g.player.pitch = 0.05;
   },
   // hydroplán na jezeře
   seaplane: () => {
     const S = SHOT, g = S.g, L = g.lakeOf(-422, -521), a = 1.9;
+    if (g.player.vehicle) { const v = g.vehicles.get(g.player.vehicle); v.spd = 0; g.exitVehicle(); g.toggleCarCam(); }
     if (!S.sea) { const x = L.x + Math.cos(a) * L.r * 0.6, z = L.z + Math.sin(a) * L.r * 0.6; S.sea = g.spawnVehicle('seaplane', x, z, 0.9); g.vehicles.get(S.sea).y = g.levelAt(x, z) - 0.18; }
     const v = g.vehicles.get(S.sea);
     S.place({ x: L.x + Math.cos(a) * L.r * 1.1, z: L.z + Math.sin(a) * L.r * 1.1, up: 3, yaw: 0, time: 0.6 });
