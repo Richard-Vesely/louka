@@ -330,3 +330,9 @@ export const SMELT_TIME = 3;
   block('neon_magenta', 'Fialový neon', 'decor', { hard: 0.8, light: 10, lightColor: 0xd04bff });
   R('neon_magenta', 4, [' G ', 'GMG', ' G '], { G: 'glass', M: 'markorite_raw' });
 })();
+
+// Luk a šípy (client/src/player/bow.js)
+RECIPES.push(
+  { out: 'bow', n: 1, shape: [' TF', 'T F', ' TF'], key: { T: 'stick', F: 'fiber' }, cat: 'tools' },
+  { out: 'arrow', n: 4, shape: ['K', 'T', 'F'], key: { K: 'stone', T: 'stick', F: 'fiber' }, cat: 'tools' },
+);

@@ -36,11 +36,12 @@ import { planeSpot } from '../vehicles/plane.js';
 import { useRod } from '../world/fishing.js';
 import { usePortal } from '../world/shrine.js';
 import { placedAny } from '../world/world-state.js';
+import { cancelDraw, updateArrows, updateBow } from './bow.js';
 import { sitOn, startEating, useTable } from './eating.js';
 import { hitKick, hitStop } from './camera-feel.js';
 import { wearHeld } from './durability.js';
 import { addItem, addStack, consumeSelected, heldStack, inv } from './inventory.js';
-import { creative, input, player, playerIntersects } from './player.js';
+import { creative, input, isLocked, player, playerIntersects } from './player.js';
 import { pickTarget } from './targeting.js';
 
 // ============================================================ těžba, útok, pokládání
@@ -130,6 +131,8 @@ function renderAttackMeter(aimMob) {
   el.firstChild.style.width = `${(atkCharge * 100).toFixed(1)}%`;
 }
 
+// Uvolněná myš (inventář, pauza): rozpracované natahování luku se zruší, ať po návratu nevystřelí samo.
+document.addEventListener('pointerlockchange', () => { if (!isLocked()) cancelDraw(); });
 export function updateInteraction(dt) {
   target = withPaper(pickTarget()); // papíry a rámečky ve světě (14e)
   const held = heldStack(), heldId = held?.id ?? null;
@@ -196,8 +199,12 @@ export function updateInteraction(dt) {
     mining.key = null;
     mining.p = 0;
   }
-  if (input.rmb && useCd <= 0) { useCd = ITEMS[heldStack()?.id]?.block ? 0.15 : 0.25; useItem(); }
-  if (input.rmb) pillarPlace();
+  updateArrows(dt);
+  if (updateBow(dt, target)) { /* luk v ruce: pravé tlačítko natahuje (bow.js) */ }
+  else {
+    if (input.rmb && useCd <= 0) { useCd = ITEMS[heldStack()?.id]?.block ? 0.15 : 0.25; useItem(); }
+    if (input.rmb) pillarPlace();
+  }
 
   const label = $('targetLabel');
   label.innerHTML = warn ? `<span class="warn">${warn}</span>` : target ? `${target.name}${target.hint ? `<small>${target.hint}</small>` : ''}` : '';

@@ -295,6 +295,13 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
   A full-charge hit while running knocks the mob 1.6× further.
 - **Hit feedback**: the mob turns red, hops back with knockback, drops blood/crystal chips; the camera kicks up and a strong
   hit freezes the game for ~50 ms (hit-stop). After a hit a mob is invulnerable for 0.5 s (clicking faster does nothing).
+- **Bow and arrows** (*Luk*: 3 sticks + 3 fibres at a workbench; *Šíp* ×4: stone + stick + fibre): hold the right
+  button to draw (1 s, the bow comes up in front of the eyes with a nocked arrow, a creak and a click when full), let go
+  to shoot. The arrow flies in an arc (gravity), its speed and damage grow with the draw: a full draw does 10 (more than an
+  iron sword), a half draw 2–3. It hurts the mob it hits (the same `hit` message as a sword); one that hits the ground or
+  a block sticks there for 4 s and then lies there as an arrow you can pick up. One shot uses one arrow (not in creative)
+  and wears the bow by 1 (250 shots). With a bow in hand, the right button still opens chests, tables and machines.
+  Only the shooter sees arrows in flight.
 - **Death**: the mob tips over sideways and vanishes in a puff of smoke (0.8 s).
 - **First-person hand**: an empty hand is the sleeve of your suit (colours and light from *Můj oblek*) with a glowing stripe
   and an armoured glove; holding an item, the gloved hand grips it.
@@ -302,7 +309,7 @@ Monsters stay away from the shrine; light blocks keep shadow-eaters away.
   swing, a new item slides up from below, and the hand lags a little behind camera turns.
 
 *Kód:* behaviour, spawning, loot, invulnerability `shared/sim/mobs.js`; attack rules `shared/tools.js`; models `client/src/mobs/mob-models.js`; animation and life (`poseMob`, also for the client's puppets), sounds, hit effects `client/src/mobs/mobs.js`;
-attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit-stop, view bobbing `client/src/player/camera-feel.js`; hand and swings `client/src/render/held-item.js`.
+attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit-stop, view bobbing `client/src/player/camera-feel.js`; hand and swings `client/src/render/held-item.js`; bow and arrows `client/src/player/bow.js` (models `client/src/render/bow-model.js`).
 
 ## 7. Technology
 - **Furnace** (*Pec*): ores → ingots (iron, copper, gold), quartz → silicon, iron → steel, resin → rubber,
