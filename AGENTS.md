@@ -7,7 +7,8 @@ explain what you change, keep changes small, and ask before big ones.
 
 *Říše* (repository *rise*, formerly *louka*) is Marek's survival/building game in the browser (Three.js): endless terrain with
 biomes, a voxel underground, trees, animals and night monsters, crafting (~260 recipes), cooking, farming,
-furnaces, electricity, cars, a biplane, a computer with games and a printer, and the Mark dimension behind a portal.
+furnaces, electricity, cars, a bicycle, boats (motor and sail), a biplane and a seaplane, a garage, lakes, a computer with games
+and a printer, and the Mark dimension behind a portal.
 The full feature list is [docs/FEATURES.md](docs/FEATURES.md); read it before adding something.
 
 There are **three ways to play, with one set of rules and one protocol**:
@@ -44,12 +45,12 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `shared/data/tech.js` | ores, furnace (`FURNACE_ONLY`, `FUEL`), workshop parts, engines, vehicles, computers, electric devices |
 | `shared/data/costumes.js` | suits for *Můj oblek* (`SUITS`, colours, emblems), `cleanCostume`, the short text `encodeCostume` sent in the pose (`lk`) |
 | `shared/data/index.js` | **import data from here**; finalizes recipes (grid pattern, category) once |
-| `shared/world/terrain.js` | terrain height and biomes (its GLSL twin is `client/src/render/glsl.js`, keep them identical) |
+| `shared/world/terrain.js` | terrain height, biomes, ponds and lakes (`lakeOf`; `pondOf` returns a lake when near one; its GLSL twin is `client/src/render/glsl.js`, keep them identical) |
 | `shared/world/voxels.js` | the underground (what is where naturally, player edits, `setVox`, `groundHeight`) |
 | `shared/world/state.js` | **the world state**: blocks, chests, fires, stoves, crops, furnaces, power, vehicles, papers… (`SyncMap` sends changes) |
 | `shared/world/save.js` | `loadWorld(save)` / `worldState()` – the save shape used everywhere |
 | `shared/world/nature.js`, `structures.js`, `collision.js` | trees, rocks, shards, ponds; structures and their builders; what is solid |
-| `shared/sim/*.js` | simulations: `day.js`, `mobs.js` (AI, spawning, spawners), `ground-items.js`, `machines.js` (campfire, furnace, stove, crops), `power.js` (grid, printer), `weather.js` (rain, storm, fog from the day number and time: the same for every player, never sent) |
+| `shared/sim/*.js` | simulations: `day.js`, `mobs.js` (AI, spawning, spawners), `ground-items.js`, `machines.js` (campfire, furnace, stove, crops), `power.js` (grid, printer), `weather.js` (rain, storm, fog and the wind `windAt` from the day number and time: the same for every player, never sent) |
 | `shared/net/net.js` | the `NET` object the rules talk to (mode, `op()` for world changes, hooks) |
 | `shared/net/ops.js` | applying world changes from others (`applyOp`), small maps diff (`kvDiff`, `applyKV`) |
 | `shared/net/room.js` | **the host**: accepts players, handles their messages, broadcasts (browser host and Node server) |
@@ -63,7 +64,8 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/mobs/` | `mob-models.js` creature 3D models; `mobs.js` animation and life (`poseMob`), sounds, sparks (behaviour is in `shared/sim/mobs.js`) |
 | `client/src/audio/` | all sound (WebAudio synthesis): `sound.js` mix + `Sound.at(x, y, z, fn)` positional sound, recipes in `sfx.js` / `voices.js`, materials, ambience, machine hums, music; `soundscape.js` runs it each frame |
 | `client/src/ui/` | HUD, inventory window, touch controls |
-| `client/src/machines/`, `pc/`, `vehicles/`, `dining/`, `world/` | the browser side of machines, the computer + Tanks + documents, car + plane, table manners, shrine/fishing/dropped items |
+| `client/src/machines/`, `pc/`, `dining/`, `world/` | the browser side of machines (garage block model `garage-model.js`), the computer + Tanks + documents, table manners, shrine/fishing/dropped items |
+| `client/src/vehicles/` | `kinds.js` (data: names, sizes, seats, upgrades per vehicle type), `car.js` (chain module: get in/out, drawing all vehicles, cameras, nitro, car driving), `car-model.js`, `bike.js`, `boat.js` (motorboat, sailboat, wake), `plane.js` (chain module: biplane + seaplane), `garage.js`, `passengers.js`, `vehicle-ui.js` (HUD line, vehicle window) |
 | `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars (other players, own body + third-person view, name tags), chat + Esc menu, the net loop (`mp-start.js`) |
 | `server/` | `index.js` (env config), `worlds.js` (`WORLDS` list, moving old data), `server.js` (HTTP + WebSocket, logs players in, sends each player's messages to their world), `profiles.js` (player profiles: name + PIN, tokens, wrong-PIN throttle, `players.json`), `world-worker.js` (one world in its own thread: room + 20 Hz loop + saving + the players' backpacks), `me.js` (checks a player's state before it is saved), `sim.js` (one world step), `persist.js` (saving + backups), `admin-http.js` (`/admin` page + local admin port), `admin.js` (CLI: `players`, `reset-pin`), `static.js` |
 
@@ -87,6 +89,9 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
   render/dimension → world/ground-items → world/fishing → vehicles/car → vehicles/plane → player/eating →
   dining/dine-view → dining/food-models → dining/dining → player/survival → render/daylight → ui/hud → game/save →
   ui/touch → game/loop → net/multiplayer → net/avatars → net/mp-ui → net/mp-start → game/debug`.
+  Side-effect-free helpers outside the chain (e.g. `vehicles/kinds.js`, `bike.js`, `boat.js`, `garage.js`, `passengers.js`,
+  `vehicle-ui.js`, `car-model.js`, `machines/garage-model.js`) may be imported from anywhere; in a file that also imports
+  `vehicles/car.js`, import them after it, so they load inside the chain order.
   A **new browser module** either has no side effects at load time (only functions/constants; then no chain line
   is needed), or it gets a chain line and is inserted into the chain (ask Richard). Modules in `shared/` never import `client/`.
 - **`window.game`** (`client/src/game/debug.js`) exposes the game for the console and the play-tests. Keep it working.
@@ -102,6 +107,12 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
   `['kv', changes]` (2×/s), `['pl', [[pid, name, pose, perm]…]]` (12×/s), `['mobs', dayTime, day, [[nid, type, x, y, z, ry, hp, flash, dead, eggs, milk]…]]` (5×/s),
   `['give', id, n, w?]` (w = tool wear), `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`,
   `['kick', reason?]` (the browser host sends no reason; the Node server sends `['kick', 'Přihlásil ses jinde.']` when the same player logs in again in that world).
+- **Vehicles in the pose** (the host passes it on unchanged, `client/src/vehicles/car.js` `vehPose`): the driver sends
+  `veh: { id, x, y, z, yaw, pitch, roll, spd, steer, thr, lights }` (or `null`) with optional `bm` (sailboat boom angle),
+  `lf: 1` (sail luffing), `pd: 1` (pedalling a bike), `nb: 1` (nitro burning), and `hn` = horn count. A **passenger** sends
+  `rd: { id, s }` (vehicle id, seat index ≥ 1 from `vehicles/kinds.js`) and no `veh`; others read taken seats from these
+  poses, so a seat frees itself when the passenger gets out or leaves. Seats are never stored in the world. The vehicle
+  itself (`vehicles` small map: colour, fuel, `mods` from the garage, `gear`, sail `thr`/`boom`) syncs like other small maps.
 - Ops: `['m', 'blocks'|'blockMeta', key, value|null]`, `['s', 'removed'|'ruinsOpened', key]`, `['r', structure]`, `['v', x, y, z, id]`,
   `['c', x, z, r]` grass cut, `['p']` portal, `['g', gid, id, n, pos, vel, delay, w?]` dropped item (w = tool wear, only for worn tools), `['gx', gid, n]`.
 - WebSocket only (Node server, `server/server.js`): the client first sends `['hello', { name, pass, v: 2, world, pin | token }]`.
@@ -158,7 +169,7 @@ npm install                     # once
 npm run dev                     # the game: open http://localhost:5173 (Hrát sám)
 npm test                        # unit tests + the Node server over WebSocket (fast)
 npm run build                   # build into dist/
-npm run playtest                # menu + single player in a real browser (50+ checks), then the inventory tricks (27 checks); needs the build
+npm run playtest                # single player in a real browser (70+ checks), inventory tricks (28), vehicles (18); needs the build
 npm run test:server             # Node server + 2 browsers: join, edits, mobs, pickup, chat, restart; then player profiles (name + PIN, backpack on the server, admin page)
 npm run test:worlds             # Node server with 2 worlds + 2 browsers: world buttons, password once, isolation, creative, saves per world
 npm run test:peer               # browser host + browser client over PeerJS (needs internet)
@@ -167,7 +178,8 @@ npm run test:load               # 8 simulated players: server memory, CPU, time 
 npm run test:load:worlds        # the same with 2 worlds × 4 players
 ```
 Console helpers (single player or host): `game.addItem('iron', 5)`, `game.setTime(0.9)` (night),
-`game.spawnMob('boar', x, z)`, `game.setCreative(true)`, `game.teleport(x, z)`.
+`game.spawnMob('boar', x, z)`, `game.setCreative(true)`, `game.teleport(x, z)`, `game.toLake()`,
+`game.spawnOnLake('sailboat')`, `game.spawnVehicle('bike', x, z, yaw)`.
 
 ## Recipes
 
