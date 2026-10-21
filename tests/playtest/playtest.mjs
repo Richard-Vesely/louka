@@ -81,7 +81,8 @@ try {
     const g = window.game; T.clearInv(); T.holdNothing();
     T.tpg(0, 40); T.step(2);
     g.rebuildForest?.(g.player.pos.x, g.player.pos.z, true);
-    const t = [...g.forestTrees].sort((a, b) => Math.hypot(a.x, a.z - 40) - Math.hypot(b.x, b.z - 40))[0];
+    // Blízké biomy mohou mít jiné dřevo; tento test ověřuje obyčejné klády z dubu.
+    const t = [...g.forestTrees].filter(t => t.kind === 'oak').sort((a, b) => Math.hypot(a.x, a.z - 40) - Math.hypot(b.x, b.z - 40))[0];
     T.tpg(t.x + 1.6, t.z); T.step(10);
     T.aim(t.x, t.y + 1.2, t.z);
     const label = T.text('targetLabel');

@@ -15,6 +15,8 @@ export function serveDir(dir) {
   const root = path.resolve(dir);
   const srv = http.createServer((req, res) => {
     let p = decodeURIComponent(req.url.split('?')[0]);
+    // Chrome žádá ikonu i bez odkazu v HTML; hra vlastní favicon nemá.
+    if (p === '/favicon.ico') { res.writeHead(204); res.end(); return; }
     if (p.endsWith('/')) p += 'index.html';
     const f = path.join(root, p);
     if (!f.startsWith(root)) { res.writeHead(403); res.end(); return; }

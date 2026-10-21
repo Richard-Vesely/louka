@@ -60,6 +60,11 @@ When you add or change a feature, update this file in the same pull request.
   The world is the same for everyone (no seed): it is computed from coordinates.
 - **Biomes** (name shown next to the clock): meadow and forest, cherry grove, jungle, savanna, desert, tundra,
   mushroom forest, volcano (lava in the crater hurts).
+  Biome borders meander into bays and peninsulas. Warm, dry regions are more common, with broader deserts and
+  rolling dunes of varying height. Climate regions are compressed 12×, with a 35 m starting meadow and a smooth
+  45 m transition: desert, jungle and cherry forest start roughly 60 m from spawn, tundra about 85 m away.
+  The Mark dimension stays unchanged.
+  This changes generated terrain in existing worlds too; player-built blocks keep their saved positions.
 - **Trees** per biome (oak, spruce, cherry, jungle, snowy spruce, acacia, dead tree/bush, cactus, giant mushroom)
   and **boulders** (16 % with iron).
 - **Grass** you can cut (fiber, seeds, berries, potatoes, rice near water, flowers); it grows back in ~2 minutes.
