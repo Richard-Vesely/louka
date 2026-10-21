@@ -139,6 +139,11 @@ sudo bash /opt/louka/deploy/update.sh       # git pull (code + dist branch), npm
 ```
 Connected players see *"Spojení se přerušilo. Zkus se připojit znovu."* and join again (their backpack is on the server).
 
+**Automatic updates** (`louka-update.timer`, installed by `setup-vps.sh`): every 5 minutes `deploy/auto-update.sh` checks
+GitHub. It updates only to a tested version (the `dist-<branch>` build of the newest code, so a merge waits until CI is
+green) and only when nobody is playing; between 4:00 and 4:59 Prague time it updates even with players online.
+Log: `journalctl -u louka-update`. Off: `systemctl disable --now louka-update.timer`.
+
 ### 5. Data and backups
 Every world has its own folder `/opt/louka/server/data/<id>/` (e.g. `svet/`, `kreativ/`):
 - `<id>/world.json`: the whole world (saved every 30 s and on shutdown, written atomically).

@@ -72,6 +72,11 @@ cp deploy/louka.service /etc/systemd/system/louka.service
 systemctl daemon-reload
 systemctl enable --now louka
 
+echo "== Automatická aktualizace (každých 5 minut, když nikdo nehraje)"
+cp deploy/louka-update.service deploy/louka-update.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now louka-update.timer
+
 echo "== Caddy pro $DOMAIN"
 sed "s/hry.example.cz/$DOMAIN/" deploy/Caddyfile > /etc/caddy/Caddyfile
 systemctl reload caddy
