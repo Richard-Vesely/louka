@@ -84,7 +84,7 @@ export const TERRAIN_GLSL = /* glsl */`
     vec4 ca, cb;
     biomeWeights(L.xy, ca, cb);
     float hc = terrainBase(L.xy, ca, cb);
-    return h + (hc - h) * sst(${LAKE_EDGE.toFixed(2)}, 1.15, d) - L.w * sst(1.0, 0.55, d); // rovný břeh, pak dno
+    return h + (hc - h) * sst(${LAKE_EDGE.toFixed(2)}, 1.15, d) - L.w * sst(1.0, 0.7, d); // rovný břeh, pak dno
   }
   float terrainH(vec2 p) { vec4 wa, wb; biomeWeights(p, wa, wb); return terrainHW(p, wa, wb); }
 `;

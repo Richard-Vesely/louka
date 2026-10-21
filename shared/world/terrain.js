@@ -96,12 +96,12 @@ export function terrainH(x, z) {
   if (!L) return h;
   const d = Math.hypot(x - L.x, z - L.z) / L.r;
   if (d >= LAKE_EDGE) return h;
-  return h + (L.hc - h) * smoothstep(LAKE_EDGE, 1.15, d) - L.depth * smoothstep(1, 0.55, d); // rovný břeh, pak dno
+  return h + (L.hc - h) * smoothstep(LAKE_EDGE, 1.15, d) - L.depth * smoothstep(1, 0.7, d); // rovný břeh, pak dno
 }
 // ============================================================ jezera
 // Vzácná velká jezera (průměr 100–240 m, hloubka 6–8 m) v mřížce 1000×1000 m. Jsou dál než 500 m od domovské svatyně
 // (tam stojí stavby hráčů), ne v Markově dimenzi a ne u sopky. Okolí jezera (do LAKE_EDGE × poloměr) se plynule srovná na
-// výšku terénu ve středu jezera (do 1,15 poloměru úplně), takže hladina má rovný břeh; od 0,55 poloměru je ploché dno. Stejný výpočet je v GLSL.
+// výšku terénu ve středu jezera (do 1,15 poloměru úplně), takže hladina má rovný břeh; od 0,7 poloměru je ploché dno. Stejný výpočet je v GLSL.
 export const LAKE_CELL = 1000, LAKE_MIN = 500, LAKE_EDGE = 1.45;
 const lakes = new Map();
 export function lakeOf(x, z) {
