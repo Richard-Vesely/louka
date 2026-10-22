@@ -403,7 +403,7 @@ export function rebuildBlocks() {
 
 // Světla pochodní a táboráků: pevný počet světel se přiděluje těm nejbližším.
 // Oheň svítí teplou bílou (asi 3000 K, LK.torch), ne červeně – zelená tráva pod ním zůstane zelená; elektřina chladně bílou.
-const FIRE_COL = new THREE.Color(...LK.torch), ELEC_COL = new THREE.Color(0.86, 0.95, 1.0), GLOWSHROOM_COL = new THREE.Color(0.35, 0.9, 1.0), SPAWNER_COL = new THREE.Color(0.8, 0.35, 1.0), tmpLC = new THREE.Color();
+const FIRE_COL = new THREE.Color(...LK.torch), ELEC_COL = new THREE.Color(0.78, 0.9, 1.08), GLOWSHROOM_COL = new THREE.Color(0.35, 0.9, 1.0), SPAWNER_COL = new THREE.Color(0.8, 0.35, 1.0), tmpLC = new THREE.Color();
 const lightPool = Array.from({ length: GFX.lights }, () => { const l = new THREE.PointLight(FIRE_COL, 0, 16, 1.7); scene.add(l); return l; });
 export function updateLights(time) {
   // elektrická světla svítí jen napájená
