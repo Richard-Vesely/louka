@@ -28,11 +28,13 @@ import { U, camera, scene } from '../render/renderer.js';
 import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { buildCarModel } from './car-model.js';
+import { animateLook, exhaustOf, lookKey } from './veh-look.js';
 import { bell, buildBikeModel, placeBikeCamera, rideBike, setGear } from './bike.js';
 import { boatHorn, buildBoatModel, placeBoatCamera, sailBoat, updateWake } from './boat.js';
 import { NITRO_TIME, isBoat, isPlane, kindOf, powerMul, trunkSize } from './kinds.js';
 import { leaveRide, placeRider, tryRide } from './passengers.js';
-import { PLANE, buildPlaneModel, flyPlane, placePlaneCamera } from './plane.js';
+import { PLANE, flyPlane, placePlaneCamera } from './plane.js';
+import { buildPlaneModel } from './plane-model.js';
 import { vehicleHud } from './vehicle-ui.js';
 export { renderCarUI } from './vehicle-ui.js';
 export { setGear };
@@ -53,13 +55,14 @@ export const vehMeshes = new Map(); // id vozidla -> model ({ group, wheels, piv
 const carSpot = new THREE.SpotLight(0xfff2d0, 0, 45, 0.55, 0.5, 1.2);
 scene.add(carSpot, carSpot.target);
 
+// Barvy nových vozidel (garáž je umí přelakovat na kteroukoli z PAINTS)
 const CAR_COLORS = [0xc82a2a, 0x2a5ab0, 0x2a8a3a, 0xe8c030, 0xe8e8e8, 0x2a2a30, 0xe07a20];
-const COLORS = { plane: [0x8a2a22, 0x3a5a3a, 0x3a4a7a, 0xb8a060], seaplane: [0x2a6ab0, 0xe8c030, 0xc82a2a, 0xe8e8e8], motorboat: [0xe8e8e8, 0x2a5ab0, 0xc82a2a, 0x2a2a30], sailboat: [0x2a5ab0, 0x8a2a22, 0x2a8a3a, 0xe8e8e8] };
+const COLORS = { plane: [0x2a5ab0, 0xc82a2a, 0x2a2a30, 0xe07a20], seaplane: [0x2a6ab0, 0xe8c030, 0xc82a2a, 0x2ab0a0], motorboat: [0xe8e8e8, 0x2a5ab0, 0xc82a2a, 0x2a2a30], sailboat: [0x2a5ab0, 0x2ab0a0, 0x2a8a3a, 0xc82a2a] };
 function buildModel(v) {
-  if (isPlane(v.type)) return buildPlaneModel(v.color ?? 0x8a2a22, v.type === 'seaplane');
-  if (v.type === 'bike') return buildBikeModel(v.color ?? 0xd83a2a);
-  if (isBoat(v.type)) return buildBoatModel(v.type, v.color ?? 0xe8e8e8);
-  return buildCarModel(v.color ?? 0xc82a2a);
+  if (isPlane(v.type)) return buildPlaneModel(v.color ?? 0x8a2a22, v.type === 'seaplane', v);
+  if (v.type === 'bike') return buildBikeModel(v.color ?? 0xd83a2a, v);
+  if (isBoat(v.type)) return buildBoatModel(v.type, v.color ?? 0xe8e8e8, v);
+  return buildCarModel(v.color ?? 0xc82a2a, v);
 }
 
 // ---------- vytvoření, nastoupení, vystoupení
@@ -235,14 +238,14 @@ export function driveVehicle(dt) {
   Sound.engine(v.engine, Math.abs(v.spd) / CAR.maxFwd + Math.max(0, thr) * 0.25 + (boost ? 0.3 : 0));
   return Math.abs(v.spd);
 }
+const camE = new THREE.Euler();
 export function placeCarCamera(v) {
   if (isPlane(v.type)) return placePlaneCamera(v);
   if (v.type === 'bike') return placeBikeCamera(v);
   if (isBoat(v.type)) return placeBoatCamera(v);
   const e = new THREE.Euler(0, 0, 0, 'YXZ');
-  if (carCam === 0) {
-    const [cx, cz] = carLocal(v, -0.42, 0.62); // oči řidiče nad sedadlem, pod střechou
-    camera.position.set(cx, v.y + 1.42, cz);
+  if (carCam === 0) { // oči řidiče nad sedadlem, pod střechou (i když auto stojí ve svahu nebo se naklání)
+    camera.position.set(-0.42, 1.42, 0.62).applyEuler(camE.set(v.pitch || 0, v.yaw, -(v.roll || 0), 'YXZ')).add(tmpV.set(v.x, v.y, v.z));
     e.set(player.pitch + (v.pitch || 0), v.yaw + clamp(player.yaw, -2.4, 2.4), 0);
   } else {
     const yaw = v.yaw + player.yaw, d = 7.5;
@@ -290,8 +293,8 @@ export function updateVehicles(dt) {
   }
   for (const [id, v] of vehicles) {
     let m = vehMeshes.get(id);
-    if (m && m.color !== v.color) { scene.remove(m.group); vehMeshes.delete(id); m = null; } // přelakováno v garáži
-    if (!m) { m = buildModel(v); m.color = v.color; scene.add(m.group); vehMeshes.set(id, m); m.group.position.set(v.x, v.y, v.z); m.group.rotation.y = v.yaw; m.spin = 0; }
+    if (m && m.look !== lookKey(v)) { scene.remove(m.group); vehMeshes.delete(id); m = null; } // přelakováno nebo vylepšeno v garáži
+    if (!m) { m = buildModel(v); m.color = v.color; m.look = lookKey(v); scene.add(m.group); vehMeshes.set(id, m); m.group.position.set(v.x, v.y, v.z); m.group.rotation.y = v.yaw; m.spin = 0; }
     const remote = v.driver && v.driver !== me ? remoteVeh.get(id) || null : null;
     const src = remote || v;
     const k = remote ? 1 - Math.exp(-dt * 10) : 1;
@@ -306,15 +309,9 @@ export function updateVehicles(dt) {
     if (m.prop && !isBoat(v.type)) m.prop.rotation.z += (src.thr || 0) * 70 * dt + (src.thr > 0 ? 6 * dt : 0); // vrtule
     for (const p of m.pivots) p.rotation.y = src.steer || 0;
     m.update?.(src, dt, v, !!v.driver);
-    const lights = remote ? remote.lights : v.lights;
-    if (m.head) { m.head.emissiveIntensity = lights ? 2.2 : 0; m.tail.emissiveIntensity = lights ? 1.2 : 0.25; }
-    if (m.under) m.under.emissiveIntensity += ((lights || Math.abs(src.spd || 0) > 0.3 ? 1.6 : 0) - m.under.emissiveIntensity) * Math.min(1, dt * 4);
-    if (m.navs) m.navs.forEach((n, i) => (n.emissiveIntensity = lights ? (i === 2 && Math.sin(performance.now() / 300) < 0 ? 0 : 2) : 0)); // poziční světla, ocasní bliká
-    // nitro: modré plameny z výfuku
-    if ((remote ? remote.nb : v.driver === me && nitro.t > 0) && Math.random() < dt * 40) {
-      const ex = m.exhaust || [0, 0.5, kindOf(v.type).len / 2], p = m.group.localToWorld(tmpV.set(...ex));
-      sparks.emit(p.x, p.y, p.z, [0.3, 0.7, 1], 3, 2.5, 0.4);
-    }
+    const lights = remote ? remote.lights : v.lights, boost = remote ? remote.nb : v.driver === me && nitro.t > 0;
+    animateLook(m, src, lights, !!remote || v.engine, boost, dt); // světla, podsvícení, trysky
+    if (boost && Math.random() < dt * 40) { const p = m.group.localToWorld(tmpV.set(...exhaustOf(m, kindOf(v.type).len))); sparks.emit(p.x, p.y, p.z, [0.3, 0.7, 1], 3, 2.5, 0.4); } // nitro: modré plameny
     if (v.slots?.[0]?.id && v.batId !== v.slots[0].id) { v.bat = v.slots[0].id === 'car_battery' ? 100 : 0; v.batId = v.slots[0].id; } // nově vložená baterie
     if (!v.slots?.[0]) v.batId = null;
   }

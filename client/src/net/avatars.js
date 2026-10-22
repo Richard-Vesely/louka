@@ -219,7 +219,7 @@ export function updateLocalBody(dt, moving) {
   // na kole, v lodi a v kokpitu je vidět i vlastní postava, když je kamera vozidla zezadu (V)
   const veh = vehicles.get(player.vehicle), onSeat = !!veh && carCam === 1 && kindOf(veh.type).open && player.alive;
   const show = (viewMode > 0 && player.alive && !player.vehicle && !player.riding) || onSeat;
-  holder.visible = !show;
+  holder.visible = !show && !player.vehicle && !player.riding && !dining; // ve vozidle a u jídla u stolu ruka není vidět
   if (!show) { if (me) me.group.visible = false; return; }
   if (!me) { me = buildCharacter(myCostume); scene.add(me.group); me.anim.bodyYaw = player.yaw; myHeld = undefined; me.armorKey = null; }
   me.group.visible = true;
