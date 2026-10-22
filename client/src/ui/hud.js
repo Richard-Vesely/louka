@@ -60,7 +60,7 @@ export function toast(text) {
 
 // Rady: tvůj postup světem – od dřeva přes kámen a železo až ke krystalu.
 const TIPS = [
-  { text: 'Pokácej strom – namiř na kmen a drž levé tlačítko myši.', done: () => countItem('log') > 0 || crafted.planks },
+  { text: 'Pokácej strom – namiř na kmen a drž levé tlačítko myši. Klády vypadnou na zem: dojdi k nim a samy ti skočí do batohu.', done: () => countItem('log') > 0 || crafted.planks },
   { text: 'Otevři inventář (E), polož kmen do mřížky výroby a vezmi si prkna. Pak 4 prkna do čtverce = pracovní stůl. (Recepty vlevo rozloží suroviny za tebe.)', done: () => crafted.workbench },
   { text: 'Polož pracovní stůl (pravé tlačítko), klikni na něj pravým a vyrob dřevěný krumpáč.', done: () => crafted.wood_pick },
   { text: 'Vytěž kámen z balvanů a vyrob kamenné nástroje. Vytrhej trávu (míř pod sebe) na vlákno.', done: () => crafted.stone_pick || crafted.stone_axe || crafted.stone_sword },
