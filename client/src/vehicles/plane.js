@@ -1,4 +1,4 @@
-// Dvouplošník a hydroplán (dvouplošník na plovácích): model a let.
+// Dvouplošník a hydroplán (dvouplošník na plovácích): let, srážky, místo k položení, kamera. Model je v plane-model.js.
 import './car.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { clamp } from '../../../shared/util.js';
@@ -31,94 +31,6 @@ function planePoint(v, lx, ly, lz, out = planeVec) {
   planeEuler.set(v.pitch || 0, v.yaw, -(v.roll || 0), 'YXZ');
   planeMat.makeRotationFromEuler(planeEuler);
   return out.set(lx, ly, lz).applyMatrix4(planeMat).add(tmpV.set(v.x, v.y, v.z));
-}
-// Znak AI kroužku na křídla letadla (canvas): glow = jen svítící prstenec (emissiveMap)
-const emblemCache = {};
-function emblemTex(glow = false) {
-  if (emblemCache[glow]) return emblemCache[glow];
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const x = c.getContext('2d');
-  x.translate(64, 64);
-  if (!glow) { x.fillStyle = '#0f1a2e'; x.beginPath(); x.arc(0, 0, 62, 0, Math.PI * 2); x.fill(); }
-  else { x.fillStyle = '#000'; x.fillRect(-64, -64, 128, 128); }
-  x.strokeStyle = glow ? '#fff' : '#38e8ff';
-  x.lineWidth = 8;
-  x.beginPath(); x.arc(0, 0, 52, 0, Math.PI * 2); x.stroke();
-  if (!glow) {
-    x.fillStyle = '#f4f6fa';
-    x.font = 'bold 72px system-ui, sans-serif';
-    x.textAlign = 'center';
-    x.textBaseline = 'middle';
-    x.fillText('Ř', 0, 8);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return (emblemCache[glow] = t);
-}
-export function buildPlaneModel(color, floats = false) {
-  const g = new THREE.Group();
-  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.75, ...o });
-  const fabric = M({ color }), wingM = M({ color: 0xd8c8a0 }), dark = M({ color: 0x2a2a2e, roughness: 0.5, metalness: 0.4 }), wood = M({ color: 0x7a4a24, roughness: 0.6 });
-  const box = (w, h, d, m, x, y, z, parent = g) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); parent.add(me); return me; };
-  const cyl = (r, l, m, x, y, z, axis = 'z') => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, 14), m); c.position.set(x, y, z); if (axis === 'z') c.rotation.x = Math.PI / 2; else if (axis === 'x') c.rotation.z = Math.PI / 2; g.add(c); return c; };
-  box(0.95, 0.95, 4.6, fabric, 0, 1.35, 0.1);            // trup
-  box(0.62, 0.62, 1.6, fabric, 0, 1.45, 3.1);            // zúžená zadní část
-  box(0.7, 0.08, 0.95, dark, 0, 1.84, 0.55);             // otevřený kokpit
-  box(0.62, 0.08, 0.6, dark, 0, 1.84, -0.5);             // přední kokpit pro spolujezdce
-  box(0.6, 0.3, 0.04, M({ color: 0x9ab8c8, transparent: true, opacity: 0.5 }), 0, 1.98, -0.05); // štítek proti větru
-  cyl(0.56, 0.75, dark, 0, 1.35, -2.45);                 // kryt motoru
-  for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; box(0.12, 0.12, 0.3, dark, Math.cos(a) * 0.5, 1.35 + Math.sin(a) * 0.5, -2.7); } // válce rotačního motoru
-  cyl(0.12, 0.3, dark, 0, 1.35, -2.95);                  // náboj vrtule
-  const prop = new THREE.Group();
-  prop.position.set(0, 1.35, -3.12);
-  g.add(prop);
-  box(0.16, 2.7, 0.06, wood, 0, 0, 0, prop);
-  box(0.06, 0.3, 0.08, wood, 0, 0, 0, prop);
-  // dvě patra křídel se vzpěrami, výsostné znaky
-  box(9.0, 0.12, 1.5, wingM, 0, 0.95, -0.9);
-  box(9.2, 0.12, 1.5, wingM, 0, 2.38, -1.1);
-  for (const x of [-3.3, 3.3]) for (const z of [-1.5, -0.4]) box(0.07, 1.36, 0.07, wood, x, 1.67, z);
-  for (const x of [-0.5, 0.5]) box(0.06, 0.6, 0.06, wood, x, 2.06, -1.1);
-  // znak kroužku (místo vojenských výsostných znaků): tmavý kruh, tyrkysový prstenec, bílé Ř
-  const emblem = M({ map: emblemTex(), transparent: true, roughness: 0.45, emissive: 0x38e8ff, emissiveMap: emblemTex(true), emissiveIntensity: 0.6 });
-  const roundel = (x, y) => { const d = new THREE.Mesh(new THREE.CircleGeometry(0.44, 32).rotateX(-Math.PI / 2), emblem); d.position.set(x, y, -1.1); g.add(d); };
-  roundel(-3.4, 2.445); roundel(3.4, 2.445);
-  // ocasní plochy
-  box(3.2, 0.08, 0.95, wingM, 0, 1.5, 3.55);
-  box(0.08, 1.15, 1.0, fabric, 0, 2.05, 3.65);
-  box(0.09, 0.5, 0.35, M({ color: 0xf4f4f0 }), 0, 2.2, 3.95);
-  // podvozek: dvě kola na vzpěrách, ostruha vzadu; hydroplán má místo nich dva plováky
-  const wheels = [];
-  if (floats) {
-    const fl = M({ color: 0xe8eaee, roughness: 0.35, metalness: 0.2 });
-    for (const x of [-1.25, 1.25]) {
-      const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 3.6, 4, 12).rotateX(Math.PI / 2), fl);
-      f.position.set(x, 0.24, -0.6); f.scale.set(1, 0.9, 1); g.add(f);
-      for (const z of [-1.6, 0.2]) box(0.06, 0.75, 0.06, dark, x * 0.7, 0.75, z).rotation.z = x > 0 ? 0.55 : -0.55;
-    }
-    box(2.5, 0.06, 0.08, dark, 0, 0.5, -1.6); box(2.5, 0.06, 0.08, dark, 0, 0.5, 0.2);
-  } else {
-    for (const x of [-0.85, 0.85]) {
-      box(0.07, 0.9, 0.07, dark, x * 0.75, 0.82, -1.15).rotation.z = x > 0 ? -0.3 : 0.3;
-      const w = new THREE.Group();
-      w.position.set(x, 0.42, -1.3);
-      g.add(w);
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.18, 16), dark);
-      tire.rotation.z = Math.PI / 2;
-      w.add(tire);
-      box(0.2, 0.06, 0.6, M({ color: 0xc8c8c8 }), 0, 0, 0, w);
-      wheels.push(w);
-    }
-    box(1.8, 0.06, 0.06, dark, 0, 0.42, -1.3);
-    box(0.06, 0.5, 0.06, dark, 0, 0.55, 3.75).rotation.x = 0.5;
-  }
-  // poziční světla: červené vlevo, zelené vpravo, bílé na ocasu
-  const nav = M({ color: 0x220000, emissive: 0xff2020, emissiveIntensity: 0 }), navG = M({ color: 0x002200, emissive: 0x20ff40, emissiveIntensity: 0 }), navW = M({ color: 0x222222, emissive: 0xffffff, emissiveIntensity: 0 });
-  box(0.12, 0.1, 0.12, nav, -4.6, 2.38, -1.1);
-  box(0.12, 0.1, 0.12, navG, 4.6, 2.38, -1.1);
-  box(0.1, 0.1, 0.1, navW, 0, 2.62, 4.1);
-  return { group: g, prop, wheels, pivots: [], navs: [nav, navG, navW], head: null, tail: null, exhaust: [0.6, 1.1, -2.2] };
 }
 // Narazí letadlo (příď, konce křídel, ocas) do bloku, stromu nebo do země?
 export function planeHits(v) {

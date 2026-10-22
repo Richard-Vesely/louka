@@ -148,18 +148,22 @@ try {
     g.closeInventory();
     T.step(2);
     const repainted = g.vehMeshes.get(id)?.color === g.vehicles.get(id).color;
+    const look = g.vehMeshes.get(id)?.look, exhausts = g.vehMeshes.get(id)?.exhausts?.length; // model ukazuje vylepšení
     // nitro: plný plyn, pak N
     g.enterVehicle(id); T.step(2);
+    const hand = g.camera.children.some((c) => c.visible); // ve voze z první osoby není vidět ruka ani předmět
     T.hold(['KeyW'], 40);
     const s0 = v.spd;
     T.key('KeyW', true); T.press('KeyN'); const boosted = g.nitro.t > 0; T.step(40); T.key('KeyW', false);
     const s1 = v.spd;
     g.exitVehicle(); T.step(2);
-    return { garage: /Garáž/.test(html), paints: paints.length, colorChanged: v.color !== before, repainted, mods, left: { nitro: T.count('nitro'), turbo: T.count('turbocharger'), tyres: T.count('offroad_tires') }, boosted, s0, s1, nitroLeft: v.mods.nitro };
+    return { garage: /Garáž/.test(html), paints: paints.length, colorChanged: v.color !== before, repainted, look, exhausts, hand, mods, left: { nitro: T.count('nitro'), turbo: T.count('turbocharger'), tyres: T.count('offroad_tires') }, boosted, s0, s1, nitroLeft: v.mods.nitro };
   });
   check('garage: window for a parked car, repaint changes the colour and the model', r.garage && r.paints === 16 && r.colorChanged && r.repainted, JSON.stringify(r));
   check('garage: nitro refills, turbo and off-road tyres get fitted (parts used up)', r.mods.nitro === 2 && r.mods.engine === 1 && r.mods.offroad === 1 && r.left.nitro === 0 && r.left.turbo === 0 && r.left.tyres === 0, JSON.stringify(r.mods));
   check('nitro: N boosts the car and uses one charge', r.boosted && r.s1 > r.s0 + 3 && r.nitroLeft === 1, JSON.stringify(r));
+  check('garage: the model shows the upgrades (off-road tyres, turbo, nitro nozzles)', /\|111$/.test(r.look || '') && r.exhausts === 2, JSON.stringify({ look: r.look, exhausts: r.exhausts }));
+  check('in the car (first person) the hand and held item are hidden', r.hand === false, JSON.stringify({ hand: r.hand }));
 
   // ------------------------------------------------------------ passenger seat (another player drives)
   r = await ev(() => {

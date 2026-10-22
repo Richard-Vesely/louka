@@ -65,7 +65,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `client/src/audio/` | all sound (WebAudio synthesis): `sound.js` mix + `Sound.at(x, y, z, fn)` positional sound, recipes in `sfx.js` / `voices.js`, materials, ambience, machine hums, music; `soundscape.js` runs it each frame |
 | `client/src/ui/` | HUD, inventory window, touch controls |
 | `client/src/machines/`, `pc/`, `dining/`, `world/` | the browser side of machines (garage block model `garage-model.js`), the computer + Tanks + documents, table manners, shrine/fishing/dropped items |
-| `client/src/vehicles/` | `kinds.js` (data: names, sizes, seats, upgrades per vehicle type), `car.js` (chain module: get in/out, drawing all vehicles, cameras, nitro, car driving), `car-model.js`, `bike.js`, `boat.js` (motorboat, sailboat, wake), `plane.js` (chain module: biplane + seaplane), `garage.js`, `passengers.js`, `vehicle-ui.js` (HUD line, vehicle window) |
+| `client/src/vehicles/` | `kinds.js` (data: names, sizes, seats, upgrades per vehicle type), `car.js` (chain module: get in/out, drawing all vehicles, cameras, nitro, car driving), `bike.js`, `boat.js` (motorboat, sailboat, wake), `plane.js` (chain module: biplane + seaplane), models `car-model.js`, `bike-model.js`, `boat-model.js`, `plane-model.js` + their shared look `veh-look.js` (paint, glass, tyres, rims, merging, lights), `garage.js`, `passengers.js`, `vehicle-ui.js` (HUD line, vehicle window) |
 | `client/src/net/` | multiplayer in the browser: client side (`multiplayer.js`), avatars (other players, own body + third-person view, name tags), chat + Esc menu, the net loop (`mp-start.js`) |
 | `server/` | `index.js` (env config), `worlds.js` (`WORLDS` list, moving old data), `server.js` (HTTP + WebSocket, logs players in, sends each player's messages to their world), `profiles.js` (player profiles: name + PIN, tokens, wrong-PIN throttle, `players.json`), `world-worker.js` (one world in its own thread: room + 20 Hz loop + saving + the players' backpacks), `me.js` (checks a player's state before it is saved), `sim.js` (one world step), `persist.js` (saving + backups), `admin-http.js` (`/admin` page + local admin port), `admin.js` (CLI: `players`, `reset-pin`), `static.js` |
 
@@ -90,7 +90,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
   dining/dine-view → dining/food-models → dining/dining → player/survival → render/daylight → ui/hud → game/save →
   ui/touch → game/loop → net/multiplayer → net/avatars → net/mp-ui → net/mp-start → game/debug`.
   Side-effect-free helpers outside the chain (e.g. `vehicles/kinds.js`, `bike.js`, `boat.js`, `garage.js`, `passengers.js`,
-  `vehicle-ui.js`, `car-model.js`, `machines/garage-model.js`) may be imported from anywhere; in a file that also imports
+  `vehicle-ui.js`, the vehicle models `*-model.js` + `veh-look.js`, `render/icons-vehicles.js`, `machines/garage-model.js`) may be imported from anywhere; in a file that also imports
   `vehicles/car.js`, import them after it, so they load inside the chain order.
   A **new browser module** either has no side effects at load time (only functions/constants; then no chain line
   is needed), or it gets a chain line and is inserted into the chain (check that `npm test` and the play-tests still pass). Modules in `shared/` never import `client/`.
