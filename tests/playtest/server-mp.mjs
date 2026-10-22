@@ -138,8 +138,13 @@ try {
   // pochodně: Ája pověsí pochodeň na zeď a jednu postaví na blok; Bára zeď zboří, server pochodeň shodí jako předmět
   await A.evaluate(() => { const g = window.game; g.blocks.set('8,40,30', 'cobble'); g.blockMeta.set('8,40,31', 4); g.blocks.set('8,40,31', 'torch'); g.blocks.set('9,40,30', 'cobble'); g.blockMeta.set('9,41,30', 1); g.blocks.set('9,41,30', 'torch'); });
   check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1));
+  // každý ze dvou hráčů si zapamatuje, že k němu dorazila vypadlá pochodeň (mohl ji mezitím někdo sebrat)
+  const seenTorch = () => { const g = window.game, push = g.groundItems.push; window.__torchItem = null; g.groundItems.push = function (...a) { for (const it of a) if (it.id === 'torch') window.__torchItem = { n: it.n, y: +it.pos.y.toFixed(1) }; return push.apply(this, a); }; };
+  await A.evaluate(seenTorch); await B.evaluate(seenTorch);
   await B.evaluate(() => { window.game.blocks.delete('8,40,30'); });
-  check('torch: Bára removes the wall, the server drops the torch as an item for both', await until(A, () => !window.game.blocks.has('8,40,31') && window.game.groundItems.some((x) => x.id === 'torch' && x.n > 0)) && await until(B, () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31')));
+  const torchState = () => { const g = window.game; return { has: g.blocks.has('8,40,31'), meta: g.blockMeta.get('8,40,31') ?? null, wall: g.blocks.get('8,40,30') ?? null, sp: g.specials.has('8,40,31'), item: window.__torchItem, items: g.groundItems.filter((x) => x.id === 'torch').map((x) => [x.n, +x.pos.y.toFixed(1)]) }; };
+  const torchGone = () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31') && window.__torchItem?.n === 1;
+  check('torch: Bára removes the wall, the server drops the torch as an item for both', await until(A, torchGone) && await until(B, torchGone), JSON.stringify({ A: await A.evaluate(torchState), B: await B.evaluate(torchState) }));
 
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
   await sleep(1500);
