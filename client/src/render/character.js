@@ -683,6 +683,8 @@ export function setCharacterArmor(R, ids) {
   }
   if (boots) for (const l of [R.legL, R.legR]) { add(l.knee, boots, 0.23, 0.17, 0.31, 0, -0.32, -0.03, 0.05); add(l.knee, boots, 0.19, 0.16, 0.05, 0, -0.16, -0.105, 0.02); }
   R.armorParts = skinRig(R.group, (m) => m.userData.armor);
+  // hrdina s helmou: vlasy (vlastní materiály, sloučené do jednoho dílu) se schovají pod ni
+  if (R.M.hair) for (const o of R.group.children) if (o.isSkinnedMesh && (o.material === R.M.hair || o.material === R.M.hairDark)) o.visible = !helmet;
 }
 
 // ============================================================ animace
