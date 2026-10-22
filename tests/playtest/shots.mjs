@@ -10,7 +10,7 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, tech-machines, vehicles;
+// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, ground-items, items-water, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
@@ -209,6 +209,24 @@ const VIEWS = {
     S.clearInv();
     for (const [id, n] of [['iron_pick', 1], ['stone_sword', 1], ['planks', 48], ['cobble', 64], ['torch', 20], ['bread', 6], ['apple', 9], ['iron', 12], ['crystal', 5], ['glass', 16], ['coal', 30], ['log', 14]]) if (g.ITEMS[id]) g.addItem(id, n, true);
     g.openInventory();
+  },
+  // předměty ležící na zemi: hromádky (víc kousků = víc kusů), nástroj, bloky
+  'ground-items': () => {
+    const S = SHOT, g = S.g, X = 40, Z = 46, V = { x: 0, y: 0, z: 0 };
+    S.place({ x: X, z: Z + 3.6, up: 0.1, yaw: 0, time: 0.4 });
+    g.groundItems.length = 0;
+    const put = (id, n, dx, dz) => g.spawnGroundItem(id, n, { x: X + dx, y: g.groundHeight(X + dx, Z + dz) + 0.3, z: Z + dz }, V, 999);
+    put('log', 40, -1.3, 0.1); put('apple', 3, -0.4, 0.8); put('iron_pick', 1, 0.5, 0.3); put('stone', 20, 1.4, -0.4);
+    put('dirt', 1, 0.3, -0.9); put('torch', 5, -1.5, -1.1); put('planks', 64, -0.4, -1.6); put('bread', 2, 1.2, 0.9);
+    S.lookAt(X, g.groundHeight(X, Z) + 0.1, Z - 0.3);
+  },
+  // předměty spadlé do rybníka: vyplavou a plavou na hladině (starší hra: leží na dně)
+  'items-water': () => {
+    const S = SHOT, g = S.g, p = g.pondOf(-181.5, -48), lv = g.pondLevel(p), V = { x: 0, y: 0, z: 0 };
+    g.groundItems.length = 0;
+    for (const [id, dx, dz] of [['log', 0, 0], ['apple', 0.9, 0.7], ['planks', -1, 0.5], ['iron_pick', 0.4, -0.9], ['bread', -0.6, -0.8]]) g.spawnGroundItem(id, 3, { x: p.x + dx, y: lv + 1, z: p.z + dz }, V, 999);
+    S.place({ x: p.x, z: p.z + 3.6, y: lv + 0.5, yaw: 0, time: 0.42 });
+    S.lookAt(p.x, lv, p.z - 0.2);
   },
 };
 

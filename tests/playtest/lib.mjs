@@ -92,6 +92,14 @@ export async function waitGame(page, timeout = 120000) {
       count: (id) => g.countItem(id),
       clearInv() { g.inv.slots.fill(null); g.inv.cursor = null; },
       mineUntil(fn, max = 600) { g.input.lmb = true; let n = 0; while (!fn() && n < max) { this.step(1); n++; } g.input.lmb = false; this.step(1, 0.0001); return n; },
+      // Vytěžené bloky vyskočí jako předměty: dojdi (teleportem) ke každému do 8 m, počkej na sebrání a vrať se.
+      collect(max = 160) {
+        const p0 = g.player.pos.clone(), near = () => g.groundItems.find((x) => x.n > 0 && !x.burnt && Math.hypot(x.pos.x - p0.x, x.pos.z - p0.z) < 8);
+        let n = 0;
+        for (let it = near(); it && n < max; it = near(), n++) { if (it.age > it.delay) this.tp(it.pos.x, it.pos.z, it.pos.y + 0.05); this.step(1); }
+        this.tp(p0.x, p0.z, p0.y);
+        return n;
+      },
       text: (id) => document.getElementById(id)?.textContent ?? '',
       key(code, down = true) { window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code })); },
       press(code) { this.key(code, true); this.key(code, false); },
