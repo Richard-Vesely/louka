@@ -461,6 +461,11 @@ drawing, cameras, nitro, the car's driving) `car.js`; models `car-model.js`, `bi
   `?world=<id>` link preselects one. Each world has its own buildings, animals, day, players and chat;
   creative mode is on or off for everyone in a world. The backpack and position are saved per player and world on the server. The info box and the
   Esc menu show the world name.
+- **Fights between players** (only in a world with the `:pvp` option, e.g. `arena:Aréna:pvp`): another player is a target
+  (*hráč · souboj*), a sword or an arrow hurts them. Weapons are tuned for mobs, so a player gets 2.5× the damage (full iron
+  sword 15, full arrow 25 of 100 hp; armor protects as against mobs). The host checks every hit: reach 7 m (arrows 90 m),
+  0.45 s invulnerability after a hit, no hits on or by dead players or players in creative mode. Other worlds have no fights.
+  *Kód:* rules `hitPlayer` in `shared/net/room.js`, the player's side `client/src/player/pvp.js`.
 - **Pause menu** (Esc): code + copy, player list, host can allow creative for one player or everyone, and kick.
 - **Chat** (T), only to players in the same world.
 - Everyone sees other players in **their own suit** (*Můj oblek*, sent in the position as `lk`), with a modern
