@@ -24,7 +24,7 @@ for (const t of Object.values(voxTex)) t.anisotropy = Math.min(8, renderer.capab
 // Jeden materiál pro celé podzemí. Části bloků, které vyčnívají nad hladký terén, se nekreslí (kraje díry tak
 // přesně navazují na povrch). Hrany bloků jsou trochu tmavší (je vidět, kde blok končí), krystaly a markorit svítí
 // jen svými zrny a jiskří, kovová zrna rud se lesknou. Reliéf (normálová mapa) jen se střední a vysokou grafikou.
-export const voxUniforms = { uVAlb: { value: voxTex.alb }, uVOrm: { value: voxTex.orm }, uVNrm: { value: voxTex.nrm }, uVGlow: { value: 1.25 }, uVNrmK: { value: QUALITY === 'high' ? 1 : 0.8 }, uVEdge: { value: 0.24 } };
+export const voxUniforms = { uVAlb: { value: voxTex.alb }, uVOrm: { value: voxTex.orm }, uVNrm: { value: voxTex.nrm }, uVGlow: { value: 1.25 }, uVNrmK: { value: QUALITY === 'high' ? 0.7 : 0.6 }, uVEdge: { value: 0.24 } };
 function voxMaterial() {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1 });
   if (QUALITY !== 'low') mat.defines = { VOX_NRM: '' };
@@ -77,7 +77,11 @@ diffuseColor.rgb *= 1.0 - uVEdge * smoothstep(0.43, 0.5, max(vEd.x, vEd.y));`)
   float det = max(dot(T, T), dot(B, B)), sc = det == 0.0 ? 0.0 : inversesqrt(det);
   vec3 mapN = texture(uVNrm, vAuv).xyz * 2.0 - 1.0;
   mapN.xy *= uVNrmK * (1.0 - 0.75 * smoothstep(8.0, 26.0, length(vViewPosition))); // daleko jemnější (nemihotá se)
+  vec3 gN = normal;
   normal = normalize(mat3(T * sc, B * sc, normal) * mapN);
+  // reliéf nesmí normálu převrátit od stěny (zblízka u pochodně by vznikly černé lesklé skvrny)
+  float nd = dot(normal, gN);
+  if (nd < 0.5) normal = normalize(normal + gN * (0.5 - nd) * 1.6);
 }
 #endif`)
       .replace('#include <aomap_fragment>', `#include <aomap_fragment>
