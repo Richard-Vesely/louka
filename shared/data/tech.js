@@ -178,7 +178,7 @@ export const SMELT_TIME = 3;
   item('fuel_canister', 'Kanystr s palivem', 'vehicles', ['canister', '#c82a2a']);
   R('fuel_canister', 1, ['PEP', 'PEP'], { P: 'iron_plate', E: 'ethanol' });
   // Auto: karoserie (se sedadly), podvozek (s nádrží), motor, převodovka, volant, 2 nápravy (4 kola), světlomety a klakson
-  item('car', 'Auto', 'vehicles', ['car', '#c82a2a'], { stack: 1, vehicle: 'car' });
+  item('car', 'Auto', 'vehicles', ['car', '#c82a2a', '#38e8ff'], { stack: 1, vehicle: 'car' });
   R('car', 1, ['HBK', 'SEG', 'ACA'], { H: 'headlight', B: 'car_body', K: 'car_horn', S: 'steering_wheel', E: 'combustion_engine', G: 'gearbox', A: 'axle', C: 'chassis' }, ADV);
 
   // ---------- díly letadel
@@ -201,17 +201,17 @@ export const SMELT_TIME = 3;
   item('landing_gear', 'Podvozek letadla', 'aircraft', ['landing', '#5a5a62']);
   R('landing_gear', 1, ['R R', 'W W'], { R: 'steel_rod', W: 'wheel' }, ADV);
   // Dvouplošník: 2 křídla, kokpit, vrtule, letecký motor, trup (s nádrží), 2 podvozky, ocasní plochy
-  item('biplane', 'Dvouplošník', 'aircraft', ['plane', '#8a2a22'], { stack: 1, vehicle: 'plane' });
+  item('biplane', 'Dvouplošník', 'aircraft', ['plane', '#2a5ab0', '#38e8ff'], { stack: 1, vehicle: 'plane' });
   R('biplane', 1, ['WCW', 'PEF', 'LTL'], { W: 'wing', C: 'cockpit', P: 'propeller', E: 'aircraft_engine', F: 'fuselage', L: 'landing_gear', T: 'tail_unit' }, ADV);
   // Hydroplán: dvouplošník přestavěný na plováky (startuje a přistává na vodě)
   item('floats', 'Plováky', 'aircraft', ['float', '#d8dce2']);
   R('floats', 1, ['PPP', 'R R', 'PPP'], { P: 'iron_plate', R: 'steel_rod' }, ADV);
-  item('seaplane', 'Hydroplán', 'aircraft', ['seaplane', '#2a6ab0'], { stack: 1, vehicle: 'seaplane' });
+  item('seaplane', 'Hydroplán', 'aircraft', ['seaplane', '#2a6ab0', '#38e8ff'], { stack: 1, vehicle: 'seaplane' });
   R('seaplane', 1, ['B', 'F'], { B: 'biplane', F: 'floats' });
 
   // ---------- jízdní kolo a lodě
   // Jízdní kolo: bez paliva, šlape se (stojí trochu hladu); jde vyrobit brzy, na pracovním stole
-  item('bike', 'Jízdní kolo', 'vehicles', ['bike', '#d83a2a'], { stack: 1, vehicle: 'bike' });
+  item('bike', 'Jízdní kolo', 'vehicles', ['bike', '#d83a2a', '#38e8ff'], { stack: 1, vehicle: 'bike' });
   R('bike', 1, [' RW', 'RGR', 'TRT'], { R: 'iron_rod', W: 'wool', G: 'gear', T: 'tire' });
   item('boat_hull', 'Trup lodi', 'vehicles', ['boat', '#9a6a3a']);
   R('boat_hull', 1, ['P P', 'PPP'], { P: 'planks' });
@@ -220,12 +220,12 @@ export const SMELT_TIME = 3;
   item('sail', 'Plachta', 'vehicles', ['cloth', '#f4f0e4']);
   R('sail', 1, ['CC', 'CC'], { C: 'canvas' });
   // Plachetnice: pluje jen větrem (stejný vítr pro všechny hráče), bez paliva
-  item('sailboat', 'Plachetnice', 'vehicles', ['sailboat', '#f4f0e4', '#9a6a3a'], { stack: 1, vehicle: 'sailboat' });
+  item('sailboat', 'Plachetnice', 'vehicles', ['sailboat', '#f4f3ee', '#2a5ab0'], { stack: 1, vehicle: 'sailboat' });
   R('sailboat', 1, [' S ', 'RMR', ' H '], { S: 'sail', M: 'mast', R: 'iron_rod', H: 'boat_hull' });
   item('outboard_motor', 'Lodní motor', 'vehicles', ['motor', '#3a4a5a']);
   R('outboard_motor', 1, ['E', 'R', 'P'], { E: 'combustion_engine', R: 'steel_rod', P: 'propeller' }, ADV);
   // Motorový člun: tankuje se kanystrem jako auto
-  item('motorboat', 'Motorový člun', 'vehicles', ['boat', '#e8e8e8', '#2a5ab0'], { stack: 1, vehicle: 'motorboat' });
+  item('motorboat', 'Motorový člun', 'vehicles', ['motorboat', '#e8e8e8', '#38e8ff'], { stack: 1, vehicle: 'motorboat' });
   R('motorboat', 1, ['LWS', 'THM'], { L: 'headlight', W: 'steering_wheel', S: 'seat', T: 'fuel_tank', H: 'boat_hull', M: 'outboard_motor' }, ADV);
 
   // ---------- garáž a vylepšení vozidel (garáž: přebarvení, nitro, terénní pneumatiky, turbo)

@@ -351,11 +351,13 @@ attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit
   colour of its job (cyan = electricity, amber = heat), and a **status light** (green = working, amber blinking = no
   power). The generator has a spinning side fan and an amber firebox, solar cells glow cyan at their edges in
   sunshine, the battery shows its charge with cyan bars, the electric lamp is a street lamp with a warm white panel,
-  the computer has a lit keyboard and scanlines running over the screen. Above every running machine floats a
+  the computer has a lit keyboard and scanlines running over the screen (switched off but on a powered network it shows
+  a slowly scrolling standby terminal). Above every running machine floats a
   **hologram** with its icon and a live value (*+60 W*, *40 W*, *75 %*): cyan, flickering, with scanlines, turned
   to the player, visible within ~22 m. A machine nearby that starts makes a short electric sound.
-- **Cables** show their metal (copper, gold) and carry **cyan energy pulses** when power flows: faster and brighter
-  the more the network produces or uses; a cable without power is dark.
+- **Cables** show their metal (copper, gold; a faint glow of their own metal keeps gold golden even at dusk) and carry
+  **cyan energy pulses** when power flows: faster and brighter the more the network produces or uses; a cable without
+  power shows only its metal.
 
 *Kód:* furnace `shared/sim/machines.js`, power grid and printer `shared/sim/power.js`, data `shared/data/tech.js`, models and windows `client/src/machines/furnace.js` + `power.js`, machine look (materials, status lights, holograms) `client/src/machines/machine-models.js`.
 
@@ -393,15 +395,35 @@ attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit
   F gets you out (not in the air). Your seat is part of your position, so it frees itself when you leave the game.
 - **Riders are visible** on open vehicles (bike, boats, cockpits) for other players, and for yourself with the rear
   vehicle camera (V); in the car you sit inside.
-- **Look**: the car has rounded bodywork with metallic clearcoat paint (*střední*, *vysoká*), glass that reflects the
-  sky, chrome, and a **cyan underglow** that fades in while it drives or has its lights on. The biplane carries the
-  club emblem (navy disc, glowing cyan ring, white *Ř*) instead of military roundels.
+- **Look „Jasná budoucnost“** (shared parts in `client/src/vehicles/veh-look.js`, one model file per vehicle): metallic
+  clearcoat paint (*střední*, *vysoká*; plain gloss on *nízká*), graphite and white parts, tinted glass that reflects
+  the sky, and **cyan light strips** (cyan = technology, like the machines and suits).
+  - **Car**: smooth body from a side profile with wheel arches, tinted cabin under a black glass roof, LED light bars
+    front and back (the front one is a daytime light, full with L), a cyan side stripe, an **underglow** (dim when
+    parked, bright while driving or with lights on) and aero rims with a glowing ring.
+  - **Biplane and seaplane**: smooth fuselage, a tinted canopy over both seats (invisible from inside, so the cockpit
+    view stays clear), white wings joined at the tips by slim end plates with a glowing edge (no wooden struts),
+    chrome spinner, cyan intake ring, two side **thrusters** that glow with the throttle (nitro flames come out of
+    them), wheel spats or white floats with a glowing waterline. The club emblem (navy disc, glowing cyan ring, white
+    *Ř*) is on the upper wing instead of military roundels.
+  - **Bicycle**: thick frame with a cyan strip on the down tube, tri-spoke rims with glowing rings, LED lamp and tail light.
+  - **Motorboat**: V-hull, curved tinted windscreen, console with a screen, electric outboard in a white cowl with a
+    glowing ring. **Sailboat**: V-hull with a keel bulb, carbon mast and boom, shrouds, sails with the club emblem and
+    a cyan band, a masthead light.
+  - **Garage upgrades show on the model**: off-road tyres are wider and knobbly (the car also gets fender flares), the
+    turbo adds a hood scoop and a rear wing (car), an intake under the engine (planes) or a bigger cowl with an intake
+    (motorboat), nitro adds blue nozzles (car exhaust tips, rings on the plane thrusters, motorboat). The model is
+    rebuilt when the paint or the upgrades change. Inventory icons show the new look.
+  - Cheap to draw: fixed parts are merged per material; boats cast no shadow (a bobbing hull would stripe itself).
+  - In first person the hand is hidden in every vehicle (and at a dining table); the car's driver camera follows the
+    car's tilt, so on a slope it stays above the seat.
 - **Biplane** (*Dvouplošník*): needs flat ground to place. Throttle Space/Shift, pitch W/S, roll A/D; stall if too slow;
   crash landing hurts.
 
 *Kód:* kinds of vehicles (names, sizes, seats, upgrades) `client/src/vehicles/kinds.js`; shared parts (get in/out,
-drawing, cameras, nitro, the car's driving) `car.js`, car model `car-model.js`; `bike.js`, `boat.js` (both boats, wake,
-wind), `plane.js` (biplane and seaplane), `garage.js` (window; block model `client/src/machines/garage-model.js`),
+drawing, cameras, nitro, the car's driving) `car.js`; models `car-model.js`, `bike-model.js`, `boat-model.js`,
+`plane-model.js` with the shared look (materials, tyres, rims, merging) in `veh-look.js`, icons
+`client/src/render/icons-vehicles.js`; `bike.js`, `boat.js` (both boats, wake, wind), `plane.js` (biplane and seaplane), `garage.js` (window; block model `client/src/machines/garage-model.js`),
 `passengers.js`, HUD and vehicle window `vehicle-ui.js`. State in `vehicles` (`shared/world/state.js`), wind in
 `shared/sim/weather.js`, lakes in `shared/world/terrain.js` (+ GLSL twin). Console: `game.spawnVehicle('bike', x, z, yaw)`,
 `game.spawnOnLake('sailboat' | 'motorboat' | 'seaplane')`, `game.windAt(day, t)`, `game.toggleCarCam()`.

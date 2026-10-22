@@ -1,6 +1,5 @@
-// Jízdní kolo: model, jízda (šlapání stojí trochu hladu), tři převody, náklon v zatáčce, zvonek.
+// Jízdní kolo: jízda (šlapání stojí trochu hladu), tři převody, náklon v zatáčce, zvonek. Model je v bike-model.js.
 // Jen funkce a konstanty (nic se nespouští při načtení); volá je vehicles/car.js.
-import * as THREE from 'three';
 import { mobs } from '../../../shared/sim/mobs.js';
 import { clamp } from '../../../shared/util.js';
 import { solidAny } from '../../../shared/world/collision.js';
@@ -13,91 +12,13 @@ import { forestColliders } from '../render/forest.js';
 import { camera } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { carCam, carLocal, carWarn, floorAt } from './car.js';
+import { bikeModel } from './bike-model.js';
 
 // Převody: nejvyšší rychlost (m/s) a zrychlení. 1 = do kopce, 3 = rovinka (~49 km/h). Z kopce se kolo rozjede i bez šlapání.
 export const BIKE = { wb: 1.08, r: 0.34, gears: [{ max: 6, acc: 5.5 }, { max: 9.5, acc: 3.8 }, { max: 13.5, acc: 2.6 }], brake: 8, steerMax: 0.65, step: 0.45 };
 
-// ---------- model: dopředu je -z, počátek na zemi mezi koly
-const tube = (a, b, r, m) => {
-  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A);
-  const me = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 8), m);
-  me.position.copy(A).addScaledVector(d, 0.5);
-  me.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
-  return me;
-};
-function wheel(dark, chrome) {
-  const spin = new THREE.Group();
-  const tire = new THREE.Mesh(new THREE.TorusGeometry(BIKE.r - 0.03, 0.035, 8, 30), dark);
-  tire.rotation.y = Math.PI / 2;
-  spin.add(tire);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(BIKE.r - 0.065, 0.012, 6, 30), chrome);
-  rim.rotation.y = Math.PI / 2;
-  spin.add(rim);
-  for (let i = 0; i < 8; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.008, (BIKE.r - 0.07) * 2, 0.008), chrome); s.rotation.x = (i / 8) * Math.PI; spin.add(s); } // dráty
-  spin.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.1, 10).rotateZ(Math.PI / 2), chrome)); // náboj
-  return spin;
-}
-export function buildBikeModel(color) {
-  const g = new THREE.Group();
-  const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.5, ...o });
-  const paint = M({ color, metalness: 0.5, roughness: 0.3 }), dark = M({ color: 0x1c1c20, roughness: 0.85 }), chrome = M({ color: 0xd8dce2, metalness: 1, roughness: 0.2 });
-  const R = BIKE.r, C = [0, 0.32, 0], S = [0, 0.86, 0.17], H = [0, 0.92, -0.4], Hb = [0, 0.7, -0.45], RH = [0, R, 0.54];
-  for (const [a, b, r] of [[C, S, 0.022], [S, H, 0.02], [C, Hb, 0.026], [C, RH, 0.014], [S, RH, 0.013]]) {
-    g.add(tube(a, b, r, paint));
-    if (b === RH) g.add(tube([0.05, a[1], a[2]], [0.05, RH[1], RH[2]], r, paint)); // zadní vidlice je zdvojená
-  }
-  g.add(tube([0, 0.86, 0.17], [0, 0.98, 0.21], 0.014, chrome)); // sedlovka
-  const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.26), dark);
-  saddle.position.set(0, 1.0, 0.2);
-  g.add(saddle);
-  const rear = wheel(dark, chrome);
-  rear.position.set(0, R, 0.54);
-  g.add(rear);
-  // přední vidlice s řídítky se natáčí kolem hlavové trubky
-  const pivot = new THREE.Group();
-  pivot.position.set(0, 0, -0.5);
-  g.add(pivot);
-  const front = wheel(dark, chrome);
-  front.position.set(0, R, -0.04);
-  pivot.add(front);
-  for (const x of [-0.04, 0.04]) pivot.add(tube([x, R, -0.04], [x, 0.72, 0.06], 0.013, chrome));
-  pivot.add(tube([0, 0.72, 0.06], [0, 1.0, 0.1], 0.016, chrome));
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.58, 8).rotateZ(Math.PI / 2), chrome);
-  bar.position.set(0, 1.0, 0.12);
-  pivot.add(bar);
-  for (const x of [-0.27, 0.27]) { const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 8).rotateZ(Math.PI / 2), dark); grip.position.set(x, 1.0, 0.12); pivot.add(grip); }
-  const bell = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), chrome);
-  bell.position.set(-0.17, 1.02, 0.12);
-  pivot.add(bell);
-  const head = M({ color: 0xfff8e0, emissive: 0xfff2c0, emissiveIntensity: 0 });
-  const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.07, 10).rotateX(Math.PI / 2), head);
-  lamp.position.set(0, 0.86, 0.02);
-  pivot.add(lamp);
-  const tail = M({ color: 0x6a1010, emissive: 0xff2010, emissiveIntensity: 0.25 });
-  const refl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.02), tail);
-  refl.position.set(0, 0.8, 0.36);
-  g.add(refl);
-  // kliky se šlapkami a převodník
-  const crank = new THREE.Group();
-  crank.position.set(0, C[1], C[2]);
-  g.add(crank);
-  const ringM = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.012, 6, 20), chrome);
-  ringM.rotation.y = Math.PI / 2;
-  ringM.position.x = 0.04;
-  crank.add(ringM);
-  for (const s of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.17, 0.03), chrome);
-    arm.position.set(s * 0.07, s * 0.075, 0);
-    crank.add(arm);
-    const pedal = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.06), dark);
-    pedal.position.set(s * 0.12, s * 0.15, 0);
-    crank.add(pedal);
-  }
-  g.add(tube([0.05, C[1], C[2]], [0.05, R, 0.54], 0.006, dark)); // řetěz
-  const m = { group: g, wheels: [rear, front], pivots: [pivot], head, tail, crank };
-  m.update = (src, dt) => { if (src.pd || (src.spd || 0) < 0) crank.rotation.x -= ((src.spd || 0) / BIKE.r) * dt * 0.45; }; // šlape jen při šlapání
-  return m;
-}
+// ---------- model (bike-model.js): dopředu je -z, počátek na zemi mezi koly
+export const buildBikeModel = (color, v) => bikeModel(color, v, BIKE.r);
 
 // ---------- jízda
 const wheelsAt = [[0, -0.54], [0, 0.54]];

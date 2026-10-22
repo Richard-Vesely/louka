@@ -1,4 +1,4 @@
-// Lodě: motorový člun a plachetnice. Modely, plutí po hladině (houpání na vlnách, mělčina u břehu), brázda a spršky.
+// Lodě: motorový člun a plachetnice. Plutí po hladině (houpání na vlnách, mělčina u břehu), brázda a spršky.
 // Plachetnici pohání vítr (shared/sim/weather.js windAt): stejný pro všechny hráče, takže plachty míří všem stejně.
 // Proti větru plout nejde (plachta třepetá), nejrychleji to jede s větrem z boku. Jen funkce a konstanty (nic se nespouští při načtení).
 import * as THREE from 'three';
@@ -15,6 +15,7 @@ import { camera, scene } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
 import { carCam, carLocal, carWarn, nitroOn } from './car.js';
 import { powerMul } from './kinds.js';
+import { buildMotorboat, buildSailboat, shapeSail } from './boat-model.js';
 
 // draft = ponor (jak hluboko je dno lodi pod hladinou); počátek lodi je na hladině
 export const BOATS = {
@@ -55,101 +56,9 @@ export function boatSpot(type) {
   return { ok: false, why };
 }
 
-// ---------- modely: dopředu je -z, počátek na hladině
-// Trup z půdorysu (špičatá příď): vytažený dolů, s dutinou nahoře (paluba s bočnicemi)
-function hullGeo(len, wid, y0, y1, inset = 0) {
-  const L = len / 2, W = wid / 2 - inset, s = new THREE.Shape();
-  s.moveTo(-W, L - inset); s.lineTo(W, L - inset); s.lineTo(W, -L * 0.25);
-  s.quadraticCurveTo(W * 0.95, -L * 0.8, 0, -L + inset * 1.5); s.quadraticCurveTo(-W * 0.95, -L * 0.8, -W, -L * 0.25); s.closePath();
-  const g = new THREE.ExtrudeGeometry(s, { depth: y1 - y0, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2, curveSegments: 10 });
-  return g.rotateX(Math.PI / 2).translate(0, y1, 0); // tvar x–y → x–z, vytažení dolů od y1 k y0
-}
-function hullWalls(len, wid, y0, y1, t) {
-  const L = len / 2, W = wid / 2, s = new THREE.Shape(), h = new THREE.Path();
-  const outline = (p, w, l) => { p.moveTo(-w, l); p.lineTo(w, l); p.lineTo(w, -L * 0.25); p.quadraticCurveTo(w * 0.95, -L * 0.8, 0, -l); p.quadraticCurveTo(-w * 0.95, -L * 0.8, -w, -L * 0.25); p.closePath(); };
-  outline(s, W, L); outline(h, W - t, L - t * 1.6);
-  s.holes.push(h);
-  return new THREE.ExtrudeGeometry(s, { depth: y1 - y0, bevelEnabled: false, curveSegments: 10 }).rotateX(Math.PI / 2).translate(0, y1, 0);
-}
-const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.5, ...o });
-const box = (g, w, h, d, m, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); g.add(me); return me; };
-function buildMotorboat(color) {
-  const B = BOATS.motorboat, g = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color, metalness: 0.2, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08 });
-  const white = M({ color: 0xf2f2ee, roughness: 0.35 }), dark = M({ color: 0x1e1e22, roughness: 0.8 }), deck = M({ color: 0xb08a5a, roughness: 0.7 }), chrome = M({ color: 0xd8dce2, metalness: 1, roughness: 0.18 });
-  g.add(new THREE.Mesh(hullGeo(B.len, B.wid, -B.draft, 0.12), white));
-  g.add(new THREE.Mesh(hullWalls(B.len, B.wid, 0.12, 0.6, 0.1), paint));
-  g.add(new THREE.Mesh(hullGeo(B.len - 0.25, B.wid - 0.25, 0.1, 0.14), deck));
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.45, 0.05), M({ color: 0x1a2632, transparent: true, opacity: 0.5, depthWrite: false }));
-  glass.position.set(0, 0.85, 0.25); glass.rotation.x = -0.5; g.add(glass);
-  box(g, 0.7, 0.45, 0.4, white, -0.42, 0.37, 0.4); // pult s volantem
-  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.02, 6, 16), dark);
-  wheel.position.set(-0.42, 0.72, 0.62); wheel.rotation.x = -0.9; g.add(wheel);
-  for (const [x, z] of [[-0.42, 0.9], [0.45, 0.9], [-0.42, -0.35], [0.45, -0.35]]) { box(g, 0.55, 0.14, 0.5, dark, x, 0.24, z); box(g, 0.55, 0.45, 0.1, dark, x, 0.45, z + 0.27); }
-  // přívěsný motor (natáčí se kormidlem) s vrtulí
-  const pivot = new THREE.Group(); pivot.position.set(0, 0.4, B.len / 2 + 0.05); g.add(pivot);
-  box(pivot, 0.36, 0.55, 0.4, M({ color: 0x2a2e36, metalness: 0.4, roughness: 0.35 }), 0, 0.15, 0.12);
-  box(pivot, 0.1, 0.9, 0.14, dark, 0, -0.45, 0.12);
-  const prop = new THREE.Group(); prop.position.set(0, -0.8, 0.22); pivot.add(prop);
-  for (let i = 0; i < 3; i++) { const b = box(prop, 0.06, 0.28, 0.02, chrome, 0, 0, 0); b.rotation.z = (i / 3) * Math.PI * 2; b.geometry.translate(0, 0.12, 0); }
-  const head = M({ color: 0xfff8e0, emissive: 0xfff2c0, emissiveIntensity: 0 }), tail = M({ color: 0x6a1010, emissive: 0xff2010, emissiveIntensity: 0.25 });
-  box(g, 0.25, 0.1, 0.05, head, 0, 0.5, -B.len / 2 + 0.25);
-  box(g, 0.08, 0.08, 0.04, tail, -0.8, 0.55, B.len / 2 - 0.05); box(g, 0.08, 0.08, 0.04, tail, 0.8, 0.55, B.len / 2 - 0.05);
-  // tyrkysové podsvícení pod čarou ponoru (jako u auta)
-  const under = M({ color: 0x0b0d12, emissive: 0x38e8ff, emissiveIntensity: 0 });
-  for (const x of [-0.98, 0.98]) box(g, 0.03, 0.04, 3.6, under, x, 0.02, 0.4);
-  return { group: g, wheels: [], pivots: [pivot], head, tail, under, prop, boat: B };
-}
-// Plachta: trojúhelník z mřížky bodů, vydutý do strany podle větru; při třepetání se vlní
-function sailGeo(nu = 8, nv = 10) {
-  const g = new THREE.BufferGeometry(), pos = new Float32Array((nu + 1) * (nv + 1) * 3), idx = [];
-  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setIndex(idx);
-  g.userData = { nu, nv };
-  return g;
-}
-// vrcholy: hlava (h), přední spodní roh (t), zadní spodní roh (c); vydutí b do strany x
-function shapeSail(geo, h, t, c, b, flutter, time) {
-  const { nu, nv } = geo.userData, p = geo.attributes.position.array;
-  for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
-    const v = j / nv, u = i / nu, k = (j * (nu + 1) + i) * 3;
-    // body podél spodku od t do c, nahoru se zužuje k hlavě
-    const bx = t[0] + (c[0] - t[0]) * u, by = t[1] + (c[1] - t[1]) * u, bz = t[2] + (c[2] - t[2]) * u;
-    const x = bx + (h[0] - bx) * v, y = by + (h[1] - by) * v, z = bz + (h[2] - bz) * v;
-    const belly = Math.sin(Math.PI * u) * (1 - v * 0.85);
-    const wave = flutter * Math.sin(time * 22 + u * 9 + v * 4) * belly;
-    p[k] = x + b * belly + wave; p[k + 1] = y; p[k + 2] = z;
-  }
-  geo.attributes.position.needsUpdate = true;
-  geo.computeVertexNormals();
-}
-function buildSailboat(color) {
-  const B = BOATS.sailboat, g = new THREE.Group();
-  const paint = M({ color, roughness: 0.35, metalness: 0.1 }), white = M({ color: 0xf2f2ee, roughness: 0.4 }), wood = M({ color: 0xa8784a, roughness: 0.65 }), dark = M({ color: 0x24242a, roughness: 0.7 });
-  const cloth = M({ color: 0xf6f2e8, roughness: 0.85, side: THREE.DoubleSide });
-  g.add(new THREE.Mesh(hullGeo(B.len, B.wid, -B.draft, 0.18), paint));
-  g.add(new THREE.Mesh(hullWalls(B.len, B.wid, 0.18, 0.5, 0.09), white));
-  g.add(new THREE.Mesh(hullGeo(B.len - 0.22, B.wid - 0.22, 0.16, 0.2), wood));
-  box(g, 0.08, 0.8, 1.1, dark, 0, -B.draft - 0.4, 0); // kýl
-  for (const [x, z] of [[-0.62, 0.7], [0.62, 0.7], [0, 2.0]]) box(g, x ? 0.4 : 1.2, 0.12, x ? 1.4 : 0.4, wood, x, 0.32, z); // lavice
-  const mz = -0.7;
-  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 6.3, 10), wood);
-  mast.position.set(0, 3.3, mz); g.add(mast);
-  // ráhno s hlavní plachtou: otáčí se kolem stěžně (natočení podle větru)
-  const boom = new THREE.Group(); boom.position.set(0, 1.15, mz); g.add(boom);
-  const bm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.7, 8).rotateX(Math.PI / 2), wood);
-  bm.position.z = 1.35; boom.add(bm);
-  const main = new THREE.Mesh(sailGeo(), cloth); boom.add(main);
-  const jib = new THREE.Mesh(sailGeo(6, 8), cloth); g.add(jib);
-  // vlaječka na vrcholu stěžně ukazuje, kam fouká vítr
-  const flagG = new THREE.Group(); flagG.position.set(0, 6.4, mz); g.add(flagG);
-  const fg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.12, 0), new THREE.Vector3(0, -0.12, 0), new THREE.Vector3(0, 0, 0.6)]);
-  fg.computeVertexNormals();
-  flagG.add(new THREE.Mesh(fg, M({ color: 0x38e8ff, emissive: 0x38e8ff, emissiveIntensity: 0.6, side: THREE.DoubleSide })));
-  const pivot = new THREE.Group(); pivot.position.set(0, 0.3, B.len / 2 - 0.05); g.add(pivot); // kormidlo s pákou
-  box(pivot, 0.06, 1.0, 0.4, wood, 0, -0.45, 0.15); box(pivot, 0.05, 0.05, 0.9, wood, 0, 0.25, -0.4);
-  const m = { group: g, wheels: [], pivots: [pivot], head: null, tail: null, boat: B, boom, main, jib, flagG };
+// ---------- modely (boat-model.js): dopředu je -z, počátek na hladině. Tady je jen jejich pohyb: plachty, ráhno, vlaječka.
+function rigSailboat(m) {
+  const { boom, main, jib, flagG, mz, boat: B } = m;
   m.update = (src, dt, v) => {
     const t = performance.now() / 1000, up = clamp(src.thr ?? 0, 0, 1), luff = src.lf ? 1 : 0;
     boom.rotation.y += ((src.bm ?? src.boom ?? 0) - boom.rotation.y) * Math.min(1, dt * 3); // bm = z pozice řidiče, boom = vlastní stav
@@ -164,8 +73,9 @@ function buildSailboat(color) {
   };
   return m;
 }
-export function buildBoatModel(type, color) {
-  const m = type === 'sailboat' ? buildSailboat(color) : buildMotorboat(color);
+export function buildBoatModel(type, color, v) {
+  const m = type === 'sailboat' ? rigSailboat(buildSailboat(BOATS.sailboat, color)) : buildMotorboat(BOATS.motorboat, color, v);
+  m.group.traverse((o) => { if (o.isMesh) o.userData.noCast = true; }); // houpající se loď by si stínem rušila vlastní boky
   const inner = m.update;
   // houpání zaparkované lodi, brázda a spršky (i u lodí, které řídí ostatní hráči)
   m.update = (src, dt, v, driven) => {
