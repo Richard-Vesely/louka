@@ -262,6 +262,7 @@ export function slotClick(c, i, button, shift) {
     if (inv.cursor) {
       if (!s) arr[i] = { ...inv.cursor, n: 1 };
       else if (s.id === inv.cursor.id && s.n < ITEMS[s.id].stack) s.n++;
+      else if (s.id !== inv.cursor.id) { arr[i] = inv.cursor; inv.cursor = s; if (c === 'craft') ui.ghost = null; return refreshUI(); } // jiný předmět: prohodí se (jako levým)
       else return;
       if (--inv.cursor.n <= 0) inv.cursor = null;
     } else if (s) {

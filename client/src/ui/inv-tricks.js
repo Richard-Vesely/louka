@@ -209,7 +209,7 @@ export function dropFrom(c, i, all) {
   if (!s) return false;
   const n = all ? s.n : 1;
   if (!(s.n -= n)) arr[i] = null;
-  throwItem(s.id, n);
+  throwItem(s.id, n, s.w); // opotřebovaný nástroj letí i se svým opotřebením
   refreshUI();
   return true;
 }
