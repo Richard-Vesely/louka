@@ -17,7 +17,7 @@ export const FLOAT = 0.12; // jak hluboko pod hladinou předmět plave
 /** Láva na dně kráteru sopky (stejné místo pálí i hráče, client/src/player/survival.js). */
 export const inLava = (x, y, z) => volcanoDist(x, z) < 11 && y < terrainH(x, z) + 0.5;
 
-export const groundItems = []; // { gid, id, n, pos, vel, age, delay, spin, req, w?, wet?, burnt? }
+export const groundItems = []; // { gid, id, n, pos, vel, age, delay, spin, req, w?, wet?, burnt?, lv? (hladina) }
 // w = opotřebení nástroje (shared/tools.js); posílá se jen u opotřebovaných kusů jako 8. prvek operace 'g'.
 export function spawnGroundItem(id, n, pos, vel, delay = DROP_DELAY, gid = NET.uid(), w = 0) {
   const op = ['g', gid, id, n, [pos.x, pos.y, pos.z].map(r2), [vel.x, vel.y, vel.z].map(r2), delay];
@@ -58,7 +58,7 @@ export function updateGroundItems(dt, pickup) {
     const it = groundItems[i];
     it.age += dt;
     // pohyb: ve vodě vztlak k hladině, jinak gravitace
-    const lv = waterAt(it.pos.x, it.pos.y, it.pos.z);
+    const lv = waterLevel(it);
     if (lv !== null && it.pos.y < lv) floatStep(it, lv, dt);
     else { it.wet = false; it.vel.y -= 18 * dt; }
     const nx = it.pos.x + it.vel.x * dt, nz = it.pos.z + it.vel.z * dt;
@@ -75,6 +75,12 @@ export function updateGroundItems(dt, pickup) {
     if (pickup && !it.burnt) pickup(it);
     if (it.n <= 0 || it.age > DESPAWN) groundItems.splice(i, 1);
   }
+}
+// Hladina vody pod předmětem, nebo null (počítá se znovu, až se předmět posune na jiný metr, výpočet hladiny je drahý)
+function waterLevel(it) {
+  const cx = Math.floor(it.pos.x), cz = Math.floor(it.pos.z);
+  if (it.wx !== cx || it.wz !== cz) { it.wx = cx; it.wz = cz; it.lv = waterAt(cx + 0.5, -Infinity, cz + 0.5); }
+  return it.lv;
 }
 // Ve vodě: předmět zpomalí, vyplave k hladině a houpe se na ní (tlumená pružina); usazený má vel.y = 0, takže se může slít.
 function floatStep(it, lv, dt) {
