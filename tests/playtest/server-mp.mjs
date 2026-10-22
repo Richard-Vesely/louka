@@ -68,11 +68,6 @@ try {
   check('block from Ája appears at Bára', await until(B, () => window.game.blocks.get('4,2,30') === 'bricks'));
   await B.evaluate(() => { window.game.setVox(5, -6, 30, 0); });
   check('digging from Bára reaches Ája', await until(A, () => window.game.getVox(5, -6, 30) === 0));
-  // pochodně: Ája pověsí pochodeň na zeď a jednu postaví na blok; Bára zeď zboří, server pochodeň shodí jako předmět
-  await A.evaluate(() => { const g = window.game; g.blocks.set('8,40,30', 'cobble'); g.blockMeta.set('8,40,31', 4); g.blocks.set('8,40,31', 'torch'); g.blocks.set('9,40,30', 'cobble'); g.blockMeta.set('9,41,30', 1); g.blocks.set('9,41,30', 'torch'); });
-  check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1));
-  await B.evaluate(() => { window.game.blocks.delete('8,40,30'); });
-  check('torch: Bára removes the wall, the server drops the torch as an item for both', await until(A, () => !window.game.blocks.has('8,40,31') && window.game.groundItems.some((x) => x.id === 'torch' && x.n > 0)) && await until(B, () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31')));
   await A.evaluate(() => { window.game.blocks.set('6,2,30', 'chest'); window.game.chests.set('6,2,30', Array(27).fill(null)); });
   await until(B, () => window.game.chests.has('6,2,30'));
   await B.evaluate(() => { const c = Array(27).fill(null); c[0] = { id: 'apple', n: 5 }; window.game.chests.set('6,2,30', c); });
@@ -127,6 +122,12 @@ try {
   await A.evaluate(() => window.game.keys.delete('KeyW'));
   await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); } });
   check('sound: a joined player hears others build and walk, and the animals', heard && await until(B, () => window.__heard.place > 0 && window.__heard.step > 0 && window.__heard.mob > 0, null, 8000), await B.evaluate(() => JSON.stringify(window.__heard)));
+
+  // pochodně: Ája pověsí pochodeň na zeď a jednu postaví na blok; Bára zeď zboří, server pochodeň shodí jako předmět
+  await A.evaluate(() => { const g = window.game; g.blocks.set('8,40,30', 'cobble'); g.blockMeta.set('8,40,31', 4); g.blocks.set('8,40,31', 'torch'); g.blocks.set('9,40,30', 'cobble'); g.blockMeta.set('9,41,30', 1); g.blocks.set('9,41,30', 'torch'); });
+  check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1));
+  await B.evaluate(() => { window.game.blocks.delete('8,40,30'); });
+  check('torch: Bára removes the wall, the server drops the torch as an item for both', await until(A, () => !window.game.blocks.has('8,40,31') && window.game.groundItems.some((x) => x.id === 'torch' && x.n > 0)) && await until(B, () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31')));
 
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
   await sleep(1500);
