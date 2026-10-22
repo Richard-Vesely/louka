@@ -133,8 +133,9 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
 
 ## Rules for AI helpers
 
-1. **Small pull requests.** One idea per PR. Never push to `main`; open a PR, CI must be green, then the kid merges it
-   (no review or approval is required). Never force-push.
+1. **Small pull requests.** One idea per PR. Never push to `main`; open a PR, CI must be green, then the PR bot (or the kid) merges it
+   (no review or approval is required; a red CI or a conflict gets a Czech bot comment with a prompt to fix it;
+   changes to `.github/` or `deploy/` wait for Richard). Never force-push.
 2. **All text in the game stays Czech.** Comments may be Czech (most are) or English.
 3. **Data before engine.** A new item, block, recipe, cooking recipe or mob is mostly a data change in `shared/data/`
    or `shared/sim/mobs.js`. Add engine code only when data can't express it.
