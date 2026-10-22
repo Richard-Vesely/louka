@@ -8,9 +8,10 @@ import { structuresNear } from '../../shared/world/structures.js';
 
 test('data tables are complete (counts from Marek\'s version 2778d1b)', () => {
   // + 5 futuristických bloků (technický a bílý panel, 3 neony; shared/data/tech.js) + luk a šíp (2 předměty, 2 recepty)
-  assert.equal(Object.keys(ITEMS).length, 360 + 5 + 2);
-  assert.equal(RECIPES.length, 262 + 5 + 2);
-  assert.equal(Object.keys(BLOCKS).length, 112 + 5);
+  // + 13 vozidel a dílů (kolo, lodě, hydroplán, garáž a vylepšení; shared/data/tech.js)
+  assert.equal(Object.keys(ITEMS).length, 360 + 5 + 2 + 13);
+  assert.equal(RECIPES.length, 262 + 5 + 2 + 13);
+  assert.equal(Object.keys(BLOCKS).length, 112 + 5 + 1);
   assert.equal(KITCHEN.length, 36);
   assert.equal(Object.keys(CROPS).length, 4);
 });
@@ -82,7 +83,8 @@ test('underground voxels and structures are deterministic', () => {
   assert.equal(naturalAt(0, -48, 0, topY(0, 0)), V.BEDROCK);
   const near = structuresNear(0, 0, 700);
   const count = (t) => near.filter((s) => s.type === t).length;
-  assert.deepEqual([count('camp'), count('dungeon'), count('tower'), count('temple'), count('hut'), count('mushhouse')], [42, 38, 18, 2, 2, 7]);
+  // jezero u (-422, -521) vzalo místo 1 tábora, 1 kobky a 2 houbových domků (stavby v jezeře nejsou)
+  assert.deepEqual([count('camp'), count('dungeon'), count('tower'), count('temple'), count('hut'), count('mushhouse')], [41, 37, 18, 2, 2, 5]);
 });
 
 test('every module in shared/ imports in Node (no DOM, no Three.js)', async () => {

@@ -69,6 +69,16 @@ When you add or change a feature, update this file in the same pull request.
   and **boulders** (16 % with iron).
 - **Grass** you can cut (fiber, seeds, berries, potatoes, rice near water, flowers); it grows back in ~2 minutes.
 - **Ponds** with water (fishing, slows vehicles), fireflies at night.
+- **Lakes** (*jezera*): rare big lakes, 100–240 m across and 6–8 m deep, in about 4 of 10 squares of 1 × 1 km, never closer
+  than 500 m to the home shrine (where the club builds), never in the Mark dimension or by a volcano. The land around a
+  lake levels out to a flat shore with reeds and stones; the bottom is flat from 0.7 of the radius. No trees, boulders,
+  structures, grass or animals spawn in a lake. Fishing, the wet shore, frogs and water sounds work like at ponds.
+  The lake nearest to the shrine is at about (−420, −520). Console: `game.toLake()` (shore of the nearest lake), `game.nearestLake(x, z)`.
+- **Swimming**: in deep water (chest under the surface) you float up until your head is above water; Space swims up,
+  Shift dives, you move a bit slower, and Space at the shore climbs out.
+- **Wind** (*vítr*): one wind for everyone, from the day number and the time of day (`windAt` in `shared/sim/weather.js`):
+  each quarter of the day it blows from its own side with its own strength, turns smoothly between them, gusts, and
+  blows harder in rain and storms. Grass, tree crowns, reeds and smoke bend with it, and sailboats sail by it.
 - **Underground**: caves (tunnels and domes), rock layers (stone, granite, marble, basalt, sandstone, obsidian),
   ores in nests: coal, iron, copper, gold, quartz, crystal, markorite (Mark dimension only).
   No digging within 10.5 m of a shrine.
@@ -338,14 +348,50 @@ attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit
 
 ## 8. Vehicles
 - **Car** (*Auto*): place it, fill fuel (canister), put in a charged car battery, F to get in. Drive with WASD,
-  Space handbrake, L lights, B horn, V camera. Trunk with 18 slots. Hits animals and monsters.
+  Space handbrake, L lights, B horn, N nitro (from the garage), V camera. Trunk with 18 slots, front and back seats. Hits animals and monsters.
+- **Bicycle** (*Jízdní kolo*, workbench: iron rods, wool saddle, gear, 2 tyres): no fuel, you pedal (W), which uses a
+  little hunger (more in a higher gear; with an empty stomach you barely move). **Gears 1/2/3** (touch: *Převod*):
+  1 climbs hills, 3 is fast on the flat (~49 km/h). Coasts and speeds up downhill on its own, leans into turns, S/Space
+  brakes, B rings the **bell**, L dynamo lamp. It won't ride into deep water; shallow water slows it. Basket with 4 slots.
+  The wheels spin, the handlebar turns with the front wheel and the pedals go round while you pedal.
+- **Motorboat** (*Motorový člun*, workshop: hull, outboard motor, fuel tank, steering wheel, seat, headlight): launched
+  onto a pond or lake with right click (it slides out from the shore until the water is deep enough). Fuel from the
+  canister. W/S throttle and reverse, A/D rudder (turns even from standstill with the motor on), bow rises at speed,
+  L lights, B horn, N nitro. Stops at shallow water and the shore with *Mělčina!* (never drives onto land). 9 slots.
+- **Sailboat** (*Plachetnice*, workbench: sail, mast, hull, iron rods): driven only by the **wind**. W hoists the sail,
+  S furls it, A/D rudder; the sail trims itself. **Points of sail**: within ~34° of the wind the sail **luffs** (flaps,
+  no drive), close-hauled is slower, **beam reach** (wind from the side) is the fastest, running downwind is slower
+  again, so to go upwind you **tack** (zig-zag). The boom swings to the side away from the wind, the sail bellies out
+  and flutters when luffing, she heels away from the wind, and a cyan pennant on the masthead shows where the wind
+  blows. The HUD shows the wind relative to the bow (arrow), where it comes from (*od SV*), its speed, the point of sail
+  and how much sail is up. Same no-shore rule as the motorboat.
+- **Boats** bob and roll on small waves (more in strong wind), leave a **wake** of foam rings and throw **spray** from
+  the bow at speed, with slapping water and (sailboat) flapping sounds. F gets you out onto the nearest dry shore, or
+  into the water to swim if there is none nearby. A parked boat keeps bobbing.
+- **Seaplane** (*Hydroplán*, biplane + floats): placed on a lake, floats on two pontoons. Throttle up on the water,
+  pull up at ~70 km/h; lands back on water (softer than on land) with a splash. On land it only slides and can't take
+  off. Spray from the floats while taxiing.
+- **Garage** (*Garáž*, workbench block): right click shows the vehicles parked within 8 m. **Repaint** in 16 colours
+  (free, the model changes for everyone), and upgrades stored in the vehicle: **nitro** (*Nitro* bottles, up to 5 charges;
+  N or 🔥 = 3 s of extra power with blue flames), **off-road tyres** (less slowdown uphill and in water, higher step;
+  car and bike) and a **turbo** (*Turbodmychadlo*: higher top speed and acceleration; car, motorboat, planes).
+- **Passengers** (multiplayer): F on a vehicle someone else drives puts you in a free seat (car 3, motorboat 3,
+  sailboat 2, biplane and seaplane 1 in the front cockpit, bike none). You ride along, look around with the mouse, and
+  F gets you out (not in the air). Your seat is part of your position, so it frees itself when you leave the game.
+- **Riders are visible** on open vehicles (bike, boats, cockpits) for other players, and for yourself with the rear
+  vehicle camera (V); in the car you sit inside.
 - **Look**: the car has rounded bodywork with metallic clearcoat paint (*střední*, *vysoká*), glass that reflects the
   sky, chrome, and a **cyan underglow** that fades in while it drives or has its lights on. The biplane carries the
   club emblem (navy disc, glowing cyan ring, white *Ř*) instead of military roundels.
 - **Biplane** (*Dvouplošník*): needs flat ground to place. Throttle Space/Shift, pitch W/S, roll A/D; stall if too slow;
   crash landing hurts.
 
-*Kód:* `client/src/vehicles/car.js`, `client/src/vehicles/plane.js` (state in `vehicles`, `shared/world/state.js`).
+*Kód:* kinds of vehicles (names, sizes, seats, upgrades) `client/src/vehicles/kinds.js`; shared parts (get in/out,
+drawing, cameras, nitro, the car's driving) `car.js`, car model `car-model.js`; `bike.js`, `boat.js` (both boats, wake,
+wind), `plane.js` (biplane and seaplane), `garage.js` (window; block model `client/src/machines/garage-model.js`),
+`passengers.js`, HUD and vehicle window `vehicle-ui.js`. State in `vehicles` (`shared/world/state.js`), wind in
+`shared/sim/weather.js`, lakes in `shared/world/terrain.js` (+ GLSL twin). Console: `game.spawnVehicle('bike', x, z, yaw)`,
+`game.spawnOnLake('sailboat' | 'motorboat' | 'seaplane')`, `game.windAt(day, t)`, `game.toggleCarCam()`.
 
 ## 9. Computer and documents
 - **Computer** (*Počítač*, OS *ŘíšeOS*): needs power. Desktop with windows, start menu, clock.
@@ -421,7 +467,8 @@ under the feet / being mined), `ambience.js` (ambience beds and one-shots), `hum
 
 ## 12. Controls (summary)
 WASD move · Shift run · Space jump · mouse look · left button mine/attack · right button place/use/eat ·
-E inventory · Q / G drop (Ctrl+Q / Shift+G stack) · middle button pick block · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle · L lights · B horn · V view (first person / behind / front; car camera in a vehicle) · O suit (*Můj oblek*) · Esc menu.
+E inventory · Q / G drop (Ctrl+Q / Shift+G stack) · middle button pick block · C creative · H help · T chat · 1–9 / wheel hotbar · F vehicle (or passenger seat) · L lights · B horn / bell · N nitro · 1/2/3 bike gears · V view (first person / behind / front; vehicle camera in a vehicle) · O suit (*Můj oblek*) · Esc menu.
+In vehicles the touch screen adds *Brzda, Převod, Nitro, Klakson/Zvonek/Houkačka, Světla, Kamera, Vystoupit*; a passenger only gets *Kamera* and *Vystoupit*.
 Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba, Pohled…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.

@@ -1,4 +1,4 @@
-// Dvouplošník: model a let.
+// Dvouplošník a hydroplán (dvouplošník na plovácích): model a let.
 import './car.js'; // pořadí spouštění: nejdřív předchozí modul (viz client/src/main.js)
 import * as THREE from 'three';
 import { clamp } from '../../../shared/util.js';
@@ -14,12 +14,15 @@ import { forestColliders, forestTrees } from '../render/forest.js';
 import { debris, sparks } from '../render/particles.js';
 import { camera } from '../render/renderer.js';
 import { toast } from '../ui/hud.js';
-import { carCam, carWarn, floorAt } from './car.js';
+import { levelAt } from './boat.js';
+import { carCam, carWarn, floorAt, nitroOn } from './car.js';
+import { powerMul } from './kinds.js';
 
 // ============================================================ dvouplošník: model a letová fyzika
 // Zjednodušená, ale fyzikální: tah motoru, odpor vzduchu ~ v², vztlak ~ v² × součinitel podle úhlu náběhu,
 // nad kritickým úhlem nebo pod pádovou rychlostí vztlak zmizí (pád rychlosti) a nos klesá. Zatáčí se náklonem.
-// Na zemi jezdí po podvozku (ostruhové kolo řídí A/D, s plynem na nule kola brzdí).
+// Na zemi jezdí po podvozku (ostruhové kolo řídí A/D, s plynem na nule kola brzdí). Hydroplán jezdí po vodě na plovácích
+// (voda brzdí víc než kola), na souši jen klouže a vzlétnout z ní nejde.
 // tah 9 m/s² a odpor 0,009·v² = nejvyšší rychlost ~32 m/s (115 km/h); při stoupání nad ~45° rychlost spadne pod pádovou
 export const PLANE = { span: 9.2, len: 7, stall: 15, vTake: 21, maxThrust: 9, drag: 0.009, fuelMax: 60, groundPitch: 0.14 };
 const planeEuler = new THREE.Euler(0, 0, 0, 'YXZ'), planeMat = new THREE.Matrix4(), planeVec = new THREE.Vector3();
@@ -53,7 +56,7 @@ function emblemTex(glow = false) {
   t.colorSpace = THREE.SRGBColorSpace;
   return (emblemCache[glow] = t);
 }
-export function buildPlaneModel(color) {
+export function buildPlaneModel(color, floats = false) {
   const g = new THREE.Group();
   const M = (o) => new THREE.MeshStandardMaterial({ roughness: 0.75, ...o });
   const fabric = M({ color }), wingM = M({ color: 0xd8c8a0 }), dark = M({ color: 0x2a2a2e, roughness: 0.5, metalness: 0.4 }), wood = M({ color: 0x7a4a24, roughness: 0.6 });
@@ -62,6 +65,7 @@ export function buildPlaneModel(color) {
   box(0.95, 0.95, 4.6, fabric, 0, 1.35, 0.1);            // trup
   box(0.62, 0.62, 1.6, fabric, 0, 1.45, 3.1);            // zúžená zadní část
   box(0.7, 0.08, 0.95, dark, 0, 1.84, 0.55);             // otevřený kokpit
+  box(0.62, 0.08, 0.6, dark, 0, 1.84, -0.5);             // přední kokpit pro spolujezdce
   box(0.6, 0.3, 0.04, M({ color: 0x9ab8c8, transparent: true, opacity: 0.5 }), 0, 1.98, -0.05); // štítek proti větru
   cyl(0.56, 0.75, dark, 0, 1.35, -2.45);                 // kryt motoru
   for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; box(0.12, 0.12, 0.3, dark, Math.cos(a) * 0.5, 1.35 + Math.sin(a) * 0.5, -2.7); } // válce rotačního motoru
@@ -84,27 +88,37 @@ export function buildPlaneModel(color) {
   box(3.2, 0.08, 0.95, wingM, 0, 1.5, 3.55);
   box(0.08, 1.15, 1.0, fabric, 0, 2.05, 3.65);
   box(0.09, 0.5, 0.35, M({ color: 0xf4f4f0 }), 0, 2.2, 3.95);
-  // podvozek: dvě kola na vzpěrách, ostruha vzadu
+  // podvozek: dvě kola na vzpěrách, ostruha vzadu; hydroplán má místo nich dva plováky
   const wheels = [];
-  for (const x of [-0.85, 0.85]) {
-    box(0.07, 0.9, 0.07, dark, x * 0.75, 0.82, -1.15).rotation.z = x > 0 ? -0.3 : 0.3;
-    const w = new THREE.Group();
-    w.position.set(x, 0.42, -1.3);
-    g.add(w);
-    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.18, 16), dark);
-    tire.rotation.z = Math.PI / 2;
-    w.add(tire);
-    box(0.2, 0.06, 0.6, M({ color: 0xc8c8c8 }), 0, 0, 0, w);
-    wheels.push(w);
+  if (floats) {
+    const fl = M({ color: 0xe8eaee, roughness: 0.35, metalness: 0.2 });
+    for (const x of [-1.25, 1.25]) {
+      const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 3.6, 4, 12).rotateX(Math.PI / 2), fl);
+      f.position.set(x, 0.24, -0.6); f.scale.set(1, 0.9, 1); g.add(f);
+      for (const z of [-1.6, 0.2]) box(0.06, 0.75, 0.06, dark, x * 0.7, 0.75, z).rotation.z = x > 0 ? 0.55 : -0.55;
+    }
+    box(2.5, 0.06, 0.08, dark, 0, 0.5, -1.6); box(2.5, 0.06, 0.08, dark, 0, 0.5, 0.2);
+  } else {
+    for (const x of [-0.85, 0.85]) {
+      box(0.07, 0.9, 0.07, dark, x * 0.75, 0.82, -1.15).rotation.z = x > 0 ? -0.3 : 0.3;
+      const w = new THREE.Group();
+      w.position.set(x, 0.42, -1.3);
+      g.add(w);
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.18, 16), dark);
+      tire.rotation.z = Math.PI / 2;
+      w.add(tire);
+      box(0.2, 0.06, 0.6, M({ color: 0xc8c8c8 }), 0, 0, 0, w);
+      wheels.push(w);
+    }
+    box(1.8, 0.06, 0.06, dark, 0, 0.42, -1.3);
+    box(0.06, 0.5, 0.06, dark, 0, 0.55, 3.75).rotation.x = 0.5;
   }
-  box(1.8, 0.06, 0.06, dark, 0, 0.42, -1.3);
-  box(0.06, 0.5, 0.06, dark, 0, 0.55, 3.75).rotation.x = 0.5;
   // poziční světla: červené vlevo, zelené vpravo, bílé na ocasu
   const nav = M({ color: 0x220000, emissive: 0xff2020, emissiveIntensity: 0 }), navG = M({ color: 0x002200, emissive: 0x20ff40, emissiveIntensity: 0 }), navW = M({ color: 0x222222, emissive: 0xffffff, emissiveIntensity: 0 });
   box(0.12, 0.1, 0.12, nav, -4.6, 2.38, -1.1);
   box(0.12, 0.1, 0.12, navG, 4.6, 2.38, -1.1);
   box(0.1, 0.1, 0.1, navW, 0, 2.62, 4.1);
-  return { group: g, prop, wheels, pivots: [], navs: [nav, navG, navW], head: null, tail: null };
+  return { group: g, prop, wheels, pivots: [], navs: [nav, navG, navW], head: null, tail: null, exhaust: [0.6, 1.1, -2.2] };
 }
 // Narazí letadlo (příď, konce křídel, ocas) do bloku, stromu nebo do země?
 export function planeHits(v) {
@@ -161,6 +175,23 @@ export function planeSpot(pt) {
   }
   return { ok: false, why };
 }
+// Hydroplán se spouští na vodu: pod plováky musí být dost hluboko (hledá se ve směru pohledu)
+const FLOAT_PTS = [];
+for (const x of [-1.25, 1.25]) for (let z = -2.4; z <= 1.21; z += 0.9) FLOAT_PTS.push([x, z]);
+export function seaplaneSpot() {
+  const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
+  let why = 'potřebuje vodu (jezero) asi 10 × 8 m';
+  for (let d = 6; d <= 30; d += 1) {
+    const x = player.pos.x + fx * d, z = player.pos.z + fz * d, lv = levelAt(x, z);
+    if (lv === null) continue;
+    const v = { x, y: lv - 0.18, z, yaw: player.yaw, pitch: 0.04, roll: 0 };
+    const c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+    if (FLOAT_PTS.some(([lx, lz]) => { const px = x + c * lx + s * lz, pz = z - s * lx + c * lz, l = levelAt(px, pz); return l === null || l - terrainH(px, pz) < 0.5; })) { why = 'moc mělko pod plováky'; continue; }
+    why = planeBlocker(v);
+    if (!why) return { ok: true, x, y: v.y, z };
+  }
+  return { ok: false, why };
+}
 let stallWarnT = 0;
 export function flyPlane(v, dt) {
   const joy = input.joy;
@@ -182,7 +213,7 @@ export function flyPlane(v, dt) {
   const stalled = !v.ground && (air < PLANE.stall || aoa > 0.38);
   const cl = stalled ? 0.2 : clamp(0.55 + aoa * 2.2, 0, 1.45);
   const lift = 9.8 * cl * (air / PLANE.vTake) ** 2;
-  const thrust = v.engine ? v.thr * PLANE.maxThrust : 0;
+  const thrust = v.engine ? v.thr * PLANE.maxThrust * powerMul(v, nitroOn()) : 0;
   const drag = PLANE.drag * speed * speed + (stalled ? 0.4 * speed : 0);
   const inv = speed > 0.01 ? 1 / speed : 0;
   v.vx += (fwd[0] * thrust + upv[0] * lift - v.vx * inv * drag) * dt;
@@ -207,12 +238,16 @@ export function flyPlane(v, dt) {
   v.roll = clamp(v.roll || 0, -1.1, 1.1);
   const ox = v.x, oy = v.y, oz = v.z, opitch = v.pitch, oyaw = v.yaw;
   v.x += v.vx * dt; v.y += v.vy * dt; v.z += v.vz * dt;
-  // země: dosednutí, rozjezd a brzdy
-  const floor = floorAt(v.x, v.z, oy + 0.5);
+  // země (u hydroplánu hladina): dosednutí, rozjezd a brzdy
+  const sea = v.type === 'seaplane', wl = sea ? levelAt(v.x, v.z) : null;
+  const onWater = wl !== null && wl - terrainH(v.x, v.z) > 0.45;
+  const floor = onWater ? Math.max(wl - 0.18, floorAt(v.x, v.z, oy + 0.5)) : floorAt(v.x, v.z, oy + 0.5);
+  v.onWater = onWater;
   if (v.y <= floor + 0.02) {
     const impact = -v.vy;
     if (!v.ground) {
-      if (impact > 7.5 || Math.abs(v.roll) > 0.55) planeCrash(v, Math.max(impact, speed * 0.5));
+      if (impact > (onWater ? 9 : 7.5) || Math.abs(v.roll) > 0.55) planeCrash(v, Math.max(impact, speed * 0.5));
+      else if (onWater && impact > 0.5) debris.emit(v.x, floor + 0.3, v.z, [0.85, 0.92, 1], 30, 3, 2.5); // šplouchnutí
       else if (impact > 1) Sound.burst({ dur: 0.2, f0: 300, f1: 100, q: 1, vol: 0.3, type: 'lowpass' });
     }
     v.ground = true;
@@ -221,12 +256,16 @@ export function flyPlane(v, dt) {
     v.roll *= 1 - Math.min(1, dt * 6);
     // zvednutí ocasu a rotace při vzletu jen při dostatečné rychlosti, jinak sedí na ostruze
     if (air > PLANE.vTake * 0.75) v.pitch = clamp(v.pitch + pitchIn * 0.6 * dt, 0, 0.4);
-    else v.pitch += (PLANE.groundPitch - v.pitch) * Math.min(1, dt * 3);
+    else v.pitch += ((sea ? 0.04 : PLANE.groundPitch) - v.pitch) * Math.min(1, dt * 3); // plováky leží rovně
     v.yaw -= rollIn * 0.9 * dt * clamp(air / 6, 0.25, 1); // řízení ostruhovým kolem
     const hx = -Math.sin(v.yaw), hz = -Math.cos(v.yaw);
     let gs = v.vx * hx + v.vz * hz;
-    if (v.thr < 0.05) gs -= Math.sign(gs) * Math.min(Math.abs(gs), 5 * dt); // brzdy kol
-    gs *= 1 - Math.min(1, 0.15 * dt);
+    if (v.thr < 0.05) gs -= Math.sign(gs) * Math.min(Math.abs(gs), (onWater ? 1.5 : 5) * dt); // brzdy kol (na vodě jen odpor)
+    if (sea && !onWater) gs *= 1 - Math.min(1, 2.5 * dt); // hydroplán na souši jen klouže
+    else if (onWater) gs *= 1 - Math.min(1, (0.12 + Math.abs(gs) * 0.004) * dt); // odpor vody pod plováky
+    else gs *= 1 - Math.min(1, 0.15 * dt);
+    if (sea && !onWater && v.thr > 0.3 && (carWarn.t -= dt) <= 0) { carWarn.t = 3; toast('Hydroplán startuje jen z vody'); }
+    if (onWater && Math.abs(gs) > 4 && Math.random() < dt * 20) for (const x of [-1.25, 1.25]) { const p = planePoint(v, x, 0.1, -2.6); debris.emit(p.x, wl + 0.1, p.z, [0.85, 0.92, 1], 2, 1 + Math.abs(gs) * 0.06, 1.2); } // spršky od plováků
     v.vx = hx * gs; v.vz = hz * gs;
   } else v.ground = false;
   if (planeHits(v)) {
@@ -237,7 +276,7 @@ export function flyPlane(v, dt) {
     v.vx = v.vz = 0;
     if (v.vy > 0) v.vy = 0;
   }
-  if (waterAt(v.x, v.y + 0.3, v.z) !== null && v.ground) { v.vx *= 1 - Math.min(1, dt * 3); v.vz *= 1 - Math.min(1, dt * 3); }
+  if (!sea && waterAt(v.x, v.y + 0.3, v.z) !== null && v.ground) { v.vx *= 1 - Math.min(1, dt * 3); v.vz *= 1 - Math.min(1, dt * 3); }
   if (v.engine) v.fuel = Math.max(0, v.fuel - (0.02 + v.thr * 0.1) * dt);
   v.spd = Math.hypot(v.vx, v.vz) * (v.ground ? 1 : 1); // pro kola a síť
   // pilot v kokpitu

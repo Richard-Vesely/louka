@@ -138,17 +138,18 @@ const dm = new THREE.Object3D();
 /** Ozdobí rybník (mesh hladiny p) rákosím a kameny podél skutečného břehu. Volá se, když se hladina vytvoří. */
 export function decorPond(mesh, p, level, mark = false) {
   decorMaterials();
-  const reeds = new THREE.InstancedMesh(reedGeo, reedMat, 90), stones = new THREE.InstancedMesh(stoneGeo, stoneMat, 14);
+  const N = p.lake ? Math.round(p.r * 4) : 64, NR = N * 1.4 | 0, NS = Math.round(N * 0.22); // u jezera víc rákosí podél delšího břehu
+  const reeds = new THREE.InstancedMesh(reedGeo, reedMat, NR), stones = new THREE.InstancedMesh(stoneGeo, stoneMat, NS);
   let nr = 0, ns = 0;
   const col = new THREE.Color();
-  for (let i = 0; i < 64; i++) {
-    const a = (i / 64) * Math.PI * 2 + hash2(i, p.x | 0) * 0.08;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + hash2(i, p.x | 0) * 0.08;
     // najdi břeh: první místo od středu ven, kde je zem nad hladinou
-    let r = p.r * 0.5;
+    let r = p.r * (p.lake ? 0.85 : 0.5);
     while (r < p.r * 1.15 && terrainH(p.x + Math.cos(a) * r, p.z + Math.sin(a) * r) < level) r += 0.15;
     const clump = hash2(Math.floor(i / 5), (p.z | 0) + 17);
     if (clump < 0.45) continue; // rákosí roste v trsech, mezi nimi je volný břeh
-    for (let j = 0; j < 2 && nr < 90; j++) {
+    for (let j = 0; j < 2 && nr < NR; j++) {
       const rr = r + (hash2(i, j + 3) - 0.6) * 0.9, aa = a + (hash2(j, i + 9) - 0.5) * 0.06;
       const x = p.x + Math.cos(aa) * rr, z = p.z + Math.sin(aa) * rr;
       dm.position.set(x - p.x, Math.max(terrainH(x, z), level - 0.3) - level - 0.05, z - p.z);
@@ -159,7 +160,7 @@ export function decorPond(mesh, p, level, mark = false) {
       reeds.setMatrixAt(nr, dm.matrix);
       reeds.setColorAt(nr++, mark ? col.setHSL(0.72, 0.5, 0.6) : col.setHSL(0.18, 0.2, 0.85 + hash2(i, j) * 0.3));
     }
-    if (hash2(i, 77) < 0.2 && ns < 14) {
+    if (hash2(i, 77) < 0.2 && ns < NS) {
       const x = p.x + Math.cos(a) * (r + 0.3), z = p.z + Math.sin(a) * (r + 0.3), s = 0.18 + hash2(i, 5) * 0.3;
       dm.position.set(x - p.x, terrainH(x, z) - level - s * 0.2, z - p.z);
       dm.rotation.set(hash2(i, 1), hash2(i, 2) * 6, 0);

@@ -3,7 +3,7 @@
 // Modul nemá vedlejší účinky při načtení: modely vytvoří initWeather() ze smyčky hry.
 import * as THREE from 'three';
 import { dayCount, dayTime } from '../../../shared/sim/day.js';
-import { weatherAt } from '../../../shared/sim/weather.js';
+import { weatherAt, windAt } from '../../../shared/sim/weather.js';
 import { Sound } from '../audio/sound.js';
 import { toast } from '../ui/hud.js';
 import { TERRAIN_GLSL } from './glsl.js';
@@ -202,7 +202,8 @@ export function updateWeather(dt, clock, under = 0) {
   U.rain.value = W.rain;
   // vítr: poryvy z času, za deště a v bouřce silnější
   const gust = 0.5 + 0.5 * Math.sin(clock * 0.35) * Math.sin(clock * 0.13 + 1);
-  U.wind.value.set(0.94, 0.33, gust, 1 + W.rain * 0.5 + W.storm * 1.1);
+  const wd = windAt(dayCount, dayTime); // směr větru je stejný jako pro plachetnice (shared/sim/weather.js)
+  U.wind.value.set(wd.x, wd.z, gust, 0.6 + wd.speed * 0.08 + W.rain * 0.5 + W.storm * 1.1);
   // hlášky
   if (target.rain > 0.3 && lastRain <= 0.3 && clock > 2) toast(target.storm > 0.5 ? 'Blíží se bouřka – schovej se!' : 'Začíná pršet');
   if (target.rain <= 0.3 && lastRain > 0.3 && clock > 2) toast('Přestalo pršet');

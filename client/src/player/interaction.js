@@ -6,6 +6,7 @@ import { NET } from '../../../shared/net/net.js';
 import { others } from '../../../shared/net/room.js';
 import { randInt } from '../../../shared/util.js';
 import { BREAK_PAUSE, INSTANT, attackCharge, attackResult, attackSpeed, breakTime, lacksTool, useCost } from '../../../shared/tools.js';
+import { solidAt } from '../../../shared/world/collision.js';
 import { nearPond, waterAt } from '../../../shared/world/nature.js';
 import { bkey, blockMeta, blocks, chairRot, chests, crops, fires, furnaces, pcDisks, power, removed, ruinsOpened, spawners, stoves, tableItems, vehicles } from '../../../shared/world/state.js';
 import { structuresNear } from '../../../shared/world/structures.js';
@@ -32,7 +33,9 @@ import { $ } from '../ui/dom.js';
 import { toast } from '../ui/hud.js';
 import { openInventory, renderHotbar } from '../ui/inventory-ui.js';
 import { carHits, floorAt, myDriverId, spawnVehicle, vehDim } from '../vehicles/car.js';
-import { planeSpot } from '../vehicles/plane.js';
+import { boatSpot } from '../vehicles/boat.js'; // (po car.js: načte se v jeho pořadí)
+import { isBoat } from '../vehicles/kinds.js';
+import { planeSpot, seaplaneSpot } from '../vehicles/plane.js';
 import { useRod } from '../world/fishing.js';
 import { usePortal } from '../world/shrine.js';
 import { placedAny } from '../world/world-state.js';
@@ -243,9 +246,9 @@ export function breakTarget(t) {
   else if (t.kind === 'vehicle') { // rozebrané auto se vrátí do batohu i s kufrem a baterií
     const v = vehicles.get(t.id);
     if (!v) return;
-    if (v.driver && v.driver !== myDriverId()) { toast('V autě někdo sedí'); return; }
+    if (v.driver && v.driver !== myDriverId()) { toast(`${vehDim(v.type).name}: někdo v něm sedí`); return; }
     for (const s of v.slots) if (s) addStack(s, false);
-    addItem(v.type === 'plane' ? 'biplane' : v.type, 1);
+    addItem(vehDim(v.type).item, 1);
     vehicles.delete(t.id);
     breakFx(t, t.at || [v.x, v.y + 0.6, v.z]);
     sfxAt(t.at, () => { Sound.blockBreak('metal'); Sound.crack(); });
@@ -322,7 +325,7 @@ export function useItem() {
   if (target?.kind === 'vehicle') {
     const v = vehicles.get(target.id);
     if (!v) return;
-    if (heldStack()?.id === 'fuel_canister') {
+    if (heldStack()?.id === 'fuel_canister' && vehDim(v.type).fuelMax) {
       const fmax = vehDim(v.type).fuelMax;
       if (v.fuel >= fmax - 0.5) { toast('Nádrž je plná'); return; }
       v.fuel = Math.min(fmax, v.fuel + 15);
@@ -332,24 +335,31 @@ export function useItem() {
     } else openInventory('car', target.id);
     return;
   }
-  // Položení auta na zem (natočené ve směru pohledu)
+  // Položení vozidla (natočené ve směru pohledu): auto a kolo na zem, letadlo před hráče, loď a hydroplán na vodu
   const vehHeld = heldStack() && ITEMS[heldStack().id].vehicle;
+  const placed = (id, y, text) => { vehicles.get(id).y = y; consumeSelected(); Sound.place(); toast(text); };
+  if (vehHeld && (isBoat(vehHeld) || vehHeld === 'seaplane')) {
+    const spot = vehHeld === 'seaplane' ? seaplaneSpot() : boatSpot(vehHeld);
+    if (!spot.ok) { toast(`${vehDim(vehHeld).name} se spouští na vodu – ${spot.why}`); return; }
+    placed(spawnVehicle(vehHeld, spot.x, spot.z, player.yaw), spot.y, `${vehDim(vehHeld).name} je na vodě. F = nastoupit, pravé tl. = ${vehDim(vehHeld).fuelMax ? 'palivo a ' : ''}úložný prostor`);
+    return;
+  }
   if (vehHeld && target?.point && ['grass', 'ground', 'vox', 'block'].includes(target.kind) && (target.kind !== 'block' || target.normal?.[1] === 1)) {
     let [x, , z] = target.point, y = floorAt(x, z, target.point[1] + 0.5);
     if (vehHeld === 'plane') { // letadlo je větší než dosah ruky: postaví se před hráče ocasem k němu
       const spot = planeSpot(target.point);
       if (!spot.ok) { toast(`Tady se letadlo nevejde – ${spot.why} (potřebuje asi 10 × 8 m)`); return; }
       ({ x, y, z } = spot);
+    } else if (vehHeld === 'bike') {
+      if (solidAt(Math.floor(x), Math.floor(y + 0.5), Math.floor(z)) || Math.hypot(x - player.pos.x, z - player.pos.z) < 0.8) { toast('Tady se kolo nevejde'); return; }
     } else if (carHits({ y }, x, z, player.yaw) || Math.hypot(x - player.pos.x, z - player.pos.z) < 2.2) { toast('Tady se auto nevejde'); return; }
-    const id = spawnVehicle(vehHeld, x, z, player.yaw);
-    vehicles.get(id).y = y;
-    consumeSelected();
-    Sound.place();
-    toast(vehHeld === 'plane' ? 'Dvouplošník stojí. F = nastoupit, pravé tl. = palivo a zavazadla' : 'Auto stojí. F = nastoupit, pravé tl. = kufr (palivo a autobaterie)');
+    const K = vehDim(vehHeld);
+    placed(spawnVehicle(vehHeld, x, z, player.yaw), y, vehHeld === 'plane' ? 'Dvouplošník stojí. F = nastoupit, pravé tl. = palivo a zavazadla'
+      : vehHeld === 'bike' ? 'Kolo stojí. F = nasednout, pravé tl. = košík' : `${K.name} stojí. F = nastoupit, pravé tl. = kufr (palivo a autobaterie)`);
     return;
   }
   // Pravé tlačítko na pracovní stůl nebo táborák otevře jeho okno.
-  const STATION_UI = { workbench: 'bench', campfire: 'fire', chest: 'chest', stove: 'kitchen', furnace: 'furnace', adv_bench: 'adv' };
+  const STATION_UI = { workbench: 'bench', campfire: 'fire', chest: 'chest', stove: 'kitchen', furnace: 'furnace', adv_bench: 'adv', garage: 'garage' };
   const held0 = heldStack();
   if (target?.kind === 'block' && target.type === 'table') { useTable(bkey(...target.cell)); return; }
   if (target?.kind === 'block' && target.type === 'chair' && !player.sitting) { sitOn(bkey(...target.cell)); return; }

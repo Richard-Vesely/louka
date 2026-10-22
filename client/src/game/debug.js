@@ -13,7 +13,7 @@ import { ensureDoc } from '../../../shared/world/papers.js';
 import { worldState } from '../../../shared/world/save.js';
 import { blockMeta, blocks, chests, crops, fires, furnaces, paperSpots, papers, pcDisks, portalActive, power, ruinsBuilt, spawners, stoves, tableItems, vehicles } from '../../../shared/world/state.js';
 import { STRUCTS, buildStructure, ruinsNear, structuresNear } from '../../../shared/world/structures.js';
-import { SHRINES, biomeAt, biomeWeights, pondOf, terrainH, volcanoOf } from '../../../shared/world/terrain.js';
+import { SHRINES, biomeAt, biomeWeights, lakeOf, nearestLake, pondOf, terrainH, volcanoOf } from '../../../shared/world/terrain.js';
 import { V, columnDug, getVox, groundHeight, setVox, topY } from '../../../shared/world/voxels.js';
 import { materialAt, targetMaterial } from '../audio/materials.js';
 import { Sound } from '../audio/sound.js';
@@ -50,8 +50,12 @@ import { camera, renderer, scene } from '../render/renderer.js';
 import { voxChunks } from '../render/vox-mesh.js';
 import { invTricks } from '../ui/inv-tricks.js';
 import { armor, armorPoints, closeInventory, fillCooking, fillRecipe, fullSet, openInventory, renderHotbar, slotClick, takeResult, ui } from '../ui/inventory-ui.js';
-import { CAR, enterVehicle, exitVehicle, spawnVehicle } from '../vehicles/car.js';
+import { CAR, enterVehicle, exitVehicle, nitro, seatWorld, spawnVehicle, toggleCarCam, useNitro, vehMeshes } from '../vehicles/car.js';
+import { BIKE } from '../vehicles/bike.js';
+import { BOATS, levelAt, sailEff, windRel } from '../vehicles/boat.js';
+import { KINDS } from '../vehicles/kinds.js';
 import { PLANE, planeHits } from '../vehicles/plane.js';
+import { windAt } from '../../../shared/sim/weather.js';
 import { fishing, useRod } from '../world/fishing.js';
 import { dropHeld, throwItem } from '../world/ground-items.js';
 import { teleport, usePortal } from '../world/shrine.js';
@@ -59,6 +63,25 @@ import { frame, tick } from './loop.js';
 import { GFX, QUALITY, TOUCH } from './prefs.js';
 import { saveGame } from './save.js';
 
+// Na břeh nejbližšího jezera (na straně k hráči), hráč se dívá na vodu. Vrátí jezero.
+function toLake() {
+  const L = nearestLake(player.pos.x, player.pos.z);
+  if (!L) return null;
+  const a = Math.atan2(player.pos.z - L.z, player.pos.x - L.x), x = L.x + Math.cos(a) * L.r * 1.06, z = L.z + Math.sin(a) * L.r * 1.06;
+  teleport(x, z);
+  player.pos.y = terrainH(x, z) + 0.05;
+  player.yaw = Math.atan2(x - L.x, z - L.z);
+  return L;
+}
+// Loď (nebo hydroplán) na nejbližší jezero: mezi hráčem a středem jezera, přídí ke středu. Vrátí id vozidla.
+function spawnOnLake(type = 'motorboat') {
+  const L = nearestLake(player.pos.x, player.pos.z);
+  if (!L) return null;
+  const a = Math.atan2(player.pos.z - L.z, player.pos.x - L.x), x = L.x + Math.cos(a) * L.r * 0.55, z = L.z + Math.sin(a) * L.r * 0.55;
+  const id = spawnVehicle(type, x, z, Math.atan2(x - L.x, z - L.z));
+  vehicles.get(id).y = type === 'seaplane' ? levelAt(x, z) - 0.18 : levelAt(x, z);
+  return id;
+}
 // Pro ladění v konzoli prohlížeče.
 export const game = window.game = {
   testMode: false, tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, spawnMob, blocks, rebuildBlocks, forestTrees, forestRocks,
@@ -67,6 +90,8 @@ export const game = window.game = {
   get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, spawnGroundItem, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
   NET, others, worldState, saveGame, renderer, pc, openPC, closePC, pcPower, openApp, papers, pcDisks, paperSpots, openDoc, closeDoc, useDocs, newPaper, printJob, ensureDoc, vehicles, spawnVehicle, enterVehicle, exitVehicle, CAR, PLANE, planeHits, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => setDay(t), get target() { return target; }, mineState, crackStage, wearHeld, renderHotbar, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite, LK, FX, post, weather, setWeather, vis,
   toggleView, get viewMode() { return viewMode; }, openCostume, myPose, updateAvatars, localBody, mobView: viewOf, // pohled ze třetí osoby (V), výběr obleku (O), postavičky
+  lakeOf, nearestLake, toLake, // jezera: game.toLake() = na břeh nejbližšího jezera
+  KINDS, BIKE, BOATS, windAt, windRel, sailEff, levelAt, spawnOnLake, nitro, useNitro, vehMeshes, seatWorld, toggleCarCam, // vozidla: game.spawnOnLake('sailboat')
   Sound, soundEnv, materialAt, targetMaterial, // zvuky: game.Sound.music.start('night'), game.soundEnv, game.materialAt(x, y, z)
 };
 window.gameStarted = true;

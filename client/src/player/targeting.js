@@ -11,7 +11,7 @@ import { NO_DIG_R, V, VOX, getVox, groundHeight, topY } from '../../../shared/wo
 import { forestRocks, forestTrees } from '../render/forest.js';
 import { isCut } from '../render/grass.js';
 import { camera } from '../render/renderer.js';
-import { rayVehicle, vehDim } from '../vehicles/car.js';
+import { myDriverId, rayVehicle, vehDim } from '../vehicles/car.js';
 import { shrineActive } from '../world/shrine.js';
 import { countItem } from './inventory.js';
 
@@ -118,7 +118,9 @@ export function pickTarget() {
   if (vh) {
     bt = vh.t;
     const v = vehicles.get(vh.id);
-    best = { kind: 'vehicle', id: vh.id, key: 'veh' + vh.id, name: vehDim(v.type).name, hint: `F = nastoupit · pravé tl. = kufr a palivo (${v.fuel.toFixed(0)} l) · drž levé = rozebrat`, hard: 4, at: [o.x + d.x * vh.t, o.y + d.y * vh.t, o.z + d.z * vh.t] };
+    const K = vehDim(v.type), busy = v.driver && v.driver !== myDriverId();
+    const enter = busy ? (K.seats.length > 1 ? 'F = přisednout' : 'obsazeno') : v.type === 'bike' ? 'F = nasednout' : 'F = nastoupit';
+    best = { kind: 'vehicle', id: vh.id, key: 'veh' + vh.id, name: K.name, hint: `${enter} · pravé tl. = ${K.trunk.toLowerCase()}${K.fuelMax ? ` a palivo (${v.fuel.toFixed(0)} l)` : ''} · drž levé = rozebrat`, hard: K.wid < 1 ? 1.5 : 4, at: [o.x + d.x * vh.t, o.y + d.y * vh.t, o.z + d.z * vh.t] };
   }
   // Portál ve svatyni (kruh o poloměru 2,4 m, stojí v rovině x–y)
   const sh = shrineOf(o.x);

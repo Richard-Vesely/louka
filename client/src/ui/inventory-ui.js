@@ -18,6 +18,7 @@ import { renderPowerUI } from '../machines/power.js';
 import { addItem, countItem, findRecipe, hasFor, insertInto, inv, recipeNeeds, removeItem } from '../player/inventory.js';
 import { creative, input, lockPointer, setCreative, setResetting, unlockPointer } from '../player/player.js';
 import { enterVehicle, renderCarUI } from '../vehicles/car.js';
+import { garageClick, renderGarageUI } from '../vehicles/garage.js';
 import { throwItem } from '../world/ground-items.js';
 import { crafted } from '../world/world-state.js';
 import { $ } from './dom.js';
@@ -59,6 +60,7 @@ export function renderCraftArea() {
   if (ui.mode === 'furnace') return renderFurnace(area);
   if (ui.mode === 'power') return renderPowerUI(area);
   if (ui.mode === 'car') return renderCarUI(area);
+  if (ui.mode === 'garage') return renderGarageUI(area, ui.fireKey);
   if (ui.mode === 'chest') {
     const c = chestOf(ui.fireKey);
     area.innerHTML = `<div class="mc-title">Truhla <button class="mc-btn mini" data-sort="chest" title="Sloučí a seřadí předměty v truhle"><i class="ico-sort"></i>Seřadit</button></div><div class="grid">${c.map((s, i) => slotHTML(s, i, '', 'chest')).join('')}</div><div class="mc-note">Shift + klik přesune předmět mezi truhlou a batohem · Shift + 2× klik přesune všechny stejné.</div>`;
@@ -110,8 +112,8 @@ function renderCatTabs(show) {
   if (el.innerHTML !== html) el.innerHTML = html;
 }
 function renderBook() {
-  document.querySelector('.mc-book').style.display = ui.mode === 'chest' || ui.mode === 'power' || ui.mode === 'car' ? 'none' : '';
-  if (ui.mode === 'power' || ui.mode === 'car') return;
+  document.querySelector('.mc-book').style.display = ui.mode === 'chest' || ui.mode === 'power' || ui.mode === 'car' || ui.mode === 'garage' ? 'none' : '';
+  if (ui.mode === 'power' || ui.mode === 'car' || ui.mode === 'garage') return;
   renderCatTabs(['inv', 'bench', 'adv'].includes(ui.mode) && !(creative && ui.mode === 'inv'));
   if (ui.mode === 'chest') return;
   if (ui.mode === 'kitchen') {
@@ -213,7 +215,7 @@ export function quickMove(c, i, s) {
   else if (ui.mode === 'chest') left = insertStack(chestOf(ui.fireKey), s);
   else if (ui.mode === 'car' && vehicles.get(ui.fireKey)) { // do kufru (autobaterie do jejího místa)
     const sl = vehicles.get(ui.fireKey).slots;
-    if (!sl[0] && (s.id === 'car_battery' || s.id === 'car_battery_empty')) { sl[0] = s; left = 0; }
+    if (!sl[0] && vehicles.get(ui.fireKey).type === 'car' && (s.id === 'car_battery' || s.id === 'car_battery_empty')) { sl[0] = s; left = 0; }
     else {
       for (let j = 1; j < sl.length && left; j++) if (sl[j]?.id === s.id) { const k = Math.min(ITEMS[s.id].stack - sl[j].n, left); sl[j].n += k; left -= k; }
       for (let j = 1; j < sl.length && left; j++) if (!sl[j]) { sl[j] = { id: s.id, n: left }; left = 0; }
@@ -378,6 +380,8 @@ invEl.addEventListener('mousedown', (e) => {
   const ck = e.target.closest('[data-cook]');
   if (ck) fillCooking(ck.dataset.cook);
   if (e.target.closest('[data-car-enter]')) { const id = ui.fireKey; closeInventory(); enterVehicle(id); return; }
+  const gar = e.target.closest('[data-gar]');
+  if (gar) { if (garageClick(gar)) refreshUI(); return; }
   const fu = e.target.closest('[data-fur]');
   if (fu) return fillFurnace(fu.dataset.fur);
   const ct = e.target.closest('[data-cat]');

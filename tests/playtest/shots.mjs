@@ -10,7 +10,7 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, forest, inventory, tech-machines, vehicles;
+// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
@@ -43,7 +43,7 @@ const ev = (fn, arg) => page.evaluate(fn, arg);
 await page.goto(server.url, { waitUntil: 'domcontentloaded' });
 await ev((q) => { localStorage.clear(); localStorage.setItem('rise-nastaveni', JSON.stringify({ ...(q === 'auto' ? {} : { quality: q }), controls: 'mouse' })); localStorage.setItem('rise-jmeno', 'Fotograf'); }, quality);
 await page.goto(server.url + (look ? `?look=${look}` : ''), { waitUntil: 'domcontentloaded' });
-await page.click('#mSolo');
+await page.click('#mSolo', { timeout: 240000, noWaitAfter: true }); // první start na pomalém stroji kompiluje shadery dlouho
 await page.waitForFunction(() => window.gameStarted === true, null, { timeout: 120000 });
 const gpu = await ev(() => { const gl = window.game.renderer.getContext(); const e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); });
 const realQ = await ev(() => window.game.QUALITY);
@@ -116,6 +116,12 @@ const VIEWS = {
     S.place({ x: p.x + p.r + 3, z: p.z + 4, up: 1.2, yaw: 0, time: 0.31 });
     S.lookAt(p.x - p.r * 0.6, g.pondLevel(p), p.z - 2);
   },
+  // jezero (nejbližší ke svatyni): široká hladina, rovný břeh, rákosí
+  lake: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521);
+    S.place({ x: L.x + L.r * 1.12, z: L.z + L.r * 0.35, up: 2.2, yaw: 0, time: 0.4 });
+    S.lookAt(L.x - L.r * 0.3, L.level, L.z - L.r * 0.2);
+  },
   // hustý les odpoledne
   forest: () => { SHOT.place({ x: -120, z: 205, up: 0.1, yaw: 0, time: 0.6 }); SHOT.lookAt(-120, SHOT.g.groundHeight(-120, 185) + 2.5, 185); },
   // stroje a elektřina za soumraku: generátor, kabely, baterie, solár, lampy, počítač
@@ -137,6 +143,64 @@ const VIEWS = {
     if (!S.veh) { S.veh = [g.spawnVehicle('car', X, Z, 0.6), g.spawnVehicle('plane', X + 9, Z - 4, -0.4)]; }
     S.place({ x: X - 4, z: Z + 9, up: 2.4, yaw: 0, time: 0.4 });
     S.lookAt(X + 3, g.groundHeight(X, Z) + 0.8, Z - 1);
+  },
+  // jízdní kolo na louce a cyklista zezadu (kamera vozidla, V)
+  bike: () => {
+    const S = SHOT, g = S.g, X = -60, Z = -20;
+    S.place({ x: X, z: Z + 3, up: 0, yaw: 0, time: 0.42 });
+    g.player.flyT = 0;
+    if (!S.bike) { S.bike = g.spawnVehicle('bike', X, Z, 0.5); g.vehicles.get(S.bike).y = g.groundHeight(X, Z); S.bike2 = g.spawnVehicle('bike', X + 2.5, Z - 1.5, -0.4); g.vehicles.get(S.bike2).y = g.groundHeight(X + 2.5, Z - 1.5); }
+    g.enterVehicle(S.bike); g.toggleCarCam(); g.player.yaw = 1.2; g.player.pitch = -0.12; g.tick(0.0001);
+  },
+  // motorový člun a plachetnice zblízka u břehu jezera (nejbližší ke svatyni)
+  boats: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521);
+    if (S.bike && g.player.vehicle) { g.exitVehicle(); g.toggleCarCam(); }
+    const at = (a, r) => [L.x + Math.cos(a) * L.r * r, L.z + Math.sin(a) * L.r * r];
+    if (!S.boats) {
+      const [mx, mz] = at(0.07, 0.86), [sx, sz] = at(-0.08, 0.8);
+      const m = g.spawnVehicle('motorboat', mx, mz, 2.0), s = g.spawnVehicle('sailboat', sx, sz, 0.9);
+      g.vehicles.get(m).y = g.levelAt(mx, mz); g.vehicles.get(s).y = g.levelAt(sx, sz);
+      Object.assign(g.vehicles.get(s), { thr: 1, boom: -0.7 });
+      S.boats = [m, s];
+    }
+    const [cx, cz] = at(0.01, 1.04);
+    S.place({ x: cx, z: cz, up: 1.9, yaw: 0, time: 0.4 });
+    const [tx, tz] = at(0, 0.8);
+    S.lookAt(tx, L.level + 1.3, tz);
+  },
+  // plachtění: hráč kormidluje plachetnici, kamera zezadu (V) – je vidět postava, plachta a vlaječka
+  sailing: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521), w = g.windAt(1, 0.45);
+    if (!S.sail) { S.sail = g.spawnOnLake('sailboat'); }
+    const v = g.vehicles.get(S.sail);
+    S.place({ x: v.x + 3, z: v.z + 3, up: 0, yaw: 0, time: 0.45 });
+    g.player.flyT = 0;
+    g.enterVehicle(S.sail); g.toggleCarCam();
+    v.yaw = Math.atan2(w.z, -w.x) + 0.3; // vítr zboku
+    g.keys.add('KeyW'); for (let i = 0; i < 40; i++) g.tick(0.05); g.keys.delete('KeyW');
+    for (let i = 0; i < 40; i++) g.tick(0.05);
+    g.player.yaw = 0.5; g.player.pitch = 0.05;
+  },
+  // hydroplán na jezeře
+  seaplane: () => {
+    const S = SHOT, g = S.g, L = g.lakeOf(-422, -521), a = 1.9;
+    if (g.player.vehicle) { const v = g.vehicles.get(g.player.vehicle); v.spd = 0; g.exitVehicle(); g.toggleCarCam(); }
+    if (!S.sea) { const x = L.x + Math.cos(a) * L.r * 0.6, z = L.z + Math.sin(a) * L.r * 0.6; S.sea = g.spawnVehicle('seaplane', x, z, 0.9); g.vehicles.get(S.sea).y = g.levelAt(x, z) - 0.18; }
+    const v = g.vehicles.get(S.sea);
+    S.place({ x: L.x + Math.cos(a) * L.r * 1.1, z: L.z + Math.sin(a) * L.r * 1.1, up: 3, yaw: 0, time: 0.6 });
+    S.lookAt(v.x, v.y + 1.2, v.z);
+  },
+  // garáž: okno s lakem a vylepšeními pro auto
+  garage: () => {
+    const S = SHOT, g = S.g, X = -70, Z = -30;
+    if (!S.veh) S.veh = [g.spawnVehicle('car', X, Z, 0.6)];
+    const y = S.cell(X - 4, Z + 2), key = `${X - 4},${y + 1},${Z + 2}`;
+    g.blocks.set(key, 'garage'); g.rebuildBlocks();
+    g.addItem('nitro', 3, true); g.addItem('turbocharger', 1, true);
+    S.place({ x: X - 4, z: Z + 9, up: 2.4, yaw: 0, time: 0.4 });
+    S.lookAt(X - 2, g.groundHeight(X, Z) + 0.8, Z);
+    g.openInventory('garage', key);
   },
   // otevřený batoh s věcmi
   inventory: () => {
@@ -208,7 +272,7 @@ for (const [name, setup] of Object.entries(VIEWS)) {
         requestAnimationFrame(f);
       }));
     }
-    if (name === 'inventory') await ev(() => { window.game.closeInventory(); window.SHOT.clearInv(); });
+    if (name === 'inventory' || name === 'garage') await ev(() => { window.game.closeInventory(); window.SHOT.clearInv(); });
     console.log(`shot  ${name}${perf[name] ? `  ${perf[name]} ms/frame` : ''}`);
   } catch (e) {
     console.log(`FAIL  ${name}: ${String(e.message || e).split('\n')[0]}`);
