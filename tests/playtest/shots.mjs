@@ -207,7 +207,7 @@ const VIEWS = {
     const S = SHOT, g = S.g;
     S.place({ x: 46, z: 58, up: 0.1, yaw: 0, time: 0.36 }); S.lookAt(0, 4, 0);
     S.clearInv();
-    for (const [id, n] of [['iron_pickaxe', 1], ['stone_sword', 1], ['planks', 48], ['cobble', 64], ['torch', 20], ['bread', 6], ['apple', 9], ['iron', 12], ['crystal', 5], ['glass', 16], ['coal', 30], ['log', 14]]) if (g.ITEMS[id]) g.addItem(id, n, true);
+    for (const [id, n] of [['iron_pick', 1], ['stone_sword', 1], ['planks', 48], ['cobble', 64], ['torch', 20], ['bread', 6], ['apple', 9], ['iron', 12], ['crystal', 5], ['glass', 16], ['coal', 30], ['log', 14]]) if (g.ITEMS[id]) g.addItem(id, n, true);
     g.openInventory();
   },
 };

@@ -193,6 +193,24 @@ try {
   });
   check('closing with a full backpack drops the grid and the cursor on the ground', JSON.stringify(spill) === JSON.stringify(['apple:2', 'coal:3']), JSON.stringify(spill));
 
+  // ------------------------------------------------------------ Nastavení nad batohem: E a Esc zavřou jen okno nastavení
+  await ev(() => window.game.inv.slots.fill(null));
+  await setInv({});
+  await page.click('#settingsBtn');
+  await page.waitForTimeout(150);
+  await page.click('#settings .seg .mc-btn'); // klik v okně (fokus zůstane uvnitř)
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(150);
+  const afterE = await ev(() => ({ settings: !!document.getElementById('settings'), inv: document.getElementById('inventory').style.display }));
+  check('E with Nastavení open closes only Nastavení (the backpack stays open, no orphan window)', !afterE.settings && afterE.inv === 'grid', JSON.stringify(afterE));
+  await page.click('#settingsBtn');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(150);
+  const afterEsc = await ev(() => ({ settings: !!document.getElementById('settings'), inv: document.getElementById('inventory').style.display }));
+  check('Esc closes Nastavení first, then the backpack', !afterEsc.settings && afterEsc.inv === 'grid', JSON.stringify(afterEsc));
+  await ev(() => { localStorage.removeItem('rise-nastaveni'); window.game.closeInventory(); });
+
   // ------------------------------------------------------------ more Minecraft: right-click swap, Q keeps wear
   await setInv({ 9: S('log', 2) }, S('stone', 5));
   a = await box(slot(9));
