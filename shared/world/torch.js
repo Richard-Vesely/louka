@@ -4,8 +4,7 @@
 //   1 = stojí, 2–5 = visí na zdi ve směru WALL_DIRS[meta − 2], bez meta = stará pochodeň (z doby před pravidly).
 import { BLOCKS, shapeBoxes } from '../data/index.js';
 import { emit } from '../events.js';
-import { spawnGroundItem } from '../sim/ground-items.js';
-import { Vec3 } from '../vec3.js';
+import { popGroundItem } from '../sim/ground-items.js';
 import { bkey, blockMeta, blocks, lights } from './state.js';
 import { V, getVox, groundHeight, topY } from './voxels.js';
 
@@ -92,12 +91,12 @@ export function torchBox(meta) {
   return [lo(d[0]), 0.12, lo(d[2]), hi(d[0]), 0.98, hi(d[2])];
 }
 
-/** Pochodeň odpadne: zmizí ze světa a spadne jako předmět (s malým poskokem). */
+/** Pochodeň odpadne: zmizí ze světa a vyskočí jako předmět (stejně jako vytěžený blok). */
 export function dropTorch(k) {
   const [x, y, z] = k.split(',').map(Number), f = torchFlame(torchMeta(k, x, y, z));
   blocks.delete(k);
   blockMeta.delete(k);
-  spawnGroundItem('torch', 1, new Vec3(x + 0.5 + f[0], y + 0.4, z + 0.5 + f[2]), new Vec3((Math.random() - 0.5) * 1.2, 2.5, (Math.random() - 0.5) * 1.2), 0.4);
+  popGroundItem('torch', 1, x + 0.5 + f[0], y + 0.5, z + 0.5 + f[2]); // vyskočí jako vytěžený blok
   emit('torchDrop', x, y, z);
   emit('blocksChanged');
 }

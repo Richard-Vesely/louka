@@ -86,10 +86,12 @@ try {
     T.tpg(t.x + 1.6, t.z); T.step(10);
     T.aim(t.x, t.y + 1.2, t.z);
     const label = T.text('targetLabel');
-    const n = T.mineUntil(() => T.count('log') > 0 || T.count('cherry_log') > 0);
-    return { label, n, logs: T.count('log'), gone: !g.forestTrees.some((x) => x.key === t.key), removed: g.removed?.has?.(t.key) };
+    const n = T.mineUntil(() => !g.forestTrees.some((x) => x.key === t.key));
+    const dropped = g.groundItems.filter((x) => x.id === 'log' && x.n > 0).reduce((k, x) => k + x.n, 0), direct = T.count('log');
+    T.collect();
+    return { label, n, dropped, direct, logs: T.count('log'), gone: !g.forestTrees.some((x) => x.key === t.key), removed: g.removed?.has?.(t.key) };
   });
-  check('chop a tree by hand gives logs', r.logs >= 3, `${r.logs} logs in ${r.n} ticks, label "${r.label}"`);
+  check('chop a tree by hand gives logs (they pop out on the ground and you pick them up)', r.logs >= 3 && r.dropped >= 3 && r.direct === 0, `${r.logs} logs in ${r.n} ticks (dropped ${r.dropped}, direct ${r.direct}), label "${r.label}"`);
   check('felled tree disappears', r.gone);
 
   // ------------------------------------------------------------ crafting
@@ -132,6 +134,7 @@ try {
     const [x, y, z] = k.split(',').map(Number);
     T.aim(x + 0.5, y + 0.5, z + 0.5);
     const n = T.mineUntil(() => !g.blocks.has(k));
+    T.collect();
     return { n, gone: !g.blocks.has(k), planks: T.count('planks') };
   }, placed);
   check('break the placed block and get it back', r.gone && r.planks === 10, JSON.stringify(r));
@@ -143,6 +146,7 @@ try {
     const cx = -8, cz = 27, top = g.topY(cx, cz);
     T.aim(cx + 0.5, g.groundHeight(cx + 0.5, cz + 0.5), cz + 0.5);
     const n = T.mineUntil(() => g.getVox(cx, top, cz) === 0, 900);
+    T.collect();
     return { n, air: g.getVox(cx, top, cz) === 0, dirt: T.count('dirt'), fiber: T.count('fiber'), dug: g.columnDug(cx, cz) };
   });
   check('dig grass then dirt (voxel underground)', r.air && r.dirt >= 1 && r.fiber >= 1 && r.dug, JSON.stringify(r));
@@ -209,6 +213,7 @@ try {
     g.input.lmb = true; T.step(10);
     const mid = { stage: g.crackStage(), p: +g.mineState().p.toFixed(2), tg: g.target && (g.target.type || g.target.kind), near: g.mobs.filter((m) => m.pos.distanceTo(p) < 5).map((m) => m.type).join() };
     const n = T.mineUntil(() => !g.blocks.has(k));
+    T.collect();
     const s = g.inv.slots[0];
     return { mid, n, w: s?.w, bar: !!document.querySelector('#hotbar .slot .dur'), stone: T.count('stone'), cracksGone: g.crackStage() === -1, k };
   });
@@ -220,7 +225,9 @@ try {
     const [x, y, z] = k.split(',').map(Number);
     T.aim(x + 0.5, y + 0.5, z + 0.5);
     T.mineUntil(() => !g.blocks.has(k));
-    return { held: g.inv.slots[0], toast: T.text('toast'), stone: T.count('stone') };
+    const toast = T.text('toast');
+    T.collect();
+    return { held: g.inv.slots[0], toast, stone: T.count('stone') };
   }, r.k);
   check('tools: a worn-out pickaxe breaks with a Czech message (and the block still drops)', r.held === null && r.toast === 'Dřevěný krumpáč se rozbil!' && r.stone === 2, JSON.stringify(r));
   r = await ev(() => {

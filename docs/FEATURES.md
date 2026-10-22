@@ -188,6 +188,10 @@ When you add or change a feature, update this file in the same pull request.
 ## 4. Mining, building, items
 - **Mining** with hold-to-break and tool tiers: wood → stone → iron → crystal → markorite.
   Axe, pickaxe, shovel, sword (and hoe). Some ores need a better pickaxe (*Potřebuješ…*).
+  - **Drops pop out** like in Minecraft: what you mine (blocks, underground, trees, rocks, grass, crops) jumps out of
+    where it was as a small item with a little random hop; after 0.5 s the magnet pulls it in (see *Drop items*). Breaking a
+    chest, furnace, campfire, stove, generator or table drops everything inside on the ground (tool wear kept).
+    **In creative mode mined blocks drop nothing** (the contents of a chest still do).
   - **Speed** (Minecraft formula): time = hardness ÷ tool speed (hand 1, wood 2, stone 4, iron 6, crystal 8, markorite 10,
     only with the right tool for the material); 3× slower with your head under water, 2.5× slower while jumping; a sword
     cuts grass faster. A short 0.3 s pause before the next block.
@@ -206,8 +210,8 @@ When you add or change a feature, update this file in the same pull request.
   set) → +25 % per cell. Armor too. The output glows cyan, *🔧 Oprava…* shows the result and an anvil sound plays.
 - **Tooltips** of tools also show the attack speed (*⏱ 1,7 úderů/s*), what a pickaxe can mine, the crit hint,
   *Odolnost 187 / 250* (red under 10 %), how to repair.
-- **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click), Shift-move, throw out of the window
-  (left = all, right = one). Glassy futuristic look: slots glow on hover, rarity-tinted edges, the window is only as wide
+- **Inventory** (*Batoh*, E): 9-slot hotbar + 27 slots, drag, split (right-click: take half, put one; with a different
+  item it swaps like a left click), Shift-move, throw out of the window (left = all, right = one). Glassy futuristic look: slots glow on hover, rarity-tinted edges, the window is only as wide
   as the backpack; UI sounds for take, put, gather, spread, sort, open and close. Minecraft tricks:
   - **Drag with an item** over several slots: left splits the stack evenly, right puts one in each; swept slots glow and
     show the count they will get, the cursor shows what is left. Dragging over one slot is an ordinary click.
@@ -235,7 +239,11 @@ When you add or change a feature, update this file in the same pull request.
 - **Drop items** (Q one, Ctrl+Q whole stack; G and Shift+G still work): they lie on the ground, anyone can pick them up;
   they vanish after 5 min. Identical items lying together merge into one stack (decided by whoever holds the world).
   Lying items bob and spin with a soft shadow and show 1–5 models by count (1, 2–16, 17–32, 33–48, 49+). Within 2.4 m an
-  item slides toward you (magnet), flies into you shrinking and plays a short high *plip*.
+  item slides toward you (magnet), flies into you shrinking and plays a short high *plip* (also from a hole one block
+  deeper than your feet). Like Minecraft: an item you throw can be picked up after **2 s**, a mined block after **0.5 s**;
+  in a pond or lake an item dips, **floats up and bobs on the surface**; in the **lava** of a volcano crater it **burns**
+  with sparks, smoke and a hiss (whoever holds the world decides); a block placed on an item pushes it up on top.
+  A dropped tool keeps its wear (also with Q over a slot), and the save keeps wear and how long items have lain there.
 - **Building**: ~115 block types: planks of 5 woods, stones and polished stones, bricks, tiles, glass and panes,
   sandstone, snow, obsidian, mushroom blocks, roof tiles, concrete in 8 colours (from flower dyes), copper,
   gold, steel, quartz, lanterns, torches, and futuristic blocks: **Technický panel** (graphite metal panels with
