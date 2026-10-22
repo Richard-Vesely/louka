@@ -23,23 +23,26 @@ export function fireSources(x0, z0, x1, z1) {
   }
   return out;
 }
-// Jas podle vzdálenosti: úroveň světla klesá o 1 na blok jako v Minecraftu (14 u ohně), jas podle jeho křivky.
+// Síla (k), vzdálenost poloviční síly (a), strop součtu víc ohňů (cap), kolik dostane stěna bokem k ohni (side).
+// Naladěno na snímcích (tests/playtest/shots.mjs, pohled torches): nejbližší ohně mají navíc skutečné světlo.
+const TUNE = { k: 0.6, a: 1.8, cap: 1.0, side: 0.35 };
+// Jas podle vzdálenosti: blízko ohně silný, dál rychle slábne a na kraji dosahu plynule zmizí.
 function falloff(d) {
-  const L = Math.max(0, 1 - d / FIRE_R) * 0.93;
-  return L / (3 - 2 * L);
+  const w = 1 - (d / FIRE_R) ** 4;
+  return TUNE.k * w * w / (1 + (d / TUNE.a) ** 2);
 }
 
 /**
- * Pro stavbu jednoho chunku: null, když v dosahu žádný oheň není. local(lx, wy, lz) = je buňka pevná podle dat chunku
- * (undefined = mimo data, pak se zeptá podzemí). Vrací { visible(ax, ay, az), at(vis, x, y, z, n) }:
+ * Pro stavbu jednoho chunku: null, když v dosahu žádný oheň není. known(x, y, z) = je buňka pevná podle už spočítaných
+ * dat chunků (undefined = neví, pak se zeptá podzemí). Vrací { visible(ax, ay, az), at(vis, x, y, z, n) }:
  * visible = ohně, které vidí buňku vzduchu před stěnou; at = světlo v rohu stěny (x, y, z) s normálou n.
  */
-export function fireBaker(bx, bz, P, local) {
+export function fireBaker(bx, bz, P, known) {
   const src = fireSources(bx, bz, bx + P - 1, bz + P - 1);
   if (!src.length) return null;
   const far = new Map(), tops = new Map();
   const solid = (x, y, z) => {
-    const r = local(x - bx, y, z - bz);
+    const r = known(x, y, z);
     if (r !== undefined) return r;
     if (y <= VMIN) return true;
     const ck = (x + 131072) * 262144 + (z + 131072);
@@ -77,9 +80,9 @@ export function fireBaker(bx, bz, P, local) {
         const dx = s.x - x, dy = s.y - y, dz = s.z - z, d = Math.hypot(dx, dy, dz);
         if (d >= FIRE_R) continue;
         const lam = d < 0.01 ? 1 : Math.max(0, (dx * nrm[0] + dy * nrm[1] + dz * nrm[2]) / d);
-        sum += s.k * falloff(d) * (0.35 + 0.65 * lam); // i boční stěna trochu světla dostane (jako v Minecraftu)
+        sum += s.k * falloff(d) * (TUNE.side + (1 - TUNE.side) * lam); // i boční stěna trochu světla dostane (jako v Minecraftu)
       }
-      return Math.min(sum, 1.6);
+      return Math.min(sum, TUNE.cap);
     },
   };
 }

@@ -10,7 +10,7 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
-// Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, tech-machines, vehicles;
+// Views (1600×900): day-landscape, sunset-lights, cave, torches, torches-night, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
@@ -109,6 +109,48 @@ const VIEWS = {
     g.rebuildBlocks();
     S.place({ x: X + 0.5, z: Z + 5.5, y: Y + 0.2, yaw: 0, time: 0.4 });
     S.lookAt(X + 0.5, Y + 1.2, Z - 6);
+  },
+  // jeskyně s 35 pochodněmi (na stěnách i na zemi): chodba a sál osvětlené jen ohněm (v noci, jako když přijdeš z venku)
+  // --tweak "SHOT.noTorch = 1" = stejná jeskyně bez pochodní, "SHOT.torchTime = 0.4" = ve dne
+  torches: () => {
+    const S = SHOT, g = S.g, X = 52, Z = -70, Y = -22, V = g.V, cave = new Set(), key = (x, y, z) => `${x},${y},${z}`;
+    const air = (x0, x1, y0, y1, z0, z1) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) { g.setVox(x, y, z, V.AIR); cave.add(key(x, y, z)); } };
+    air(X - 2, X + 2, Y, Y + 3, Z - 36, Z + 30); // chodba (i za hráčem)
+    air(X - 6, X + 6, Y, Y + 5, Z - 26, Z - 14); // sál
+    // stěny z kamene s pár rudami, ať je vidět, jak světlo padá na stejný kámen
+    for (const c of cave) {
+      const [x, y, z] = c.split(',').map(Number);
+      for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) if (!cave.has(key(x + dx, y + dy, z + dz))) g.setVox(x + dx, y + dy, z + dz, V.STONE);
+    }
+    for (const [x, y, z, v] of [[X - 7, Y + 2, Z - 18, V.COAL], [X - 7, Y + 3, Z - 19, V.COAL], [X + 7, Y + 1, Z - 22, V.IRON], [X + 3, Y + 1, Z - 6, V.COPPER], [X - 3, Y + 2, Z - 30, V.GOLD], [X + 2, Y + 6, Z - 20, V.CRYSTAL]]) g.setVox(x, y, z, v);
+    // pochodeň: m = 1 stojí, 2–5 visí na zdi (−x, +x, −z, +z)
+    const torch = (x, y, z, m) => { if (!S.noTorch) { g.blockMeta.set(key(x, y, z), m); g.blocks.set(key(x, y, z), 'torch'); } };
+    for (let z = Z + 29; z >= Z - 13; z -= 6) torch(X - 2, Y + 2, z, 2); // chodba: vlevo a vpravo střídavě
+    for (let z = Z + 26; z >= Z - 13; z -= 6) torch(X + 2, Y + 2, z, 3);
+    for (const z of [Z - 16, Z - 20, Z - 24]) { torch(X - 6, Y + 2, z, 2); torch(X + 6, Y + 2, z, 3); } // stěny sálu
+    for (const [x, z] of [[X - 4, Z - 17], [X + 4, Z - 17], [X - 4, Z - 23], [X + 4, Z - 23], [X - 2, Z - 4], [X + 1, Z - 10]]) torch(x, Y, z, 1); // na zemi
+    torch(X - 4, Y + 3, Z - 26, 4); torch(X + 4, Y + 3, Z - 26, 4); // zadní stěna sálu
+    torch(X - 2, Y + 2, Z - 30, 2); torch(X + 2, Y + 2, Z - 33, 3); torch(X, Y + 2, Z - 36, 4); // chodba dál
+    g.rebuildBlocks();
+    S.place({ x: X + 0.5, z: Z + 2.5, y: Y + 0.05, yaw: 0, time: S.torchTime ?? 0 });
+    S.lookAt(X + 0.5, Y + 1.4, Z - 22);
+    // oči si zvyknou na jeskyni (v pomalém prohlížeči by jinak ještě svítilo slunce); bez kreslení, ať to netrvá
+    const draw = g.renderer.render; g.renderer.render = () => {};
+    try { for (let i = 0; i < 60; i++) g.tick(0.0001); } finally { g.renderer.render = draw; }
+  },
+  // noc na louce: zídka s pochodněmi na zdi, pochodně na trávě a vykopaná jáma s pochodní uvnitř
+  'torches-night': () => {
+    const S = SHOT, g = S.g, X = 96, Z = 30, V = g.V;
+    const y0 = S.cell(X, Z);
+    for (let i = -3; i <= 3; i++) for (let h = 0; h < 2; h++) g.blocks.set(`${X + i},${y0 + h},${Z - 3}`, 'cobble');
+    for (const i of [-2, 0, 2]) { g.blockMeta.set(`${X + i},${y0 + 1},${Z - 2}`, 4); g.blocks.set(`${X + i},${y0 + 1},${Z - 2}`, 'torch'); }
+    for (const [dx, dz] of [[-4, 1], [3, 2]]) { const k = `${X + dx},${S.cell(X + dx, Z + dz)},${Z + dz}`; g.blockMeta.set(k, 1); g.blocks.set(k, 'torch'); }
+    const px = X - 1, pz = Z + 4, top = g.topY(px, pz); // jáma 3 × 3, 3 hluboká
+    for (let x = px - 1; x <= px + 1; x++) for (let z = pz - 1; z <= pz + 1; z++) for (let y = top - 2; y <= top; y++) g.setVox(x, y, z, V.AIR);
+    g.setVox(px - 2, top - 1, pz, V.STONE); g.blockMeta.set(`${px - 1},${top - 1},${pz}`, 2); g.blocks.set(`${px - 1},${top - 1},${pz}`, 'torch');
+    g.rebuildBlocks();
+    S.place({ x: X + 0.5, z: Z + 7.5, up: 1.4, yaw: 0, time: 0.0 });
+    S.lookAt(X + 0.5, y0 + 0.5, Z);
   },
   // rybník ráno: hladina, břeh, odlesky
   'water-shore': () => {
@@ -259,10 +301,10 @@ for (const [name, setup] of Object.entries(VIEWS)) {
   try {
     await ev(`(${setup.toString()})()`);
     // ať se dostaví les, podzemí, odlesky oblohy (po ~3 s) a světla
-    await page.waitForTimeout(name === 'cave' || name === 'mark' ? 4500 : 3800);
+    await page.waitForTimeout(name === 'cave' || name === 'mark' || name.startsWith('torches') ? 4500 : 3800);
     if (name === 'inventory') await ev(() => { window.SHOT.g.player.flyT = 1e6; });
     if (opt('after')) { const r = await ev(opt('after')); if (r !== undefined) console.log('after:', JSON.stringify(r)); await page.waitForTimeout(300); }
-    await page.screenshot({ path: path.join(outDir, `${name}.png`) });
+    await page.screenshot({ path: path.join(outDir, `${name}.png`), timeout: 120000 }); // software WebGL on a busy PC is slow
     if (flag('perf')) {
       // čas snímku přes skutečnou smyčku hry (requestAnimationFrame), 3 s; 25. percentil, aby jiné programy
       // na stejném počítači (krátké výkyvy) měření tolik nerozhazovaly

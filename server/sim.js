@@ -7,6 +7,7 @@ import { updateCrops, updateFires, updateFurnaces, updateStoves } from '../share
 import { updateMobs, updateSpawners, updateSpawns } from '../shared/sim/mobs.js';
 import { updatePower } from '../shared/sim/power.js';
 import { loadWorld } from '../shared/world/save.js';
+import { updateTorches } from '../shared/world/torch.js';
 
 /**
  * Připraví svět a místnost.
@@ -37,5 +38,6 @@ export function stepWorld(dt) {
   updatePower(dt, day);
   updateStoves(dt);
   updateCrops(dt);
+  updateTorches(dt);
   updateRoom(dt);
 }

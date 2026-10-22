@@ -1,11 +1,12 @@
 // Model pochodně ve světě: dřevěná tyčka s ohořelou, žhnoucí hlavicí a plamen ve tvaru kapky.
 // Stojící pochodeň je svisle, na zdi je spodkem u zdi a nakloněná od ní o 22,5° (jako v Minecraftu).
-// Všechny pochodně sdílejí jednu geometrii a jeden materiál: tyčka + hlavice = 1 kreslení, plamen = 1 sprite.
+// Všechny pochodně sdílejí jednu geometrii a jeden materiál: tyčka + hlavice = 1 kreslení, plamen a záře = 2 sprity.
 // Jen funkce (volá je render/blocks.js).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TORCH_LEAN, WALL_DIRS } from '../../../shared/world/torch.js';
-import { GLOW } from './look.js';
+import { FX, GLOW } from './look.js';
+import { glowTex } from './sky.js';
 
 // Tyčka (u = 0,25 → dřevo) a hlavice (u = 0,75 → ohořelá, svítí). Textura 2 × 1 pixel, bez filtrování.
 function partGeo(geo, u) {
@@ -42,6 +43,9 @@ function flameTexture() {
   return t;
 }
 const FLAME_MAT = new THREE.SpriteMaterial({ map: flameTexture(), color: new THREE.Color(1, 1, 1).multiplyScalar(Math.max(1, GLOW * 0.7)), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+// Teplá záře kolem plamene: levné „světlo“ na blízké stěně a v okolí i u pochodní, na které nezbylo skutečné světlo
+// (s bloomem střední a vysoké grafiky slabší, ten záři přidá sám).
+const HALO_MAT = new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(1, 0.6, 0.3).multiplyScalar(FX.post ? 0.22 : 0.32), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
 
 /** Postaví pochodeň do skupiny g (spodek buňky uprostřed = 0, 0, 0). meta = jak drží (shared/world/torch.js). */
 export function buildTorchModel(g, flames, meta) {
@@ -53,8 +57,13 @@ export function buildTorchModel(g, flames, meta) {
   f.userData.base = 0.2;
   f.userData.tall = 1.75; // plamen je vyšší než širší (blocks.js ho tak i mihotá)
   f.scale.set(0.2, 0.35, 1);
-  t.add(f);
-  flames.push(f);
+  const h = new THREE.Sprite(HALO_MAT);
+  h.position.y = 0.66;
+  h.userData.base = 1.5;
+  h.userData.halo = true; // zblízka zmizí (blocks.js): tam svítí skutečné světlo a velký sprite by se zařízl do zdi
+  h.scale.setScalar(1.5);
+  t.add(f, h);
+  flames.push(f, h);
   const d = WALL_DIRS[meta - 2];
   if (!d) { g.add(t); return; }
   // na zdi: model je postavený pro zeď na −z (spodek u zdi, vršek se kloní od ní), otočí se ke skutečné zdi

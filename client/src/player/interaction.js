@@ -10,6 +10,7 @@ import { solidAt } from '../../../shared/world/collision.js';
 import { nearPond, waterAt } from '../../../shared/world/nature.js';
 import { bkey, blockMeta, blocks, chairRot, chests, crops, fires, furnaces, pcDisks, power, removed, ruinsOpened, spawners, stoves, tableItems, vehicles } from '../../../shared/world/state.js';
 import { structuresNear } from '../../../shared/world/structures.js';
+import { torchPlacement } from '../../../shared/world/torch.js';
 import { biomeAt, forest } from '../../../shared/world/terrain.js';
 import { V, VOX, columnDug, getVox, setVox, topY } from '../../../shared/world/voxels.js';
 import { blockMaterial, targetMaterial, voxMaterial } from '../audio/materials.js';
@@ -469,14 +470,18 @@ function placeMeta(shape) {
 }
 export function placeBlock(d, [x, y, z]) {
   if (BLOCKS[d.block].solid && playerIntersects(x, y, z)) return false;
+  // Pochodeň jako v Minecraftu: na zem nebo na zeď, nikdy na strop (shared/world/torch.js)
+  const tm = d.block === 'torch' ? torchPlacement(x, y, z, target?.normal, camera.getWorldDirection(new THREE.Vector3()).toArray()) : 0;
+  if (tm === null) { toast(waterAt(x + 0.5, y + 0.5, z + 0.5) !== null ? 'Pod vodou pochodeň nehoří' : 'Pochodeň potřebuje pevný blok pod sebou nebo vedle sebe'); return false; }
   // Hlína a kámen vrácené do podzemí se stanou zase přirozenou zeminou (zaplní díru i povrch).
   const NATURAL = { dirt: V.DIRT, markdirt: V.MARKDIRT, cobble: V.STONE };
   if (NATURAL[d.block] && y <= topY(x, z) && getVox(x, y, z) === V.AIR) {
     setVox(x, y, z, NATURAL[d.block]);
   } else {
     const k = bkey(x, y, z), B = BLOCKS[d.block];
+    if (tm) blockMeta.set(k, tm); // dřív než blok: ostatní hráči ho hned postaví správně
     blocks.set(k, d.block);
-    if (B.shape || B.facing) blockMeta.set(k, placeMeta(B.shape)); else blockMeta.delete(k);
+    if (B.shape || B.facing) blockMeta.set(k, placeMeta(B.shape)); else if (!tm) blockMeta.delete(k);
     placedAny[d.block] = true;
     if (d.block === 'chair') chairRot.set(bkey(x, y, z), Math.round(player.yaw / (Math.PI / 2)) * (Math.PI / 2));
     rebuildBlocks();

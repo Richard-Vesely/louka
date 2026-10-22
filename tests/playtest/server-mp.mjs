@@ -68,6 +68,11 @@ try {
   check('block from Ája appears at Bára', await until(B, () => window.game.blocks.get('4,2,30') === 'bricks'));
   await B.evaluate(() => { window.game.setVox(5, -6, 30, 0); });
   check('digging from Bára reaches Ája', await until(A, () => window.game.getVox(5, -6, 30) === 0));
+  // pochodně: Ája pověsí pochodeň na zeď a jednu postaví na blok; Bára zeď zboří, server pochodeň shodí jako předmět
+  await A.evaluate(() => { const g = window.game; g.blocks.set('8,40,30', 'cobble'); g.blockMeta.set('8,40,31', 4); g.blocks.set('8,40,31', 'torch'); g.blocks.set('9,40,30', 'cobble'); g.blockMeta.set('9,41,30', 1); g.blocks.set('9,41,30', 'torch'); });
+  check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1));
+  await B.evaluate(() => { window.game.blocks.delete('8,40,30'); });
+  check('torch: Bára removes the wall, the server drops the torch as an item for both', await until(A, () => !window.game.blocks.has('8,40,31') && window.game.groundItems.some((x) => x.id === 'torch' && x.n > 0)) && await until(B, () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31')));
   await A.evaluate(() => { window.game.blocks.set('6,2,30', 'chest'); window.game.chests.set('6,2,30', Array(27).fill(null)); });
   await until(B, () => window.game.chests.has('6,2,30'));
   await B.evaluate(() => { const c = Array(27).fill(null); c[0] = { id: 'apple', n: 5 }; window.game.chests.set('6,2,30', c); });
@@ -133,6 +138,7 @@ try {
   await waitGame(C, 60000);
   check('a server without a password joins without asking', await C.evaluate(() => window.game.NET.client === true));
   check('after a restart the world is still there (block, chest, digging)', await C.evaluate(() => window.game.blocks.get('4,2,30') === 'bricks' && window.game.chests.get('6,2,30')?.[0]?.id === 'apple' && window.game.getVox(5, -6, 30) === 0));
+  check('after a restart the torch still stands on its block', await C.evaluate(() => window.game.blocks.get('9,41,30') === 'torch' && window.game.blockMeta.get('9,41,30') === 1));
   check('no console errors (Cyril)', C.errors.length === 0, C.errors.slice(0, 3).join(' | '));
 } catch (e) {
   check('test ran without exception', false, e.stack || e);

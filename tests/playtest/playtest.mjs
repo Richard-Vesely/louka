@@ -149,6 +149,54 @@ try {
   r = await ev(() => { let tiles = 0, glowOnly = true; for (const c of window.game.voxChunks.values()) { const a = c.mesh?.geometry.getAttribute('aTile'); if (a) tiles++; if (c.mesh && Array.isArray(c.mesh.material)) glowOnly = false; } return { tiles, glowOnly }; });
   check('underground: one material on a texture array (layer per block type)', r.tiles > 0 && r.glowOnly, JSON.stringify(r));
 
+  // ------------------------------------------------------------ torches (like Minecraft): floor, wall, never the ceiling, pop off, instant break, light
+  r = await ev(() => {
+    const g = window.game, K = (x, y, z) => `${x},${y},${z}`, bx = 16, bz = 27;
+    T.clearInv(); T.give('torch', 8); T.hold('torch');
+    T.tpg(bx + 0.5, bz + 3.5); T.step(3); g.player.flyT = 1e6; g.mobs.length = 0;
+    const y = Math.floor(g.groundHeight(bx + 0.5, bz + 0.5)) + 1, at = (px, py, pz) => { T.tp(px, pz, py); g.player.vel.set(0, 0, 0); };
+    for (const k of [K(bx, y, bz), K(bx, y + 1, bz), K(bx + 4, y + 3, bz)]) g.blocks.set(k, 'cobble');
+    g.rebuildBlocks();
+    const res = {};
+    at(bx + 0.5, y + 2.4, bz + 3.5); T.aim(bx + 0.5, y + 2, bz + 0.5); g.useItem(); T.step(2); // horní stěna sloupku
+    res.floor = g.blockMeta.get(K(bx, y + 2, bz));
+    at(bx + 0.5, y, bz + 3.5); T.aim(bx + 0.5, y + 0.5, bz + 1); g.useItem(); T.step(2); // boční stěna
+    const wk = K(bx, y, bz + 1), ws = g.specials.get(wk);
+    res.wall = g.blockMeta.get(wk); res.lean = ws && +(ws.lp[2] - (bz + 1)).toFixed(2);
+    at(bx + 4.5, y, bz + 0.8); T.aim(bx + 4.5, y + 3, bz + 0.5); g.useItem(); T.step(2); // spodek visícího bloku
+    res.ceiling = g.blocks.get(K(bx + 4, y + 2, bz)) ?? null; res.toast = T.text('toast');
+    g.blocks.set(K(bx + 5, y + 2, bz), 'cobble'); g.rebuildBlocks();
+    T.aim(bx + 4.5, y + 3, bz + 0.5); g.useItem(); T.step(2); // teď je vedle zeď: pochodeň skončí na ní
+    res.fallback = g.blockMeta.get(K(bx + 4, y + 2, bz));
+    res.left = T.count('torch');
+    // blok, na kterém visí pochodeň, zmizí: pochodeň odpadne a spadne jako předmět; ta nahoře stojí dál
+    g.blocks.delete(K(bx, y, bz)); g.rebuildBlocks(); T.step(10);
+    res.popped = !g.blocks.has(wk) && !g.specials.has(wk);
+    res.item = g.groundItems.some((it) => it.id === 'torch' && it.n > 0 && Math.hypot(it.pos.x - (bx + 0.5), it.pos.z - (bz + 1.5)) < 1.5);
+    res.stays = g.blocks.get(K(bx, y + 2, bz));
+    // rozbije se hned, i rukou
+    T.holdNothing(); at(bx + 0.5, y + 2.6, bz + 2.2); T.aim(bx + 0.5, y + 2.45, bz + 0.5);
+    const n0 = T.count('torch'); res.mine = T.mineUntil(() => !g.blocks.has(K(bx, y + 2, bz)), 40); res.got = T.count('torch') - n0;
+    return res;
+  });
+  check('torch: on top of a block it stands, on the side it hangs leaning from the wall', r.floor === 1 && r.wall === 4 && r.lean > 0 && r.lean < 0.4, JSON.stringify(r));
+  check('torch: never on the ceiling (with a message), falls back to a wall you look along', r.ceiling === null && /Pochodeň/.test(r.toast) && r.fallback === 3 && r.left === 5, JSON.stringify(r));
+  check('torch: pops off and drops as an item when its block goes, breaks instantly by hand', r.popped && r.item && r.stays === 'torch' && r.mine <= 3 && r.got === 1, JSON.stringify(r));
+  r = await ev(() => {
+    const g = window.game, x = 22, z = 21, top = g.topY(x, z), y = top - 9, pl = () => g.scene.children.filter((o) => o.isPointLight).length;
+    const before = pl();
+    for (let dx = -3; dx <= 3; dx++) for (let dz = -6; dz <= 6; dz++) for (let dy = 0; dy <= 2; dy++) g.setVox(x + dx, y + dy, z + dz, g.V.AIR);
+    let n = 0; // 31 pochodní v jedné jeskyni
+    for (let dx = -3; dx <= 3; dx += 2) for (let dz = -6; dz <= 6; dz += 2) { g.setVox(x + dx, y - 1, z + dz, g.V.STONE); g.blockMeta.set(`${x + dx},${y},${z + dz}`, 1); g.blocks.set(`${x + dx},${y},${z + dz}`, 'torch'); n++; }
+    for (const dz of [-5, 0, 5]) { g.setVox(x - 4, y + 1, z + dz, g.V.STONE); g.blockMeta.set(`${x - 3},${y + 1},${z + dz}`, 2); g.blocks.set(`${x - 3},${y + 1},${z + dz}`, 'torch'); n++; }
+    g.rebuildBlocks();
+    T.tp(x + 0.5, z + 0.5, y); T.step(30, 0.05);
+    const c = g.voxChunks.get(`${Math.floor(x / 16)},${Math.floor(z / 16)}`), a = c?.mesh?.geometry.getAttribute('aFire');
+    let max = 0; if (a) for (let i = 0; i < a.count; i++) max = Math.max(max, a.getX(i));
+    return { n, attr: !!a, max: +max.toFixed(2), before, after: pl() };
+  });
+  check('a cave with 31 torches: their light is baked into the walls, no extra real-time lights', r.n >= 30 && r.attr && r.max > 0.3 && r.after === r.before, JSON.stringify(r));
+
   // ------------------------------------------------------------ tools and combat: durability, cracks, repair, attack charge, armor wear
   r = await ev(() => {
     const g = window.game; T.clearInv(); T.give('wood_pick', 1); T.hold('wood_pick'); g.renderHotbar();

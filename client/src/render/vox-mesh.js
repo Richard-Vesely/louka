@@ -110,7 +110,7 @@ totalEmissiveRadiance += diffuseColor.rgb * uFire * vFire * fireFlick;`);
   return mat;
 }
 // barva a síla zapečeného světla ohňů (teplá bílá jako skutečná světla ohně v blocks.js)
-const uFire = { value: new THREE.Color(...LK.torch).multiplyScalar(1.15) };
+const uFire = { value: new THREE.Color(...LK.torch) };
 const voxMat = voxMaterial();
 
 const VFACES = [
@@ -124,9 +124,8 @@ const VFACES = [
 const AO_LIGHT = [0.4, 0.62, 0.8, 1.0];
 const GLOW_TINT = { [V.CRYSTAL]: [0.25, 0.85, 1.0], [V.MARKORITE]: [0.85, 0.3, 1.0], def: [0.6, 0.6, 0.6] };
 
-// Postaví 3D model podzemí jednoho chunku. Kreslí jen stěny, které sousedí se vzduchem v jeskyni nebo v díře.
-function buildVoxGeometry(cx, cz) {
-  const P = 18, bx = cx * 16 - 1, bz = cz * 16 - 1;
+// Co je v podzemí chunku (s okrajem 1 bloku ze sousedů): výšky sloupců a druh každého bloku.
+function voxColumns(cx, cz, bx, bz, P) {
   const tops = new Int32Array(P * P);
   let maxTop = VMIN;
   for (let z = 0; z < P; z++) for (let x = 0; x < P; x++) { const t = topY(bx + x, bz + z); tops[z * P + x] = t; maxTop = Math.max(maxTop, t); }
@@ -143,6 +142,13 @@ function buildVoxGeometry(cx, cz) {
       data[(yi * P + z) * P + x] = v;
     }
   }
+  return { tops, H, data };
+}
+// Postaví 3D model podzemí jednoho chunku. Kreslí jen stěny, které sousedí se vzduchem v jeskyni nebo v díře.
+// relight = jen nové světlo ohňů: podzemí se nezměnilo, použijí se data z minula (ušetří většinu času).
+function buildVoxGeometry(cx, cz, relight = false) {
+  const P = 18, bx = cx * 16 - 1, bz = cz * 16 - 1;
+  const { tops, H, data } = (relight && voxData.get(ckey(cx, cz))) || voxColumns(cx, cz, bx, bz, P);
   const dug = new Uint8Array(P * P);
   for (let i = 0; i < P * P; i++) dug[i] = data[(tops[i] - VMIN) * P * P + i] === V.AIR ? 1 : 0;
   const at = (x, yi, z) => (yi < 0 ? V.BEDROCK : yi >= H || x < 0 || z < 0 || x >= P || z >= P ? V.AIR : data[(yi * P + z) * P + x]);
@@ -159,12 +165,10 @@ function buildVoxGeometry(cx, cz) {
     if (!VOX[v]?.glow || !VFACES.some((f) => openAir(x + f.dir[0], yi + f.dir[1], z + f.dir[2]))) continue;
     glowSrc.push([x - 0.5, yi + 0.5, z - 0.5, GLOW_TINT[v] || GLOW_TINT.def]);
   }
-  // světlo pochodní a ohňů v okolí (null = žádný oheň v dosahu, atribut pak chybí = 0)
-  const fb = fireBaker(bx, bz, P, (lx, wy, lz) => {
-    if (lx < 0 || lz < 0 || lx >= P || lz >= P) return undefined;
-    const yi = wy - VMIN;
-    return yi < 0 ? true : yi >= H ? false : data[(yi * P + lz) * P + lx] !== V.AIR;
-  });
+  // světlo pochodní a ohňů v okolí (null = žádný oheň v dosahu, atribut pak chybí = 0); skálu mezi ohněm a stěnou
+  // hledá v datech tohoto a už postavených sousedních chunků
+  voxData.set(ckey(cx, cz), { data, H, bx, bz, tops });
+  const fb = fireBaker(bx, bz, P, knownSolid);
   const pos = [], nor = [], uv = [], col = [], tile = [], idx = [], glow = glowSrc.length ? [] : null, fire = fb ? [] : null;
   const q = [0, 0, 0], ao = [0, 0, 0, 0];
   for (let yi = 0; yi < H; yi++) for (let z = 1; z <= 16; z++) for (let x = 1; x <= 16; x++) {
@@ -223,16 +227,27 @@ function buildVoxGeometry(cx, cz) {
 }
 
 export const voxChunks = new Map();
+// Data podzemí postavených chunků (pro světlo ohňů: je mezi ohněm a stěnou skála?). Klíč je číslo, hledá se často.
+const voxData = new Map(), ckey = (cx, cz) => (cx + 50000) * 100000 + cz + 50000;
+let lastK = NaN, lastD = null;
+function knownSolid(x, y, z) {
+  const k = ckey(Math.floor(x / 16), Math.floor(z / 16));
+  if (k !== lastK) { lastK = k; lastD = voxData.get(k); }
+  if (!lastD) return undefined;
+  const yi = y - VMIN;
+  return yi < 0 ? true : yi >= lastD.H ? false : lastD.data[(yi * 18 + z - lastD.bz) * 18 + x - lastD.bx] !== V.AIR;
+}
 const cdist = (k, pcx, pcz) => { const [cx, cz] = k.split(',').map(Number); return (cx - pcx) ** 2 + (cz - pcz) ** 2; };
 const VOX_R = 3;
 const VOX_OFFSETS = [];
 for (let dz = -VOX_R; dz <= VOX_R; dz++) for (let dx = -VOX_R; dx <= VOX_R; dx++) VOX_OFFSETS.push([dx, dz]);
 VOX_OFFSETS.sort((a, b) => a[0] ** 2 + a[1] ** 2 - (b[0] ** 2 + b[1] ** 2));
-function buildVoxChunk(k) {
+function buildVoxChunk(k, relight = false) {
   const [cx, cz] = k.split(',').map(Number);
   const old = voxChunks.get(k);
   if (old?.mesh) { scene.remove(old.mesh); old.mesh.geometry.dispose(); }
-  const geo = buildVoxGeometry(cx, cz);
+  lastK = NaN;
+  const geo = buildVoxGeometry(cx, cz, relight);
   let mesh = null;
   if (geo) {
     mesh = new THREE.Mesh(geo, voxMat);
@@ -252,7 +267,7 @@ export function updateVoxChunks(px, pz) {
   for (const k of relightChunks) if (!voxChunks.has(k)) relightChunks.delete(k);
   if (relightChunks.size) {
     const near = [...relightChunks].sort((a, b) => cdist(a, pcx, pcz) - cdist(b, pcx, pcz));
-    for (const k of near) { relightChunks.delete(k); buildVoxChunk(k); if (performance.now() - start > 4) break; }
+    for (const k of near) { relightChunks.delete(k); buildVoxChunk(k, true); if (performance.now() - start > 4) break; }
   }
   for (const [dx, dz] of VOX_OFFSETS) {
     const k = `${pcx + dx},${pcz + dz}`;
@@ -265,6 +280,8 @@ export function updateVoxChunks(px, pz) {
     if (Math.abs(cx - pcx) > VOX_R + 1 || Math.abs(cz - pcz) > VOX_R + 1) {
       if (c.mesh) { scene.remove(c.mesh); c.mesh.geometry.dispose(); }
       voxChunks.delete(k);
+      voxData.delete(ckey(cx, cz));
+      lastK = NaN;
     }
   }
 }

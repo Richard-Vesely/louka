@@ -49,7 +49,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
 | `shared/world/voxels.js` | the underground (what is where naturally, player edits, `setVox`, `groundHeight`) |
 | `shared/world/state.js` | **the world state**: blocks, chests, fires, stoves, crops, furnaces, power, vehicles, papers… (`SyncMap` sends changes) |
 | `shared/world/save.js` | `loadWorld(save)` / `worldState()` – the save shape used everywhere |
-| `shared/world/nature.js`, `structures.js`, `collision.js` | trees, rocks, shards, ponds; structures and their builders; what is solid |
+| `shared/world/nature.js`, `structures.js`, `collision.js`, `torch.js` | trees, rocks, shards, ponds; structures and their builders; what is solid; torches (stand or hang on a wall, kept in `blockMeta`: 1 = stands, 2–5 = on a wall; pop off without support) |
 | `shared/sim/*.js` | simulations: `day.js`, `mobs.js` (AI, spawning, spawners), `ground-items.js`, `machines.js` (campfire, furnace, stove, crops), `power.js` (grid, printer), `weather.js` (rain, storm, fog and the wind `windAt` from the day number and time: the same for every player, never sent) |
 | `shared/net/net.js` | the `NET` object the rules talk to (mode, `op()` for world changes, hooks) |
 | `shared/net/ops.js` | applying world changes from others (`applyOp`), small maps diff (`kvDiff`, `applyKV`) |
