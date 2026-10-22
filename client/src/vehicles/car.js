@@ -186,7 +186,7 @@ export function driveVehicle(dt) {
   // zrychlení, brzdy, zpátečka, odpor; turbo a nitro z garáže přidají výkon
   const thr = v.engine ? fwd : 0, maxF = CAR.maxFwd * (v.mods?.engine ? 1.25 : 1) * (boost ? 1.35 : 1), acc = CAR.accel * powerMul(v, boost);
   if (hand) v.spd -= Math.sign(v.spd) * Math.min(Math.abs(v.spd), CAR.brake * 1.2 * dt);
-  else if (thr > 0) v.spd = v.spd < 0 ? Math.min(0, v.spd + CAR.brake * dt) : Math.min(maxF, v.spd + acc * thr * (1 - v.spd / (maxF * 1.15)) * dt);
+  else if (thr > 0) v.spd = v.spd < -0.3 ? Math.min(0, v.spd + CAR.brake * dt) : Math.min(maxF, v.spd + acc * thr * (1 - v.spd / (maxF * 1.15)) * dt); // pomalé couvání ze svahu plyn přetlačí (jinak by se auto do kopce nerozjelo)
   else if (thr < 0) v.spd = v.spd > 0.3 ? Math.max(0, v.spd - CAR.brake * dt) : Math.max(-CAR.maxRev, v.spd + CAR.accel * 0.6 * thr * dt);
   else if (fwd < 0 && v.spd > 0) v.spd = Math.max(0, v.spd - CAR.brake * dt); // brzda funguje i s vypnutým motorem
   v.spd *= 1 - Math.min(1, (0.25 + Math.abs(v.spd) * 0.012) * dt); // valivý a vzdušný odpor
