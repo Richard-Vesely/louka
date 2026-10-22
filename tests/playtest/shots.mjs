@@ -110,7 +110,7 @@ const VIEWS = {
     S.place({ x: X + 0.5, z: Z + 5.5, y: Y + 0.2, yaw: 0, time: 0.4 });
     S.lookAt(X + 0.5, Y + 1.2, Z - 6);
   },
-  // jeskyně s 35 pochodněmi (na stěnách i na zemi): chodba a sál osvětlené jen ohněm (v noci, jako když přijdeš z venku)
+  // jeskyně s 32 pochodněmi (na stěnách i na zemi): chodba a sál osvětlené jen ohněm (v noci, jako když přijdeš z venku)
   // --tweak "SHOT.noTorch = 1" = stejná jeskyně bez pochodní, "SHOT.torchTime = 0.4" = ve dne
   torches: () => {
     const S = SHOT, g = S.g, X = 52, Z = -70, Y = -22, V = g.V, cave = new Set(), key = (x, y, z) => `${x},${y},${z}`;
