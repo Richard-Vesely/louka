@@ -43,6 +43,9 @@ export const fullSet = () => { const s0 = armor[0] && ITEMS[armor[0].id].armor.s
 export const container = (c) => ({ inv: () => inv.slots, craft: () => ui.craft, armor: () => armor, chest: () => chestOf(ui.fireKey), fire: () => fireOf(ui.fireKey).slots, furnace: () => furnaceOf(ui.fireKey).slots, power: () => powerOf(ui.fireKey).slots || [], car: () => vehicles.get(ui.fireKey)?.slots || [], kitchen: () => stoveOf(ui.fireKey).slots })[c]();
 
 export function renderHotbar() { paintHotbar(inv.slots, inv.sel); }
+/** Pec bere nahoru jen to, co se taví, a dolů jen palivo (jako v Minecraftu). Vrací důvod odmítnutí, nebo null. */
+export const furnaceRefuses = (i, id) => (i === 0 && !smeltResult(id) ? 'Tohle se v peci tavit nedá'
+  : i === 1 && !FUEL[id] ? 'Tohle nehoří. Palivo je uhlí, dřevěné uhlí, dřevo nebo prkna.' : null);
 
 let onlyCraftable = false;
 // Složité součástky (adv) jdou vyrobit jen v dílně
@@ -225,10 +228,14 @@ export function quickMove(c, i, s) {
     const ok = t === 'coal_generator' ? FUEL[s.id] : t === 'electric_furnace' ? smeltResult(s.id) : t === 'printer' ? s.id === 'paper' : s.id === 'car_battery_empty';
     if (ok && !st.slots[0]) { st.slots[0] = s; left = 0; }
     else if (ok && st.slots[0].id === s.id) { const k = Math.min(ITEMS[s.id].stack - st.slots[0].n, s.n); st.slots[0].n += k; left = s.n - k; }
-  } else if (ui.mode === 'furnace' && (smeltResult(s.id) || FUEL[s.id])) { // surovina nahoru, palivo dolů
-    const f = furnaceOf(ui.fireKey), j = smeltResult(s.id) ? 0 : 1;
-    if (!f.slots[j]) { f.slots[j] = s; left = 0; }
-    else if (f.slots[j].id === s.id) { const k = Math.min(ITEMS[s.id].stack - f.slots[j].n, s.n); f.slots[j].n += k; left = s.n - k; }
+  } else if (ui.mode === 'furnace' && (smeltResult(s.id) || FUEL[s.id])) { // surovina nahoru, palivo dolů; dřevo bez místa nahoře jde do paliva
+    const f = furnaceOf(ui.fireKey);
+    for (const j of [0, 1]) {
+      if (!left || furnaceRefuses(j, s.id)) continue;
+      const t = f.slots[j];
+      if (!t) { f.slots[j] = { ...s, n: left }; left = 0; }
+      else if (t.id === s.id) { const k = Math.min(ITEMS[s.id].stack - t.n, left); t.n += k; left -= k; }
+    }
   } else if (ui.mode === 'fire' && COOKING[s.id]) {
     const f = fireOf(ui.fireKey);
     if (!f.slots[0]) { f.slots[0] = s; left = 0; }
@@ -253,6 +260,7 @@ export function slotClick(c, i, button, shift) {
   if (c === 'armor' && inv.cursor && ITEMS[inv.cursor.id].armor?.slot !== i) return deny(ITEMS[inv.cursor.id].armor ? `Sem patří: ${ARMOR_SLOT_NAMES[i]}` : 'Sem patří jen brnění'); // do políčka jen správný kus brnění
   if (c === 'power' && i === 0 && inv.cursor && blocks.get(ui.fireKey) === 'printer' && inv.cursor.id !== 'paper') return deny('Do tiskárny patří papír'); // do tiskárny jen papír
   if (c === 'car' && i === 0 && inv.cursor && !['car_battery', 'car_battery_empty'].includes(inv.cursor.id)) return deny('Sem patří autobaterie'); // místo na autobaterii
+  if (c === 'furnace' && inv.cursor && furnaceRefuses(i, inv.cursor.id)) return deny(furnaceRefuses(i, inv.cursor.id)); // surovina nahoru, palivo dolů
   if (shift && s && !inv.cursor) {
     arr[i] = null;
     const n0 = s.n, left = quickMove(c, i, s);
