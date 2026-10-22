@@ -107,7 +107,7 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
   `['dmg', dmg × 2.5, dx, dz]`; `hitPlayer` in `shared/net/room.js`), `['mu', nid]` eggs/milk, `['print', key, paperId, copies]`, `['giveTo', pid, docId]`, `['chat', text]`.
 - Host → client: `['welcome', { pid, name, perm, world, spawn, max }]`, `['full']`, `['join'|'leave', name]`, `['ops', ops]`,
   `['kv', changes]` (2×/s), `['pl', [[pid, name, pose, perm]…]]` (12×/s), `['mobs', dayTime, day, [[nid, type, x, y, z, ry, hp, flash, dead, eggs, milk]…]]` (5×/s),
-  `['give', id, n, w?]` (w = tool wear), `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['gift', docId, from]`,
+  `['give', id, n, w?]` (w = tool wear), `['swap', from, to]`, `['dmg', n, dx, dz]`, `['perm', bool]`, `['toast', text]`, `['chat', name, text]`, `['score', [[name, points, falls]…]]` and `['kill', killer|null, victim]` (arena in a `pvp` world: the host sees a player's pose turn `alive: false` and credits the last hitter within 10 s, `arenaDeath` in `shared/net/room.js`), `['gift', docId, from]`,
   `['kick', reason?]` (the browser host sends no reason; the Node server sends `['kick', 'Přihlásil ses jinde.']` when the same player logs in again in that world).
 - **Vehicles in the pose** (the host passes it on unchanged, `client/src/vehicles/car.js` `vehPose`): the driver sends
   `veh: { id, x, y, z, yaw, pitch, roll, spd, steer, thr, lights }` (or `null`) with optional `bm` (sailboat boom angle),
