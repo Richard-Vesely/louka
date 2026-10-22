@@ -5,7 +5,6 @@
 // Jen funkce (nic se nespouští při načtení); volá je vehicles/boat.js. Dopředu je -z, počátek na hladině.
 import * as THREE from 'three';
 import { boxer, glowMat, headMat, mergeGeos, mergeStatic, modsOf, paintMat, tailMat, tube, vehMats, TECH } from './veh-look.js';
-import { emblemTex } from './plane-model.js';
 
 // ---------- trup
 // Půdorys (z dozadu, x do strany): od zádě rovně do čtvrtiny délky, pak oblouk ke špičce přídě.
@@ -132,7 +131,7 @@ export function shapeSail(geo, h, t, c, b, flutter, time) {
   geo.attributes.position.needsUpdate = true;
   geo.computeVertexNormals();
 }
-// Látka plachty (canvas): bílá s švy panelů, tyrkysový pruh u spodního lemu a znak kroužku (u = podél spodku, v = nahoru)
+// Látka plachty (canvas): bílá se švy panelů, tyrkysový pruh u spodního lemu a kruhový znak (u = podél spodku, v = nahoru)
 let sailT = null;
 function sailTex() {
   if (sailT) return sailT;
@@ -144,7 +143,11 @@ function sailTex() {
   for (let y = 28; y < 256; y += 30) { x.beginPath(); x.moveTo(0, y); x.lineTo(256, y + 18); x.stroke(); } // švy panelů
   x.fillStyle = '#38e8ff'; x.fillRect(0, 226, 256, 12); // pruh u spodního lemu (v canvasu dole = v = 0)
   x.fillStyle = '#1b2a3e'; x.fillRect(0, 240, 256, 16);
-  x.drawImage(emblemTex().image, 70, 96, 70, 70); // znak kroužku ve třetině výšky
+  // kruh se znakem: tmavý disk, tyrkysový prstenec a bílé vlny (souměrné, protože plachta je vidět z obou stran)
+  x.fillStyle = '#0f1a2e'; x.beginPath(); x.arc(105, 131, 34, 0, Math.PI * 2); x.fill();
+  x.strokeStyle = '#38e8ff'; x.lineWidth = 5; x.beginPath(); x.arc(105, 131, 28, 0, Math.PI * 2); x.stroke();
+  x.strokeStyle = '#f4f6fa'; x.lineWidth = 4;
+  for (const dy of [-9, 0, 9]) { x.beginPath(); x.moveTo(87, 131 + dy); x.bezierCurveTo(96, 123 + dy, 114, 139 + dy, 123, 131 + dy); x.stroke(); }
   sailT = new THREE.CanvasTexture(c);
   sailT.colorSpace = THREE.SRGBColorSpace;
   return sailT;

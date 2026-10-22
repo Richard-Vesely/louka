@@ -45,7 +45,7 @@ const latheZ = (prof, seg = 20) => new THREE.LatheGeometry(prof.map(([r, z]) => 
 
 export function buildPlaneModel(color, floats = false, v = null) {
   const g = new THREE.Group(), box = boxer(g), T = vehMats(), paint = paintMat(color), mods = modsOf(v);
-  // trup: osa ve výšce 1,35 m, od kužele vrtule (-z) po ocas (+z); bílý pruh po boku
+  // trup: osa ve výšce 1,35 m, od kužele vrtule (-z) po ocas (+z)
   const body = new THREE.Mesh(latheZ([[0.001, -3.0], [0.3, -2.98], [0.47, -2.8], [0.54, -2.4], [0.56, -1.4], [0.55, -0.2], [0.52, 0.8], [0.45, 1.8], [0.34, 2.8], [0.22, 3.7], [0.13, 4.2], [0.001, 4.3]], 22), paint);
   body.position.y = 1.35;
   body.scale.set(1, 1.05, 1);

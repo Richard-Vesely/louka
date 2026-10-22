@@ -4,7 +4,7 @@
 // používá je render/icons-blocks.js.
 const pix = (rows) => (x, y) => { const c = rows[Math.floor(y)]?.[Math.floor(x)]; return c && c !== '.' ? c : null; };
 const seg = (x, y, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy))); return Math.hypot(x - ax - dx * t, y - ay - dy * t); };
-const wing = ['WWWWWWWWWWWWWWWW', 'AGGGGGGGGGGGGGGA', 'A....KWKK....MMA', 'A.LLLLLLLLLLLMMA', 'AGAMMMMMMMMMMMMA', 'A..DMMMMMMMMMD.A', 'WWWWWWWWWWWWWWWW', 'AGGGGGGGGGGGGGGA'];
+const plane = ['', '', '', '...WWWWWWW......', '...AGGGGGA...MM.', '...A.KWKKA...MM.', '.GAMMMMMMMMMMMMM', 'GGAMMMMMMMMMMMM.', '.GADDDDDDDDDD...', '...WWWWWWW......', '...AGGGGGA......', '....D...D.......'];
 // rám kola: spodní, horní a sedlová trubka, zadní stavby, vidlice
 const BB = [7.6, 11.4], ST = [6.8, 6.4], HD = [11.4, 6.6], RH = [3.6, 11.4], FH = [12.4, 11.4];
 const frame = (x, y) => [[BB, HD, 0.75], [ST, HD, 0.6], [BB, ST, 0.6], [BB, RH, 0.5], [ST, RH, 0.45], [HD, FH, 0.5]].some(([a, b, r]) => seg(x, y, a[0], a[1], b[0], b[1]) < r);
@@ -12,9 +12,10 @@ const frame = (x, y) => [[BB, HD, 0.75], [ST, HD, 0.6], [BB, ST, 0.6], [BB, RH, 
 export const VEH_SHAPES = {
   // auto z boku (příď vlevo): černá střecha, tónovaná kabina, tyrkysový proužek a podsvícení, kola se svítícím nábojem
   car: pix(['', '', '', '', '', '......DDDDD.....', '.....KWWKKDKK...', '...LKWKKKKDKKKL.', '.LLLLLLLLLLLLLLL', 'WMMKKKAAAAAKKKMD', 'MMKGGGKMMMKGGGKM', '.DKGAGKDDDKGAGKD', '..KGGGKAAAKGGGK.', '...KKK.....KKK..']),
-  // dvouplošník: bílá křídla spojená štíty se svítící hranou, trup v barvě, kryt kabiny, kužel vrtule a prstenec sání
-  plane: pix(['', '', '', ...wing, '....D......D....', '...KKK....KKK...', '....K......K....']),
-  seaplane: pix(['', '', ...wing, '...D........D...', '...D........D...', '.WWWWWW..WWWWWW.', '..AAAA....AAAA..']),
+  // dvouplošník z boku (příď vlevo): kužel vrtule a prstenec sání, dvě bílá křídla spojená štíty se svítící hranou,
+  // kryt kabiny, trup v barvě, kýlovka; podvozek, nebo u hydroplánu plovák se svítící čárou ponoru
+  plane: pix([...plane, '...KKK.KKK......', '....K...K.......']),
+  seaplane: pix([...plane, '..WWWWWWWWW.....', '...AAAAAAA......']),
   // kolo: pneumatiky, svítící ráfky, silný rám v barvě (proužek na spodní trubce), sedlo a řídítka
   bike: (x, y) => {
     for (const cx of [3.6, 12.4]) { const d = Math.hypot(x - cx, y - 11.4); if (d <= 3.4) return d > 2.55 ? 'K' : d > 1.85 ? 'A' : d < 0.8 ? 'G' : null; }

@@ -21,9 +21,11 @@ export function buildCarModel(color, v = null) {
   arch(body, 1.3, 0.5, 0.36, 0, 1);
   arch(body, -1.3, 0.5, 0.36, 0, 1);
   g.add(new THREE.Mesh(sideExtrude(body, 1.9, 0.1, 4), paint));
-  // kabina: tónované sklo (zevnitř neviditelné), sloupky, střecha z černého skla (dvoubarevný vzhled)
+  // kabina: tónované sklo (zevnitř neviditelné), sloupky, střecha (zevnitř černá) v barvě laku s panoramatickým oknem
   g.add(new THREE.Mesh(sideExtrude([[-0.72, 0.95], [-0.08, 1.48], [1.42, 1.48], [1.86, 1.0], [1.8, 0.95]], 1.74, 0.05, 2), T.glass));
   g.add(new THREE.Mesh(sideExtrude([[-0.12, 1.5], [0.16, 1.555], [1.3, 1.555], [1.52, 1.5], [1.48, 1.47], [1.28, 1.52], [0.2, 1.52], [-0.06, 1.47]], 1.78, 0.04, 2), T.black));
+  box(1.72, 0.02, 1.12, paint, 0, 1.592, 0.74, 0.008); // střecha v barvě laku
+  box(1.24, 0.012, 0.92, T.black, 0, 1.604, 0.74); // panoramatické okno (černé sklo)
   for (const s of [-1, 1]) {
     const x = s * 0.86;
     g.add(tube([x, 1.0, -0.68], [x, 1.5, -0.1], 0.035, paint)); // přední sloupek

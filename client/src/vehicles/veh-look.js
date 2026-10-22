@@ -50,8 +50,8 @@ export function vehMats() {
     seat: std({ color: 0x262a32, roughness: 0.72 }),
     deck: std({ color: 0xc9cdd2, roughness: 0.62 }), // světlá protiskluzová paluba
     // tónované sklo: odráží oblohu (shader skla bloků); zevnitř neviditelné (jen přední stěny), takže nezakrývá výhled
-    glass: setupBlockMat(new THREE.MeshStandardMaterial({ color: 0x0e1822, transparent: true, opacity: 0.6, depthWrite: false }), 'glass'),
-    glass2: setupBlockMat(new THREE.MeshStandardMaterial({ color: 0x0e1822, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }), 'glass'), // tenký štít (z obou stran)
+    glass: setupBlockMat(new THREE.MeshStandardMaterial({ color: 0x1a3042, transparent: true, opacity: 0.5, depthWrite: false }), 'glass'),
+    glass2: setupBlockMat(new THREE.MeshStandardMaterial({ color: 0x1a3042, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide }), 'glass'), // tenký štít (z obou stran)
     glow: glowMat(TECH.cyan, 1.3), // stálé tyrkysové proužky
     screen: std({ color: 0x050a10, emissive: 0xffffff, emissiveMap: screenTex(), emissiveIntensity: 1, roughness: 0.2 }), // displeje (budík a řádky)
     nitro: glowMat(0x3a7bff, 1.6), // modré prvky nitra
