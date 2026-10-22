@@ -144,7 +144,11 @@ try {
   await B.evaluate(() => { window.game.blocks.delete('8,40,30'); });
   const torchState = () => { const g = window.game; return { has: g.blocks.has('8,40,31'), meta: g.blockMeta.get('8,40,31') ?? null, wall: g.blocks.get('8,40,30') ?? null, sp: g.specials.has('8,40,31'), item: window.__torchItem, items: g.groundItems.filter((x) => x.id === 'torch').map((x) => [x.n, +x.pos.y.toFixed(1)]) }; };
   const torchGone = () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31') && window.__torchItem?.n === 1;
-  check('torch: Bára removes the wall, the server drops the torch as an item for both', await until(A, torchGone) && await until(B, torchGone), JSON.stringify({ A: await A.evaluate(torchState), B: await B.evaluate(torchState) }));
+  // Ája se tu jen ptá (evaluate): její stránka už může být dlouho na pozadí a prohlížeč jí pak brzdí časovače (waitForFunction)
+  const torchOk = await until(B, torchGone);
+  let torchA = false;
+  for (let i = 0; i < 50 && !torchA; i++) { torchA = await A.evaluate(torchGone); if (!torchA) await sleep(200); }
+  check('torch: Bára removes the wall, the server drops the torch as an item for both', torchOk && torchA, JSON.stringify({ A: await A.evaluate(torchState), B: await B.evaluate(torchState) }));
 
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
   await sleep(1500);
