@@ -93,7 +93,7 @@ legacy/index.html     Marek's original single file (reference only, do not edit)
   `vehicle-ui.js`, `car-model.js`, `machines/garage-model.js`) may be imported from anywhere; in a file that also imports
   `vehicles/car.js`, import them after it, so they load inside the chain order.
   A **new browser module** either has no side effects at load time (only functions/constants; then no chain line
-  is needed), or it gets a chain line and is inserted into the chain (ask Richard). Modules in `shared/` never import `client/`.
+  is needed), or it gets a chain line and is inserted into the chain (check that `npm test` and the play-tests still pass). Modules in `shared/` never import `client/`.
 - **`window.game`** (`client/src/game/debug.js`) exposes the game for the console and the play-tests. Keep it working.
 
 ## Protocol
@@ -144,20 +144,24 @@ Messages are arrays, the same over PeerJS and WebSocket (JSON). Host = `shared/n
 
 ## Rules for AI helpers
 
-1. **Small pull requests.** One idea per PR. Never push to `main`; open a PR, CI must be green. Never force-push.
+1. **Small pull requests.** One idea per PR. Never push to `main`; open a PR, CI must be green, then the kid merges it
+   (no review or approval is required). Never force-push.
 2. **All text in the game stays Czech.** Comments may be Czech (most are) or English.
 3. **Data before engine.** A new item, block, recipe, cooking recipe or mob is mostly a data change in `shared/data/`
    or `shared/sim/mobs.js`. Add engine code only when data can't express it.
-4. **Ask Richard (the lektor) before touching core files:** `shared/net/*`, `shared/world/state.js`, `shared/world/save.js`,
+4. **Be extra careful with core files:** `shared/net/*`, `shared/world/state.js`, `shared/world/save.js`,
    `shared/world/voxels.js`, `shared/world/terrain.js` + `client/src/render/glsl.js` (twins), `shared/events.js`,
    `server/*`, `client/src/net/*`, `client/src/game/*`, `client/src/menu/*`, `client/src/main.js`, the module order chain,
-   the save format or localStorage keys, and before changing balance (damage, speeds, drop rates, recipe costs).
+   the save format or localStorage keys, and balance (damage, speeds, drop rates, recipe costs). Before changing them,
+   tell the kid in simple Czech what could break, keep the change as small as possible, add or extend a test that covers
+   it, and say in the PR description which core file changed and why. No approval is needed: a PR is merged as soon as
+   CI is green, so the tests are the safety net.
 5. **Never change the protocol on one side only.** Host (`shared/net/room.js`), client (`client/src/net/multiplayer.js`)
    and the docs above change in the same PR. Old saves must keep loading.
 6. **Keep `shared/` free of DOM and Three.js** (`npm test` checks that every file imports in Node).
 7. **Keep `window.game` working**; the play-tests use it.
 8. Files stay under ~400 lines (data tables and model builders may be longer). Plain JavaScript ES modules with JSDoc,
-   no TypeScript, no frameworks. New dependencies only with Richard's OK.
+   no TypeScript, no frameworks. Add a new dependency only when plain code can't do it, and say why in the PR.
 9. When you add or change a feature, update [docs/FEATURES.md](docs/FEATURES.md) in the same PR.
 10. No secrets in the repo (the server password lives in an env file on the server). No personal data about the kids:
     a profile is a nickname + a hashed PIN, nothing else. Never log or store a PIN or a token in clear text.
@@ -218,11 +222,11 @@ Letters map to items, a space is an empty cell. Up to 2×2 works in the backpack
 ### Add a mob
 1. `shared/sim/mobs.js`: add to `MOBS`, e.g. `fox: { name: 'Liška', hp: 6, radius: 0.6, cy: 0.5, drops: [['raw_meat', 1, 1]] }`.
 2. Where it appears: a line in `updateSpawns()` (copy the deer line and change the counts). Hostile? add it to the
-   `hostile` condition and `HOSTILE_SPEED`; shy? to the flee lists. These are core rules: ask Richard first.
+   `hostile` condition and `HOSTILE_SPEED`; shy? to the flee lists. These are core rules: see rule 4 above.
 3. Model: a new branch in `buildMob()` in `client/src/mobs/mobs.js` (copy the sheep and change colours);
    a sound in the `on('mobSound', …)` table there.
 
 ## What not to do
 - Don't edit `legacy/` (Marek's original), `dist/` (built output) or `server/data/` (the live world).
 - Don't add a free-text field that collects personal data. Names are nicknames only.
-- Don't remove features from [docs/FEATURES.md](docs/FEATURES.md) without Richard.
+- Don't remove features from [docs/FEATURES.md](docs/FEATURES.md). Fix or improve them instead; if one really has to go, say so in the PR.

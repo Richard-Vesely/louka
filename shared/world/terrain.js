@@ -41,7 +41,7 @@ export function pondDip(x, z) {
 // takže přechody jsou plynulé. Sopky a houbové lesy jsou vzácné oblasti kolem náhodných středů (mřížka jako u rybníků).
 const BIOMES = ['meadow', 'cherry', 'desert', 'jungle', 'tundra', 'savanna', 'volcanic', 'mushroom'];
 export const BIOME_NAMES = { meadow: 'Louka a les', cherry: 'Třešňový les', desert: 'Poušť', jungle: 'Džungle', tundra: 'Zasněžená tundra', savanna: 'Savana', volcanic: 'Sopečná oblast', mushroom: 'Houbový les' };
-export const BIOME_START = 380, VOLC_CELL = 1100, VOLC_R = 110, MUSH_CELL = 900, MUSH_R = 170;
+export const BIOME_START = 35, BIOME_SCALE = 12, BIOME_BLEND = 45, VOLC_CELL = 1100, VOLC_R = 110, MUSH_CELL = 900, MUSH_R = 170;
 // Střed vzácné oblasti v buňce mřížky (nebo null)
 export function regionOf(x, z, cell, salt, chance) {
   const cx = Math.floor(x / cell), cz = Math.floor(z / cell);
@@ -57,11 +57,14 @@ export function biomeWeights(x, z, w = BW) {
   w.fill(0);
   w[0] = 1;
   if (isMark(x)) return w;
-  const ring = smoothstep(BIOME_START, BIOME_START + 160, shrineDist(x, z));
+  const ring = smoothstep(BIOME_START, BIOME_START + BIOME_BLEND, shrineDist(x, z));
   if (ring <= 0) return w;
-  const t = Math.sin(x * 0.0017 + 1.1) * Math.cos(z * 0.0021 - 0.4) * 0.6 + Math.sin((x + z) * 0.0009 + 2.3) * 0.4;
-  const hm = Math.cos(x * 0.0019 - 0.8) * Math.sin(z * 0.0016 + 0.6) * 0.6 + Math.sin((x - z) * 0.0011 + 0.9) * 0.4;
-  const tundra = smoothstep(-0.3, -0.48, t), hot = smoothstep(0.18, 0.36, t), dry = smoothstep(-0.02, -0.22, hm), wet = smoothstep(0.12, 0.3, hm);
+  // Zvlněné hranice tvoří zálivy a výběžky biomů; stejný výpočet je v GLSL.
+  const bx = x * BIOME_SCALE, bz = z * BIOME_SCALE;
+  const cx = bx + Math.sin(bz * 0.004) * 180, cz = bz + Math.sin(bx * 0.0035 + 0.7) * 180;
+  const t = Math.sin(cx * 0.0017 + 1.1) * Math.cos(cz * 0.0021 - 0.4) * 0.6 + Math.sin((cx + cz) * 0.0009 + 2.3) * 0.4;
+  const hm = Math.cos(cx * 0.0019 - 0.8) * Math.sin(cz * 0.0016 + 0.6) * 0.6 + Math.sin((cx - cz) * 0.0011 + 0.9) * 0.4;
+  const tundra = smoothstep(-0.3, -0.48, t), hot = smoothstep(-0.02, 0.2, t), dry = smoothstep(0.12, -0.14, hm), wet = smoothstep(0.12, 0.3, hm);
   const cherry = smoothstep(0.2, 0.38, hm) * (1 - hot) * (1 - tundra);
   const vol = smoothstep(VOLC_R * 1.7, VOLC_R * 1.05, volcanoDist(x, z)), mus = smoothstep(MUSH_R * 1.5, MUSH_R * 0.9, mushDist(x, z)) * (1 - vol);
   const k = (1 - vol - mus) * ring; // podíl běžných biomů
@@ -74,7 +77,7 @@ export const biomeAt = (x, z) => { const w = biomeWeights(x, z); let b = 0; for 
 // Výška podle biomů: duny v poušti, rovná tundra, kopcovitá džungle, kužel sopky s kráterem…
 function biomeHeight(h0, x, z, w) {
   if (w[0] >= 1) return h0;
-  const dune = (0.5 + 0.5 * Math.sin(x * 0.07 + Math.sin(z * 0.023) * 2.5)) ** 2 * 2.4;
+  const dune = (0.5 + 0.5 * Math.sin(x * 0.07 + Math.sin(z * 0.023) * 2.5)) ** 2 * (3.5 + 2 * (0.5 + 0.5 * Math.sin(z * 0.009 + x * 0.006)));
   const vd = volcanoDist(x, z), cone = vd < VOLC_R ? 30 * (1 - vd / VOLC_R) ** 1.8 - 14 * Math.max(0, 1 - vd / 18) ** 1.5 : 0;
   return w[0] * h0 + w[1] * (h0 * 1.15 + 0.6) + w[2] * (h0 * 0.45 + dune) + w[3] * (h0 * 1.3 + Math.sin(x * 0.043 + 0.4) * Math.sin(z * 0.051 + 1.2) * 2.2)
     + w[4] * (h0 * 0.55 + 0.8) + w[5] * (h0 * 0.7 + 0.4) + w[6] * (h0 * 0.9 + cone) + w[7] * (h0 * 0.8 + 0.5);

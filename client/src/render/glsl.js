@@ -1,5 +1,5 @@
 // Kousky shaderů: terén a biomy (dvojče JS vzorce v shared/world/terrain.js) a šum trávy.
-import { BIOME_START, LAKE_CELL, LAKE_EDGE, LAKE_MIN, MARK_CX, MARK_X, MUSH_CELL, MUSH_R, POND_CELL, VOLC_CELL, VOLC_R } from '../../../shared/world/terrain.js';
+import { BIOME_BLEND, BIOME_SCALE, BIOME_START, LAKE_CELL, LAKE_EDGE, LAKE_MIN, MARK_CX, MARK_X, MUSH_CELL, MUSH_R, POND_CELL, VOLC_CELL, VOLC_R } from '../../../shared/world/terrain.js';
 
 export const TERRAIN_GLSL = /* glsl */`
   float shrineDist(vec2 p) { return length(p - vec2(p.x > ${MARK_X.toFixed(1)} ? ${MARK_CX.toFixed(1)} : 0.0, 0.0)); }
@@ -45,11 +45,13 @@ export const TERRAIN_GLSL = /* glsl */`
   void biomeWeights(vec2 p, out vec4 wa, out vec4 wb) {
     wa = vec4(1.0, 0.0, 0.0, 0.0); wb = vec4(0.0);
     if (p.x > ${MARK_X.toFixed(1)}) return;
-    float ring = sst(${BIOME_START.toFixed(1)}, ${(BIOME_START + 160).toFixed(1)}, shrineDist(p));
+    float ring = sst(${BIOME_START.toFixed(1)}, ${(BIOME_START + BIOME_BLEND).toFixed(1)}, shrineDist(p));
     if (ring <= 0.0) return;
-    float t = sin(p.x * 0.0017 + 1.1) * cos(p.y * 0.0021 - 0.4) * 0.6 + sin((p.x + p.y) * 0.0009 + 2.3) * 0.4;
-    float hm = cos(p.x * 0.0019 - 0.8) * sin(p.y * 0.0016 + 0.6) * 0.6 + sin((p.x - p.y) * 0.0011 + 0.9) * 0.4;
-    float tundra = sst(-0.3, -0.48, t), hot = sst(0.18, 0.36, t), dry = sst(-0.02, -0.22, hm), wet = sst(0.12, 0.3, hm);
+    vec2 b = p * ${BIOME_SCALE.toFixed(1)};
+    vec2 c = b + vec2(sin(b.y * 0.004), sin(b.x * 0.0035 + 0.7)) * 180.0;
+    float t = sin(c.x * 0.0017 + 1.1) * cos(c.y * 0.0021 - 0.4) * 0.6 + sin((c.x + c.y) * 0.0009 + 2.3) * 0.4;
+    float hm = cos(c.x * 0.0019 - 0.8) * sin(c.y * 0.0016 + 0.6) * 0.6 + sin((c.x - c.y) * 0.0011 + 0.9) * 0.4;
+    float tundra = sst(-0.3, -0.48, t), hot = sst(-0.02, 0.2, t), dry = sst(0.12, -0.14, hm), wet = sst(0.12, 0.3, hm);
     float cherry = sst(0.2, 0.38, hm) * (1.0 - hot) * (1.0 - tundra);
     float vol = sst(${(VOLC_R * 1.7).toFixed(1)}, ${(VOLC_R * 1.05).toFixed(1)}, volcanoDist(p));
     float mus = sst(${(MUSH_R * 1.5).toFixed(1)}, ${(MUSH_R * 0.9).toFixed(1)}, regionDist(p, ${MUSH_CELL.toFixed(1)}, 43.0, 0.45)) * (1.0 - vol);
@@ -67,7 +69,7 @@ export const TERRAIN_GLSL = /* glsl */`
     if (p.x > ${MARK_X.toFixed(1)}) h = h * 1.6 + sin(p.x * 0.0045 + p.y * 0.006) * 5.0;
     if (wa.x < 1.0) {
       float dune = 0.5 + 0.5 * sin(p.x * 0.07 + sin(p.y * 0.023) * 2.5);
-      dune = dune * dune * 2.4;
+      dune = dune * dune * (3.5 + 2.0 * (0.5 + 0.5 * sin(p.y * 0.009 + p.x * 0.006)));
       float vd = volcanoDist(p);
       float cone = vd < ${VOLC_R.toFixed(1)} ? 30.0 * pow(1.0 - vd / ${VOLC_R.toFixed(1)}, 1.8) - 14.0 * pow(max(0.0, 1.0 - vd / 18.0), 1.5) : 0.0;
       h = wa.x * h + wa.y * (h * 1.15 + 0.6) + wa.z * (h * 0.45 + dune) + wa.w * (h * 1.3 + sin(p.x * 0.043 + 0.4) * sin(p.y * 0.051 + 1.2) * 2.2)
