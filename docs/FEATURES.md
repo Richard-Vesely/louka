@@ -254,7 +254,7 @@ When you add or change a feature, update this file in the same pull request.
   another player), the torch **pops off and drops as an item** (decided by whoever holds the world). No collision, it breaks
   instantly with anything, and its thin hit box lets you mine the wall behind it. Bright warm light that flickers, a
   teardrop flame with a glowing head, embers and thin smoke. **Fire light is baked into the cave walls** (torches,
-  lanterns and campfires; up to 13 blocks, fading like Minecraft's light, rock between the flame and a wall stops it,
+  lanterns and campfires; up to 13 blocks, fading with distance, rock between the flame and a wall stops it,
   gently flickering), so a cave with 30+ torches is fully lit with no extra cost per frame; only the nearest few fires
   get real-time lights (3 / 4 / 6 by Grafika), and every torch has a soft warm halo around its flame (it fades out up
   close, where the real light is), so walls built from blocks glow around far torches too. Old saves: a torch from

@@ -1,8 +1,8 @@
 // Světlo ohňů (pochodně, lucerny, táboráky) zapečené do podzemí. Skutečných světel je jen pár (render/blocks.js,
 // nejbližší ohně), ale jeskyně se 30 pochodněmi má svítit celá: každý chunk podzemí si při stavbě spočítá, kolik
-// světla z ohňů v okolí (do FIRE_R bloků) dopadá na každý roh každé stěny. Světlo ubývá se vzdáleností podobně jako
-// v Minecraftu, stěna odvrácená od ohně dostane méně a skála mezi ohněm a stěnou světlo zastaví (po stěnách, ne po
-// pixelech). Shader podzemí (vox-mesh.js) ho přičte jako teplé světlo, které jemně mihotá. Nic se nepočítá za snímku.
+// světla z ohňů v okolí (do FIRE_R bloků) dopadá na každý roh každé stěny. Světlo ubývá se vzdáleností, stěna
+// odvrácená od ohně dostane méně a skála mezi ohněm a stěnou světlo zastaví (po stěnách, ne po pixelech, takže stíny
+// jsou kostičkové jako v Minecraftu). Shader podzemí (vox-mesh.js) ho přičte jako teplé světlo, které jemně mihotá. Nic se nepočítá za snímku.
 // Jen funkce (volá je render/vox-mesh.js).
 import { blockMeta, lights } from '../../../shared/world/state.js';
 import { torchFlame, torchMeta } from '../../../shared/world/torch.js';
@@ -12,7 +12,7 @@ import { V, VMIN, getVox, topY } from '../../../shared/world/voxels.js';
 export const FIRE_R = 13;
 const FIRE = { torch: 1, lantern: 1.1, campfire: 1.45 }; // síla podle druhu ohně
 
-/** Ohně, jejichž světlo může dosáhnout do obdélníku buněk x0..x1, z0..z1: { x, y, z (plamen), c: buňka, k: síla }. */
+/** Ohně, jejichž světlo může dosáhnout do obdélníku buněk x0..x1, z0..z1: { x, y, z (plamen), cx, cy, cz (buňka), k: síla }. */
 export function fireSources(x0, z0, x1, z1) {
   const out = [];
   for (const [key, s] of lights) {
