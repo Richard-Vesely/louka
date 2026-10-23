@@ -44,7 +44,7 @@ export function checker(prefix = '') {
 }
 
 // Software WebGL is slow: while __skipDraw is true, draw calls are skipped (the game logic still runs).
-function skipDrawScript() {
+export function skipDrawScript() {
   window.__skipDraw = true;
   for (const C of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) {
     if (!C) continue;
