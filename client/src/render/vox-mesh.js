@@ -21,7 +21,7 @@ for (const t of Object.values(voxTex)) t.anisotropy = Math.min(8, renderer.capab
 // Jeden materiál pro celé podzemí. Části bloků, které vyčnívají nad hladký terén, se nekreslí (kraje díry tak
 // přesně navazují na povrch). Hrany bloků jsou trochu tmavší (je vidět, kde blok končí), krystaly a markorit svítí
 // jen svými zrny a jiskří, kovová zrna rud se lesknou. Reliéf (normálová mapa) jen se střední a vysokou grafikou.
-export const voxUniforms = { uVAlb: { value: voxTex.alb }, uVOrm: { value: voxTex.orm }, uVNrm: { value: voxTex.nrm }, uVGlow: { value: 1.25 }, uVNrmK: { value: QUALITY === 'high' ? 0.7 : 0.6 }, uVEdge: { value: 0.24 } };
+export const voxUniforms = { uVAlb: { value: voxTex.alb }, uVOrm: { value: voxTex.orm }, uVNrm: { value: voxTex.nrm }, uVGlow: { value: 1.25 }, uVNrmK: { value: QUALITY === 'high' ? 0.7 : 0.6 }, uVEdge: { value: 0.15 } }; // uVEdge: tmavší hrana bloku (víc = jeskyně jako obkládačky)
 function voxMaterial() {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1 });
   if (QUALITY !== 'low') mat.defines = { VOX_NRM: '' };

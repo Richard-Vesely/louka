@@ -113,7 +113,7 @@ export function applyUnderground(dt = 0.016) {
   const u = underground;
   CAVE_AMB.setRGB(...LK.caveAmb);
   sunLight.intensity *= 1 - 0.97 * u;
-  hemi.intensity *= 1 - 0.6 * u;
+  hemi.intensity *= 1 - 0.7 * u; // ať jsou kolem pochodní vidět teplé kruhy světla
   hemi.color.lerp(CAVE_AMB, u);
   hemi.groundColor.lerp(tmpC.copy(CAVE_AMB).multiplyScalar(0.55), u);
   scene.environmentIntensity *= 1 - 0.9 * u;
