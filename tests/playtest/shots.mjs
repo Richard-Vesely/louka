@@ -12,6 +12,7 @@
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
 //   --timeout  seconds for each step: start, view setup, screenshot (default 30; software WebGL on a slow machine needs more)
 //   --size     viewport, e.g. 960x540 (default 1600x900; software WebGL draws a smaller one much faster)
+//   --jpeg     save JPEG (quality 80) instead of PNG: small files for a gallery
 //   --skipdraw draw nothing while the game starts and the view settles, then draw a few frames for the screenshot
 //              (like the play-tests; for a very slow machine: reflections and shadows get only those few frames)
 // Views (1600×900): day-landscape, sunset-lights, cave, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, ground-items, items-water, tech-machines, vehicles;
@@ -242,22 +243,22 @@ const MORE = {
   // zlatá hodina a červánky: pohled ke slunci nad krajinou
   'golden-hour': () => {
     const S = SHOT, g = S.g, t = 0.742;
-    S.place({ x: 46, z: 58, up: 6, yaw: 0, time: t });
+    S.place({ x: 40, z: 66, up: 6, yaw: 0, time: t });
     const phi = (120 + t * 360) * Math.PI / 180;
     g.player.yaw = Math.atan2(-Math.sin(phi), -Math.cos(phi)) + 0.35; g.player.pitch = 0.04;
   },
   // půlnoc na louce: měsíc, hvězdy, ovce 15 m daleko musí být vidět
   night: () => {
     const S = SHOT, g = S.g;
-    S.place({ x: 46, z: 58, up: 1.7, yaw: 0, time: 0.0 });
+    S.place({ x: 40, z: 66, up: 1.7, yaw: 0, time: 0.0 }); // (46, 58) je teď v třešňovém lese, kamera byla v koruně
     S.lookAt(0, 3, 0); g.player.pitch = 0.02;
-    const yaw = g.player.yaw, x = 46 - Math.sin(yaw) * 15, z = 58 - Math.cos(yaw) * 15;
+    const yaw = g.player.yaw, x = 40 - Math.sin(yaw) * 15, z = 66 - Math.cos(yaw) * 15;
     g.spawnMob('sheep', x, z); g.spawnMob('deer', x + 4, z + 2);
   },
   // bouřka nad krajinou: déšť, mokrá zem, louže
   rain: () => {
     const S = SHOT, g = S.g;
-    S.place({ x: 46, z: 58, up: 2.5, yaw: 0, time: 0.42 }); S.lookAt(0, 3, 0);
+    S.place({ x: 40, z: 66, up: 2.5, yaw: 0, time: 0.42 }); S.lookAt(0, 3, 0);
     g.setWeather({ rain: 1, storm: 1 }); g.weather.rain = 1; g.weather.storm = 1; g.weather.wet = 1;
   },
   // ranní mlha v údolí
@@ -289,7 +290,7 @@ for (const [name, setup] of Object.entries(VIEWS)) {
     if (name === 'inventory') await ev(() => { window.SHOT.g.player.flyT = 1e6; });
     if (opt('after')) { const r = await ev(opt('after')); if (r !== undefined) console.log('after:', JSON.stringify(r)); await page.waitForTimeout(300); }
     if (flag('skipdraw')) await ev(() => new Promise((ok) => { window.__skipDraw = false; let n = 0; const f = () => (++n < 4 ? requestAnimationFrame(f) : ok()); requestAnimationFrame(f); }));
-    await page.screenshot({ path: path.join(outDir, `${name}.png`), timeout });
+    await page.screenshot({ path: path.join(outDir, `${name}.${flag('jpeg') ? 'jpg' : 'png'}`), ...(flag('jpeg') ? { type: 'jpeg', quality: 80 } : {}), timeout });
     if (flag('skipdraw')) await ev(() => { window.__skipDraw = true; });
     if (flag('perf')) {
       // čas snímku přes skutečnou smyčku hry (requestAnimationFrame), 3 s; 25. percentil, aby jiné programy
