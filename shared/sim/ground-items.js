@@ -31,11 +31,12 @@ export function popGroundItem(id, n, x, y, z, w = 0) {
   const a = Math.random() * Math.PI * 2, sp = 0.3 + Math.random() * 0.8, r = () => (Math.random() - 0.5) * 0.5;
   spawnGroundItem(id, n, { x: x + r(), y: y + r() * 0.5, z: z + r() }, { x: Math.cos(a) * sp, y: 3 + Math.random() * 1.2, z: Math.sin(a) * sp }, DROP_DELAY, undefined, w);
 }
-// Podlaha pod předmětem: povrch terénu nebo horní stěna bloku
-function itemFloor(x, y, z) {
+// Podlaha pod předmětem: povrch terénu nebo horní stěna bloku. Povrch platí, když byl předmět před krokem (y0) nad ním:
+// rychle padající předmět (pochodeň ze zdi vysoko) by jinak za jeden krok proletěl pod povrch a zůstal v zemi.
+function itemFloor(x, y, z, y0 = y) {
   const g = groundHeight(x, z);
   const vf = voxFloor(x, y, z);
-  return isFinite(g) && y >= g - 0.6 ? Math.max(g, vf) : vf;
+  return isFinite(g) && Math.max(y, y0) >= g - 0.6 ? Math.max(g, vf) : vf;
 }
 // Stejné předměty ležící u sebe se slijí do jedné hromádky (jako v Minecraftu: do 0,5 × 0,25 × 0,5 bloku).
 // Rozhoduje jen ten, kdo drží svět (hra pro jednoho, hostitel, server); ostatní dostanou změnu jako 'gx'.
@@ -70,9 +71,10 @@ export function updateGroundItems(dt, pickup) {
     const nx = it.pos.x + it.vel.x * dt, nz = it.pos.z + it.vel.z * dt;
     if (solidAny(Math.floor(nx), Math.floor(it.pos.y + 0.1), Math.floor(nz))) { it.vel.x *= -0.2; it.vel.z *= -0.2; }
     else { it.pos.x = nx; it.pos.z = nz; }
+    const y0 = it.pos.y;
     it.pos.y += it.vel.y * dt;
     // podlaha (i blok položený na předmět: voxFloor ho vystrčí nahoru)
-    const fl = itemFloor(it.pos.x, it.pos.y, it.pos.z);
+    const fl = itemFloor(it.pos.x, it.pos.y, it.pos.z, y0);
     if (it.pos.y <= fl) { it.pos.y = fl; it.vel.y = 0; it.vel.x *= 0.8; it.vel.z *= 0.8; }
     it.spin += dt * 1.8;
     if (!it.burnt && inLava(it.pos.x, it.pos.y, it.pos.z)) burn(it);
