@@ -128,11 +128,15 @@ try {
     return !!S.ctx;
   });
   await A.evaluate(() => { const g = window.game; window.T.tp(14, 48, g.groundHeight(14, 48)); g.player.yaw = 0; });
-  await sleep(500);
   await A.evaluate(() => { window.game.blocks.set('16,3,46', 'planks'); window.game.keys.add('KeyW'); });
-  await sleep(1500);
+  // obě hry krokujeme ručně: stránka na pozadí má od prohlížeče přibrzděné snímky, kroky by pak někdy nezazněly
+  for (let i = 0; i < 16; i++) {
+    await A.evaluate(() => window.T.step(2, 0.05));
+    await sleep(80);
+    await B.evaluate(() => window.T.step(2, 0.05));
+  }
   await A.evaluate(() => window.game.keys.delete('KeyW'));
-  await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); } });
+  await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); window.T.step(4, 0.05); } });
   check('sound: a joined player hears others build and walk, and the animals', heard && await until(B, () => window.__heard.place > 0 && window.__heard.step > 0 && window.__heard.mob > 0, null, 8000), await B.evaluate(() => JSON.stringify(window.__heard)));
 
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
