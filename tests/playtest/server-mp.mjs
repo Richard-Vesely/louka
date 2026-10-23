@@ -22,7 +22,7 @@ function startServer(pass = 'kroužek') {
   });
 }
 const stop = (s) => new Promise((ok) => { if (s.child.exitCode !== null || s.child.signalCode) return ok(); s.child.stopping = true; s.child.on('exit', ok); s.child.kill(); });
-const until = async (page, fn, arg, timeout = 15000) => { try { await page.waitForFunction(fn, arg, { timeout: timeout * SLOW, polling: 100 }); return true; } catch { return false; } };
+const until = async (page, fn, arg, timeout = 15000) => { try { await page.waitForFunction(fn, arg, { timeout: timeout * SLOW, polling: 100 }); return true; } catch (e) { until.err = String(e?.message || e).slice(0, 160); return false; } };
 
 let srv = await startServer();
 const browser = await launch();
@@ -145,13 +145,17 @@ try {
   check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => { window.T.step(1, 0.0001); return window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1; }));
   // každý ze dvou hráčů si zapamatuje, že k němu dorazila vypadlá pochodeň (mohl ji mezitím někdo sebrat)
   const seenTorch = () => { const g = window.game, push = g.groundItems.push; window.__torchItem = null; g.groundItems.push = function (...a) { for (const it of a) if (it.id === 'torch') window.__torchItem = { n: it.n, y: +it.pos.y.toFixed(1) }; return push.apply(this, a); }; };
+  // diagnostika pro CI: kdy dorazilo shození, kdy poprvé platila která podmínka, kolikrát a jak dlouho běžela kontrola, dlouhé úlohy stránky
+  const torchDiag = () => { const t0 = Date.now(), d = window.__td = { t0, arr: null, calls: 0, stepMax: 0, ok: {}, lt: [] }, f = window.__netOnData; window.__netOnData = (m) => { if (d.arr === null && JSON.stringify(m).includes('"8,40,31",null')) d.arr = Date.now() - t0; return f(m); }; try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.duration > 200) d.lt.push([Math.round(e.startTime + performance.timeOrigin - t0), Math.round(e.duration)]); }).observe({ type: 'longtask' }); } catch {} };
+  await A.evaluate(torchDiag); await B.evaluate(torchDiag);
   await A.evaluate(seenTorch); await B.evaluate(seenTorch);
   await B.evaluate(() => { window.game.blocks.delete('8,40,30'); window.T.step(1, 0.0001); });
-  const torchState = () => { const g = window.game; return { has: g.blocks.has('8,40,31'), meta: g.blockMeta.get('8,40,31') ?? null, wall: g.blocks.get('8,40,30') ?? null, sp: g.specials.has('8,40,31'), item: window.__torchItem, items: g.groundItems.filter((x) => x.id === 'torch').map((x) => [x.n, +x.pos.y.toFixed(1)]) }; };
-  const torchGone = () => { window.T.step(1, 0.0001); return !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31') && window.__torchItem?.n === 1; };
+  const torchState = () => { const g = window.game; return { has: g.blocks.has('8,40,31'), meta: g.blockMeta.get('8,40,31') ?? null, wall: g.blocks.get('8,40,30') ?? null, sp: g.specials.has('8,40,31'), item: window.__torchItem, td: { ...window.__td, now: Date.now() - window.__td.t0, t0: undefined }, items: g.groundItems.filter((x) => x.id === 'torch').map((x) => [x.n, +x.pos.y.toFixed(1)]) }; };
+  const torchGone = () => { const d = window.__td, s0 = performance.now(); window.T.step(1, 0.0001); d.calls++; d.stepMax = Math.max(d.stepMax, Math.round(performance.now() - s0)); const c = { gone: !window.game.blocks.has('8,40,31'), sp: !window.game.specials.has('8,40,31'), item: window.__torchItem?.n === 1 }; for (const k in c) if (c[k] && d.ok[k] === undefined) d.ok[k] = Date.now() - d.t0; return c.gone && c.sp && c.item; };
   // (dřív tu obě stránky na sekundy zamrzly: 3D model vypadlé pochodně se čte z ikony a čtení z plátna na grafické kartě čeká, viz iconCanvas)
-  const torchOk = await until(B, torchGone) && await until(A, torchGone);
-  check('torch: Bára removes the wall, the server drops the torch as an item for both', torchOk, JSON.stringify({ A: await A.evaluate(torchState), B: await B.evaluate(torchState) }));
+  const tw = Date.now(), torchB = await until(B, torchGone), twB = Date.now() - tw, torchA = await until(A, torchGone), twA = Date.now() - tw - twB;
+  const torchOk = torchB && torchA;
+  check('torch: Bára removes the wall, the server drops the torch as an item for both', torchOk, JSON.stringify({ waitB: twB, waitA: twA, err: until.err, A: await A.evaluate(torchState), B: await B.evaluate(torchState) }));
 
   // restart: the world is saved every second (SAVE_SECONDS=1) and on shutdown
   await sleep(1500);
