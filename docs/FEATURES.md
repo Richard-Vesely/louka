@@ -161,6 +161,10 @@ When you add or change a feature, update this file in the same pull request.
   (hand to the mouth, crumbs fly), flying (legs back, jets glow and spark), sitting, a short squash when landing,
   red flash when hurt; capes, coat flaps and the halo move on their own. Sneaking is supported by the model (pose
   `sn`) but has no key yet.
+- **Items in hand in the Hytale style** (graphic update): every model in the hand (also in other players' hands) has a dark
+  outline (inverted hull); tool heads and the sword blade are thicker, grips have leather wraps; the *Rybářský prut* is a 3D rod
+  (cork grip, reel, guides) and the *Motyka* a 3D hoe; other items are thick voxels from the icon with a dark outline.
+  Code: `client/src/render/held-models.js`.
 - **First-person hand**: a gloved suit sleeve (your colours, glowing cuff) holds the item. It sways with your steps,
   lags a little behind fast turns, dips and comes back up when you switch items, jolts when you get hurt, and swings
   with the same tool arcs.
@@ -240,6 +244,14 @@ When you add or change a feature, update this file in the same pull request.
   **workshop** (*Dílna*). ~260 recipes in 12 categories with a recipe book and "only what I can make".
   A **search box** (🔍 *Hledat…*) above the book filters it by item name (accents optional, so *zelezo* finds *Železo*);
   it works for recipes, the creative item list, the campfire, the furnace and the stove cookbook, and is cleared when the window closes.
+- **Second hand** (like Minecraft): one more slot under the armor in the backpack (a shield outline when empty); **F** swaps the
+  item in the hand with the second hand (aiming at a car, F still gets in). Any item can be held there and is shown in the left
+  hand (also to other players, pose `oh`). A **shield** (*Štít*: planks + iron) guards while the right button is held: a hit
+  from the front (about ±70°, mobs, swords and arrows of other players) is stopped and only pushes a little, the shield wears
+  by 1; from behind it doesn't help. A **torch** in either hand lights the area around you. A **block** in the second hand is
+  placed with the right button while the main hand is empty or holds a tool or weapon. The **bow** takes arrows from the
+  second hand first. Saved in the browser and on the server (`off`). Code: `client/src/player/offhand.js`, the left hand in
+  `client/src/render/held-item.js`.
 - **Chest** (*Truhla*, 27 slots).
 - **Farm traps**: spikes (*Bodce*) hurt mobs; loot of mobs killed on spikes goes to a chest nearby.
 - **Mob spawner** blocks in dungeons and fortresses.

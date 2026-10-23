@@ -7,15 +7,15 @@ import { NET } from '../../../shared/net/net.js';
 import { lerp, smoothstep, wrapAngle } from '../../../shared/util.js';
 import { WALK } from '../../../shared/world/constants.js';
 import { toolSound } from '../audio/tool-sounds.js';
-import { iconVoxels } from '../dining/food-models.js';
 import { loadCostume } from '../menu/costume.js';
-import { heldStack } from '../player/inventory.js';
+import { heldStack, inv } from '../player/inventory.js';
 import { player } from '../player/player.js';
 import { blockMat } from './blocks.js';
 import { bowModel } from './bow-model.js';
+import { addOutline, chunkyVoxels, hoeModel, rodModel, shieldModel } from './held-models.js';
 import { buildFPArm, disposeCharacter, suitPalette } from './character.js';
 import { ICONS } from './icons.js';
-import { camera } from './renderer.js';
+import { camera, scene } from './renderer.js';
 import { glowTex } from './sky.js';
 
 // ============================================================ předmět v ruce
@@ -51,6 +51,7 @@ function toolModel(d, mesh) {
   const future = d.tier >= 4, shaft = future ? graphite : handleMat, head = TIER_MAT[d.tier];
   mesh(new THREE.CylinderGeometry(0.019, 0.023, 0.64, 10), shaft, 0, 0.11);
   mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.16, 10), gripMat, 0, -0.1); // omotávka
+  for (const y of [-0.04, -0.1, -0.16]) mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.018, 10), handleMat, 0, y); // pruhy omotávky
   mesh(new THREE.CylinderGeometry(0.029, 0.027, 0.03, 10), socketMat, 0, -0.2); // koncovka
   if (future) for (const y of [0.0, 0.22]) mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.012, 12), NEON[d.tier], 0, y);
   if (d.tool === 'pick') {
@@ -60,7 +61,7 @@ function toolModel(d, mesh) {
     s.quadraticCurveTo(0.15, 0.05, 0.28, -0.07);
     s.quadraticCurveTo(0.14, 0.0, 0, -0.005);
     s.quadraticCurveTo(-0.14, 0.0, -0.28, -0.07);
-    mesh(ex(s, 0.03), head, 0, 0.4);
+    mesh(ex(s, 0.05), head, 0, 0.4); // tlustší hlava (Hytale)
     mesh(new THREE.BoxGeometry(0.06, 0.1, 0.056), socketMat, 0, 0.405);
     if (future) mesh(new THREE.BoxGeometry(0.064, 0.022, 0.06), NEON[d.tier], 0, 0.4); // svítící jádro v objímce
   } else if (d.tool === 'axe') {
@@ -70,7 +71,7 @@ function toolModel(d, mesh) {
     s.quadraticCurveTo(0.2, 0.0, 0.1, -0.11);
     s.lineTo(0.02, -0.055);
     s.lineTo(0.02, 0.05);
-    mesh(ex(s, 0.018, 0.008), head, 0, 0.36);
+    mesh(ex(s, 0.034, 0.008), head, 0, 0.36);
     mesh(new THREE.BoxGeometry(0.07, 0.1, 0.05), socketMat, -0.005, 0.36); // objímka
     mesh(new THREE.BoxGeometry(0.05, 0.06, 0.04), head, -0.06, 0.36); // týl
     if (future) mesh(new THREE.BoxGeometry(0.006, 0.17, 0.03), NEON[d.tier], 0.155, 0.355).rotation.z = 0.12;
@@ -82,7 +83,7 @@ function toolModel(d, mesh) {
     s.quadraticCurveTo(0.065, 0.2, 0, 0.235);
     s.quadraticCurveTo(-0.065, 0.2, -0.07, 0.12);
     s.lineTo(-0.07, 0);
-    const blade = mesh(ex(s, 0.012, 0.005), head, 0, 0.42);
+    const blade = mesh(ex(s, 0.022, 0.005), head, 0, 0.42);
     blade.rotation.x = -0.12; // lopata je trochu prohnutá dopředu
     mesh(new THREE.CylinderGeometry(0.03, 0.022, 0.08, 10), socketMat, 0, 0.42);
     if (future) mesh(new THREE.BoxGeometry(0.008, 0.16, 0.02), NEON[d.tier], 0, 0.53);
@@ -94,12 +95,19 @@ export function buildHeld(id) { // používají ho i postavičky ostatních hrá
   const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; };
   if (d.tool === 'sword') {
     const shape = new THREE.Shape([new THREE.Vector2(-0.032, 0), new THREE.Vector2(0.032, 0), new THREE.Vector2(0.027, 0.74), new THREE.Vector2(0, 0.86), new THREE.Vector2(-0.027, 0.74)]);
-    mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.006, bevelSegments: 1 }).translate(0, 0.02, -0.004), TIER_MAT[d.tier]);
+    mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.018, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 1 }).translate(0, 0.02, -0.009), TIER_MAT[d.tier]); // tlustší čepel (Hytale)
     mesh(new THREE.BoxGeometry(0.24, 0.035, 0.05), d.tier >= 3 ? goldMat : handleMat);
     mesh(new THREE.CylinderGeometry(0.021, 0.024, 0.17, 10), handleMat, 0, -0.1);
+    for (const y of [-0.05, -0.1, -0.15]) mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.022, 10), gripMat, 0, y); // kožená omotávka
     mesh(new THREE.SphereGeometry(0.034, 12, 8), d.tier >= 3 ? goldMat : handleMat, 0, -0.2);
   } else if (d.tool === 'axe' || d.tool === 'pick' || d.tool === 'shovel') {
     toolModel(d, mesh);
+  } else if (id === 'fishing_rod') {
+    rodModel(mesh);
+  } else if (id === 'hoe') {
+    hoeModel(mesh, handleMat, gripMat);
+  } else if (d.shield) {
+    shieldModel(mesh);
   } else if (d.bow) {
     const b = bowModel();
     g.add(b);
@@ -113,11 +121,12 @@ export function buildHeld(id) { // používají ho i postavičky ostatních hrá
     f.position.y = 0.33;
     g.add(f);
   } else {
-    const s = iconVoxels(id, 0.016);
+    const s = chunkyVoxels(id, 0.016); // tlusté kostičky s obrysem (Hytale)
     s.position.y = 0.12;
     s.rotation.y = -0.4;
     g.add(s);
   }
+  addOutline(g); // tmavý obrys jako v Hytale
   g.scale.setScalar(0.7);
   return g;
 }
@@ -228,6 +237,7 @@ export function updateSwing(dt, moving) {
     r[0] = lerp(r[0], 0, e); r[1] = lerp(r[1], 0.08, e); r[2] = lerp(r[2], -0.2, e);
     p[0] += Math.sin(performance.now() / 40) * 0.0025 * k; // plně natažený se trochu chvěje
   }
+  if (player.blocking === 'main') { p[0] = 0.12; p[1] = -0.2; p[2] = -0.46; r[0] = 0.05; r[1] = -0.35; r[2] = 0; } // štít v hlavní ruce před tělem
   // vytažení předmětu: ruka vyjede zespodu
   if (equipT < 1) {
     equipT = Math.min(1, equipT + dt / 0.2);
@@ -254,4 +264,44 @@ export function updateSwing(dt, moving) {
   p[1] -= hurtT * 0.05; r[2] += hurtT * 0.15;
   holder.position.set(p[0], p[1], p[2]);
   holder.rotation.set(r[0], r[1], r[2]);
+  updateOffhand(dt, sway, d);
+}
+
+// ============================================================ druhá ruka (levá): předmět z inv.off, štít se při krytí zvedne před tělo
+const offHolder = new THREE.Group();
+let offId, offGrip = null, offModels = {}, guardK = 0, torchLight = null;
+const ARM_HOLD_L = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-0.3, -0.72, 0.62).normalize());
+function buildOffGrip() {
+  if (offGrip) { offGrip.parent?.remove(offGrip); disposeCharacter(offGrip); }
+  offGrip = buildFPArm(loadCostume(NET.name));
+  offGrip.scale.set(-0.72, 0.72, 0.72); // zrcadlově: levá ruka
+  offGrip.quaternion.copy(ARM_HOLD_L);
+  offGrip.position.set(0, -0.035, 0.015);
+}
+addEventListener('rise-costume', () => { offId = undefined; offGrip = null; });
+function updateOffhand(dt, sway, d) {
+  if (!offHolder.parent) camera.add(offHolder);
+  const s = inv.off[0], id = s ? s.id : null;
+  if (id !== offId) {
+    offId = id;
+    offHolder.clear();
+    if (id && ITEMS[id] && ICONS[id]) {
+      if (!offGrip) buildOffGrip();
+      offHolder.add(offModels[id] ||= buildHeld(id), offGrip);
+    }
+  }
+  offHolder.visible = !!id && !player.eating;
+  // klid vlevo dole, při krytí štítem před tělem (štít v hlavní ruce: hlavní ruka se zvedne sama, swing)
+  guardK = lerp(guardK, player.blocking === 'off' ? 1 : 0, 1 - Math.exp(-dt * 14));
+  const k = smoothstep(0, 1, guardK);
+  offHolder.position.set(lerp(-0.34, -0.22, k) - Math.sin(d) * 0.018 * sway, lerp(-0.38, -0.27, k) - Math.abs(Math.cos(d)) * 0.022 * sway, lerp(-0.62, -0.46, k));
+  offHolder.rotation.set(lerp(-0.3, 0.05, k), lerp(-0.15, 0.5, k), lerp(0.4, 0.05, k));
+  // pochodeň v kterékoli ruce svítí kolem hráče
+  const torch = id === 'torch' || heldId === 'torch';
+  if (torch && !torchLight) { torchLight = new THREE.PointLight(0xffa04a, 0, 11, 1.6); scene.add(torchLight); }
+  if (torchLight) {
+    torchLight.intensity = lerp(torchLight.intensity, torch ? 9 * GLOW * (0.92 + Math.sin(performance.now() / 90) * 0.04 + Math.sin(performance.now() / 37) * 0.03) : 0, 1 - Math.exp(-dt * 10));
+    torchLight.position.set(camera.position.x, camera.position.y - 0.3, camera.position.z);
+    torchLight.visible = torchLight.intensity > 0.05;
+  }
 }
