@@ -1,7 +1,7 @@
 // Ikony předmětů ve stylu Hytale (grafický update): tmavý obrys kolem tvaru, světlo shora (přechod), světlá horní
 // a levá hrana, tmavší spodní a pravá. Kreslí se jen pro okna a lištu (kopie obrázku); předmět v ruce a 3D ikony bloků zůstávají, jak jsou.
 // Bez vedlejších účinků při načtení (ikona se upraví až při prvním zobrazení a uloží se).
-import { ICONS } from '../render/icons.js';
+import { ICONS, iconCanvas } from '../render/icons.js';
 
 const cache = new Map();
 /** Adresa obrázku ikony ve stylu Hytale (hladké 3D ikony bloků beze změny). */
@@ -17,7 +17,7 @@ export function styledIconUrl(id) {
 
 function stylize(src) {
   const n = src.width, m = src.height, P = 1; // o pixel větší plátno, ať se obrys vejde
-  const c = document.createElement('canvas');
+  const c = iconCanvas();
   c.width = n + 2 * P; c.height = m + 2 * P;
   const g = c.getContext('2d');
   g.drawImage(src, P, P);

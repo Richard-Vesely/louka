@@ -93,9 +93,9 @@ export function updateAmbientFx(dt, under = 0) {
     for (const [key, s] of specials) {
       if (s.type === 'furnace') { furnaceFx(key, s, step, k, wind); continue; }
       if (s.type !== 'campfire' && s.type !== 'torch' && s.type !== 'lantern') continue;
-      const x = s.x + 0.5, z = s.z + 0.5, dx = x - cp.x, dz = z - cp.z;
+      const x = s.lp ? s.lp[0] : s.x + 0.5, z = s.lp ? s.lp[2] : s.z + 0.5, dx = x - cp.x, dz = z - cp.z; // lp = plamen pochodně (i na zdi)
       if (dx * dx + dz * dz > 900) continue;
-      const fire = s.type === 'campfire', top = s.ry + (fire ? 0.45 : s.type === 'torch' ? 0.85 : 0.5);
+      const fire = s.type === 'campfire', top = s.lp ? s.lp[1] + 0.1 : s.ry + (fire ? 0.45 : 0.5);
       // žhavé jiskry: stoupají, kmitají a hasnou
       if (s.type !== 'lantern' && Math.random() < step * (fire ? 9 : 1.5) * k)
         emit(glow, 0, x + rnd(-0.15, 0.15), top, z + rnd(-0.15, 0.15), rnd(-0.2, 0.2), rnd(0.8, 1.8), rnd(-0.2, 0.2), rnd(0.8, 1.8), rnd(0.025, 0.05), 1.0 * GLOW, 0.55 * GLOW, 0.2 * GLOW, 1);

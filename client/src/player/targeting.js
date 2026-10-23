@@ -6,6 +6,7 @@ import { mobs } from '../../../shared/sim/mobs.js';
 import { REACH } from '../../../shared/world/constants.js';
 import { TREE_NAMES } from '../../../shared/world/nature.js';
 import { bkey, blockMeta, blocks, vehicles } from '../../../shared/world/state.js';
+import { torchBox, torchMeta } from '../../../shared/world/torch.js';
 import { biomeAt, isMark, shrineDist, shrineOf } from '../../../shared/world/terrain.js';
 import { NO_DIG_R, V, VOX, getVox, groundHeight, topY } from '../../../shared/world/voxels.js';
 import { forestRocks, forestTrees } from '../render/forest.js';
@@ -47,10 +48,11 @@ function raycastBlocks(o, d, max) {
   while (t <= max) {
     const type = blocks.get(bkey(x, y, z));
     if (type && !(t === 0 && !BLOCKS[type].solid)) { // židli, na které sedíš, nezaměříš
-      const sh = BLOCKS[type].shape;
-      if (!sh) return { t, x, y, z, type, normal };
-      // Schody, půlblok…: paprsek musí trefit skutečný tvar (nad půlblokem se dá mířit dál)
-      const hit = rayBoxes(o, d, x, y, z, shapeBoxes(sh, blockMeta.get(bkey(x, y, z)) || 0));
+      const sh = BLOCKS[type].shape, torch = type === 'torch';
+      if (!sh && !torch) return { t, x, y, z, type, normal };
+      // Schody, půlblok…: paprsek musí trefit skutečný tvar (nad půlblokem se dá mířit dál). Pochodeň je tenká: kolem ní
+      // jde vytěžit zeď nebo blok, na kterém drží.
+      const k = bkey(x, y, z), hit = rayBoxes(o, d, x, y, z, torch ? [torchBox(torchMeta(k, x, y, z))] : shapeBoxes(sh, blockMeta.get(k) || 0));
       if (hit && hit.t <= max) return { t: hit.t, x, y, z, type, normal: hit.normal };
     }
     // Podzemní bloky (horní vrstvu sloupce řeší povrch terénu níže v pickTarget).

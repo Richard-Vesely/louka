@@ -8,6 +8,7 @@ import { updateMobs, updateSpawners, updateSpawns } from '../../../shared/sim/mo
 import { updatePower } from '../../../shared/sim/power.js';
 import { EYE } from '../../../shared/world/constants.js';
 import { vehicles } from '../../../shared/world/state.js';
+import { updateTorches } from '../../../shared/world/torch.js';
 import { Sound } from '../audio/sound.js';
 import { updateSoundscape } from '../audio/soundscape.js';
 import { dining, updateDining } from '../dining/dining.js';
@@ -131,6 +132,7 @@ export function tick(realDt) {
   updateStoves(realDt);
   stoveVisuals(realDt);
   if (!NET.client) updateCrops(W);
+  if (!NET.client) updateTorches(realDt); // pochodeň bez opory odpadne (rozhoduje ten, kdo drží svět)
   updatePortals(realDt);
   regrowGrass(realDt);
   updateLights(gameClock);

@@ -55,11 +55,22 @@ export function skipDrawScript() {
   }
 }
 
+// Pointer Lock is only pretended: a real lock in headless Chromium on Windows traps the real desktop cursor
+// (ClipCursor to the viewport size) while the tests run. The game sees the same pointerLockElement + pointerlockchange.
+function fakePointerLockScript() {
+  let locked = null;
+  const changed = () => setTimeout(() => document.dispatchEvent(new Event('pointerlockchange')));
+  Object.defineProperty(Document.prototype, 'pointerLockElement', { configurable: true, get: () => locked });
+  Element.prototype.requestPointerLock = function () { locked = this; changed(); return Promise.resolve(); };
+  Document.prototype.exitPointerLock = function () { if (!locked) return; locked = null; changed(); };
+}
+
 /** Opens a new browser context + page, collects console errors. */
 export async function openPage(browser, url, { label = '', viewport = { width: 1100, height: 680 }, clear = true, ignore = [] } = {}) {
   const ctx = await browser.newContext({ viewport });
   if (SLOW > 1) ctx.setDefaultTimeout(30000 * SLOW);
   await ctx.addInitScript(skipDrawScript);
+  await ctx.addInitScript(fakePointerLockScript);
   // PLAYTEST_QUALITY=low (CI): méně trávy a stromů, ať je software WebGL na pomalém stroji rychlejší
   if (process.env.PLAYTEST_QUALITY) await ctx.addInitScript((q) => { try { const p = JSON.parse(localStorage.getItem('rise-nastaveni') || '{}'); if (!p.quality) localStorage.setItem('rise-nastaveni', JSON.stringify({ ...p, quality: q })); } catch {} }, process.env.PLAYTEST_QUALITY);
   const page = await ctx.newPage();

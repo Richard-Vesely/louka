@@ -71,6 +71,17 @@ test('an item in the lava of a volcano crater burns (the world holder decides)',
   }, true);
 });
 
+test('an item falling from high up lands on the ground, not inside it (also with long frames)', () => {
+  for (const dt of [1 / 60, 0.05, 0.1]) {
+    withNet(() => {
+      const x = 8.6, z = 31.3, g = groundHeight(x, z);
+      spawnGroundItem('torch', 1, { x, y: g + 40, z }, V0, 0, 'fall');
+      run(4, dt);
+      assert.ok(Math.abs(groundItems[0].pos.y - g) < 0.01, `dt ${dt}: y ${groundItems[0].pos.y} vs ground ${g}`);
+    });
+  }
+});
+
 test('a block placed on an item pushes the item up on top of it', () => {
   withNet(() => {
     const x = 37, z = 41, y = Math.floor(groundHeight(x + 0.5, z + 0.5));
