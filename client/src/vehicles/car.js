@@ -321,6 +321,7 @@ export function updateVehicles(dt) {
   const hud = player.vehicle || player.riding?.id;
   const hv = vehicles.get(hud);
   vehHud.style.display = hv ? 'block' : 'none';
+  document.body.classList.toggle('in-veh', !!hv); // řádek vozidla je na místě nápovědy kláves: nápověda se schová
   if (hv) { const html = vehicleHud(hv, !!player.riding); if (vehHud.innerHTML !== html) vehHud.innerHTML = html; }
   // reflektor vozidla, ve kterém sedíš
   const v = vehicles.get(player.vehicle);
