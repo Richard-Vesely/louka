@@ -71,7 +71,7 @@ When you add or change a feature, update this file in the same pull request.
   45 m transition: desert, jungle and cherry forest start roughly 60 m from spawn, tundra about 85 m away.
   The Mark dimension stays unchanged.
   This changes generated terrain in existing worlds too; player-built blocks keep their saved positions.
-- **Trees** per biome (oak, spruce, cherry, jungle, snowy spruce, acacia, dead tree/bush, cactus, giant mushroom)
+- **Trees** per biome (oak, spruce, cherry with rose-pink blossom, jungle, snowy spruce, acacia, dead tree/bush, cactus, giant mushroom)
   and **boulders** (16 % with iron).
 - **Grass** you can cut (fiber, seeds, berries, potatoes, rice near water, flowers); it grows back in ~2 minutes.
 - **Ponds** with water (fishing, slows vehicles), fireflies at night.
@@ -90,7 +90,7 @@ When you add or change a feature, update this file in the same pull request.
   No digging within 10.5 m of a shrine.
   - **Look**: 128 px textures made by code (64 px on *nízká*), one layer per block type in a texture array (no colour
     bleeding at a distance): natural rock with chipped ledges and thin cracks in a cool grey, dirt with pebbles, every
-    ore on the same stone as plain stone. Each pixel also has relief (normal map, softer with distance, *střední* and
+    ore on the same stone as plain stone, with big, dense grains so an ore block reads from afar. Each pixel also has relief (normal map, softer with distance, *střední* and
     *vysoká*), roughness, metal and glow: gold, copper and iron nuggets shine like metal and glint; **crystal and
     markorite glow only in their shards**, pulse gently and sparkle, and **light the cave walls around them** (cyan or
     violet, up to ~3 blocks). Block edges are slightly darker so every block reads, also in caves.
@@ -113,8 +113,8 @@ When you add or change a feature, update this file in the same pull request.
     (about 17:00–19:30), stars only after dusk, a moon that lights the land in cool blue and casts shadows, fireflies
     that pulse gently. Sky light fills shadows (about a third of the sun) so shadows are never black.
   - **Weather** (`shared/sim/weather.js` decides it from the day number and time, so every player sees the same sky;
-    nothing is sent or saved): rain with streaks and splashes, wet darker ground and **puddles** that reflect the sky
-    and ripple, grey overcast sky and thicker air, **thunderstorms** with lightning bolts, a flash and thunder delayed by
+    nothing is sent or saved): rain with streaks and splashes, wet darker ground and **puddles** that reflect a muted sky
+    (wet grey, not white patches) and ripple, grey overcast sky and thicker air, **thunderstorms** with lightning bolts, a flash and thunder delayed by
     distance, and **foggy mornings** in valleys. Day 1 of a new world is always clear. Messages: *Začíná pršet*,
     *Blíží se bouřka – schovej se!*, *Přestalo pršet*. Rain noise and drops are synthesised (`render/weather.js`).
     Console: `game.setWeather({ rain: 1, storm: 1 })` (this browser only), `game.setWeather(null)` back to the rules.
@@ -135,7 +135,8 @@ When you add or change a feature, update this file in the same pull request.
     (brighter after a moment underground).
   - **Mark dimension**: darker violet sky, violet fog, a large cyan-and-magenta **aurora**, nights tinted violet instead
     of blue, and slow floating motes of light. The tundra gets a green aurora at night.
-  - **Light-shard beams** are a landmark: brighter by day so they stay visible against the sky.
+  - **Light-shard beams** are a landmark: brighter by day so they stay visible against the sky; by day beams fade out
+    beyond ~250 m (no wall of lines on the horizon; the compass still shows shards), at night all of them shine.
   - **Powered cables** show their metal (copper, gold) and carry **cyan pulses**; faster pulses = more power used.
   - **Grafika: střední / vysoká** draw through a post-processing chain (`client/src/render/post.js`, `postprocessing`
     + `n8ao`): HDR; sun/moon **shadows** (`shadows.js`: one map that follows the player, 20–30 updates per second; near
@@ -152,7 +153,7 @@ When you add or change a feature, update this file in the same pull request.
   - **Grafika: nízká** stays as cheap as before (no composer, no shadows, ACES); it still gets the warm-white fire light,
     wind, weather, dusk sky, simple water, reeds, embers, cave edges and ore light. CI renders with it.
   - Screenshots for comparing graphics: `node tests/playtest/shots.mjs dist <out> [--quality low|medium|high|auto]
-    [--perf] [--views all]` (8 fixed views at 1600×900, `--views all` adds golden hour, night, rain, dawn fog and the
+    [--perf] [--views all] [--jpeg] [--size WxH] [--timeout s] [--skipdraw]` (fixed views at 1600×900, `--views all` adds golden hour, night, rain, dawn fog and the
     Mark dimension; `--perf` writes ms per frame).
 
 *Kód:* terrain and biomes `shared/world/terrain.js` (+ GLSL twin `client/src/render/glsl.js`), underground `shared/world/voxels.js`, trees/rocks/shards/ponds `shared/world/nature.js`, structures and loot `shared/world/structures.js`, day clock `shared/sim/day.js`; drawing in `client/src/render/` (`ground`, `grass`, `forest`, `shards`, `vox-mesh` + underground textures `vox-tex`, `sky`, `daylight`; look `look.js`, post-processing `post.js`, shadows `shadows.js`, clouds and distant ridge `clouds.js`, water `water.js`, light shader bits `light-glsl.js`, weather `weather.js`, embers/smoke/dust `ambient-fx.js`), shrine and portal `client/src/world/shrine.js`.
@@ -446,6 +447,7 @@ attack and meter `client/src/player/interaction.js`; camera kick, hurt tilt, hit
     car's tilt, so on a slope it stays above the seat.
 - **Biplane** (*Dvouplošník*): needs flat ground to place. Throttle Space/Shift, pitch W/S, roll A/D; stall if too slow;
   crash landing hurts.
+- While you sit in a vehicle, its HUD line (speed, gear, fuel, wind) takes the place of the key hint, which hides.
 
 *Kód:* kinds of vehicles (names, sizes, seats, upgrades) `client/src/vehicles/kinds.js`; shared parts (get in/out,
 drawing, cameras, nitro, the car's driving) `car.js`; models `car-model.js`, `bike-model.js`, `boat-model.js`,

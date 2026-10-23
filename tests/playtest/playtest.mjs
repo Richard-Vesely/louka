@@ -182,6 +182,8 @@ try {
     T.holdNothing(); at(bx + 0.5, y + 2.6, bz + 2.2); T.aim(bx + 0.5, y + 2.45, bz + 0.5);
     const n0 = T.count('torch'); res.mine = T.mineUntil(() => !g.blocks.has(K(bx, y + 2, bz)), 40);
     T.step(40); res.got = T.count('torch') - n0; // rovnou do batohu, nebo vyskočí jako předmět a přiletí
+    // vyskočí náhodným směrem: z vršku sloupku občas spadne až na zem, víc než 1,3 m pod nohy (moc hluboko na magnet) – dojdi pro ni
+    if (res.got < 1) { T.collect(); res.got = T.count('torch') - n0; }
     return res;
   });
   check('torch: on top of a block it stands, on the side it hangs leaning from the wall', r.floor === 1 && r.wall === 4 && r.lean > 0 && r.lean < 0.4, JSON.stringify(r));

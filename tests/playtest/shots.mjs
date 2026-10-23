@@ -10,18 +10,23 @@
 //   --only     only these views
 //   --tweak    JavaScript run in the page after the start (e.g. "game.LK.bloom.intensity = 1")
 //   --after    JavaScript run in the page after each view is set up, just before the screenshot
+//   --timeout  seconds for each step: start, view setup, screenshot (default 30; software WebGL on a slow machine needs more)
+//   --size     viewport, e.g. 960x540 (default 1600x900; software WebGL draws a smaller one much faster)
+//   --jpeg     save JPEG (quality 80) instead of PNG: small files for a gallery
+//   --skipdraw draw nothing while the game starts and the view settles, then draw a few frames for the screenshot
+//              (like the play-tests; for a very slow machine: reflections and shadows get only those few frames)
 // Views (1600×900): day-landscape, sunset-lights, cave, torches, torches-night, water-shore, lake, bike, boats, sailing, seaplane, garage, forest, inventory, ground-items, items-water, tech-machines, vehicles;
 // with --views all also golden-hour, night, rain, dawn-fog, mark (these need the new weather/dimension API).
 // Everything is placed through window.game, so the same script works on old and new builds.
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { ARGS, serveDir } from './lib.mjs';
+import { ARGS, serveDir, skipDrawScript } from './lib.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (name, def) => { const i = argv.indexOf('--' + name); return i < 0 ? def : argv[i + 1]; };
 const flag = (name) => argv.includes('--' + name);
-const VALUED = ['--look', '--quality', '--only', '--tweak', '--after', '--views'];
+const VALUED = ['--look', '--quality', '--only', '--tweak', '--after', '--views', '--timeout', '--size'];
 const [dist, outDir] = argv.filter((a, i) => !a.startsWith('--') && !VALUED.includes(argv[i - 1]));
 if (!dist || !outDir) { console.log('usage: node tests/playtest/shots.mjs <dist> <out-dir> [--quality high] [--soft] [--perf] [--only a,b] [--views all]'); process.exit(2); }
 const look = opt('look', '');
@@ -33,7 +38,11 @@ fs.mkdirSync(outDir, { recursive: true });
 const GPU_ARGS = ['--use-angle=d3d11', '--ignore-gpu-blocklist', '--enable-gpu', '--disable-gpu-vsync', '--disable-frame-rate-limit', '--autoplay-policy=no-user-gesture-required'];
 const server = await serveDir(path.resolve(dist));
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, args: flag('soft') ? ARGS : GPU_ARGS });
-const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
+const [width, height] = opt('size', '1600x900').split('x').map(Number);
+const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
+const timeout = 1000 * Number(opt('timeout', 30));
+ctx.setDefaultTimeout(timeout);
+if (flag('skipdraw')) await ctx.addInitScript(skipDrawScript);
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -43,8 +52,8 @@ const ev = (fn, arg) => page.evaluate(fn, arg);
 await page.goto(server.url, { waitUntil: 'domcontentloaded' });
 await ev((q) => { localStorage.clear(); localStorage.setItem('rise-nastaveni', JSON.stringify({ ...(q === 'auto' ? {} : { quality: q }), controls: 'mouse' })); localStorage.setItem('rise-jmeno', 'Fotograf'); }, quality);
 await page.goto(server.url + (look ? `?look=${look}` : ''), { waitUntil: 'domcontentloaded' });
-await page.click('#mSolo', { timeout: 240000, noWaitAfter: true }); // první start na pomalém stroji kompiluje shadery dlouho
-await page.waitForFunction(() => window.gameStarted === true, null, { timeout: 120000 });
+await page.click('#mSolo', { timeout: Math.max(240000, timeout), noWaitAfter: true }); // první start na pomalém stroji kompiluje shadery dlouho
+await page.waitForFunction(() => window.gameStarted === true, null, { timeout: Math.max(120000, timeout) });
 const gpu = await ev(() => { const gl = window.game.renderer.getContext(); const e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); });
 const realQ = await ev(() => window.game.QUALITY);
 console.log(`GPU: ${gpu}  look=${look || '(default)'}  quality=${quality} (${realQ})`);
@@ -276,22 +285,22 @@ const MORE = {
   // zlatá hodina a červánky: pohled ke slunci nad krajinou
   'golden-hour': () => {
     const S = SHOT, g = S.g, t = 0.742;
-    S.place({ x: 46, z: 58, up: 6, yaw: 0, time: t });
+    S.place({ x: 40, z: 66, up: 6, yaw: 0, time: t });
     const phi = (120 + t * 360) * Math.PI / 180;
     g.player.yaw = Math.atan2(-Math.sin(phi), -Math.cos(phi)) + 0.35; g.player.pitch = 0.04;
   },
   // půlnoc na louce: měsíc, hvězdy, ovce 15 m daleko musí být vidět
   night: () => {
     const S = SHOT, g = S.g;
-    S.place({ x: 46, z: 58, up: 1.7, yaw: 0, time: 0.0 });
+    S.place({ x: 40, z: 66, up: 1.7, yaw: 0, time: 0.0 }); // (46, 58) je teď v třešňovém lese, kamera byla v koruně
     S.lookAt(0, 3, 0); g.player.pitch = 0.02;
-    const yaw = g.player.yaw, x = 46 - Math.sin(yaw) * 15, z = 58 - Math.cos(yaw) * 15;
+    const yaw = g.player.yaw, x = 40 - Math.sin(yaw) * 15, z = 66 - Math.cos(yaw) * 15;
     g.spawnMob('sheep', x, z); g.spawnMob('deer', x + 4, z + 2);
   },
   // bouřka nad krajinou: déšť, mokrá zem, louže
   rain: () => {
     const S = SHOT, g = S.g;
-    S.place({ x: 46, z: 58, up: 2.5, yaw: 0, time: 0.42 }); S.lookAt(0, 3, 0);
+    S.place({ x: 40, z: 66, up: 2.5, yaw: 0, time: 0.42 }); S.lookAt(0, 3, 0);
     g.setWeather({ rain: 1, storm: 1 }); g.weather.rain = 1; g.weather.storm = 1; g.weather.wet = 1;
   },
   // ranní mlha v údolí
@@ -322,7 +331,9 @@ for (const [name, setup] of Object.entries(VIEWS)) {
     await page.waitForTimeout(name === 'cave' || name === 'mark' || name.startsWith('torches') ? 4500 : 3800);
     if (name === 'inventory') await ev(() => { window.SHOT.g.player.flyT = 1e6; });
     if (opt('after')) { const r = await ev(opt('after')); if (r !== undefined) console.log('after:', JSON.stringify(r)); await page.waitForTimeout(300); }
-    await page.screenshot({ path: path.join(outDir, `${name}.png`), timeout: 120000 }); // software WebGL on a busy PC is slow
+    if (flag('skipdraw')) await ev(() => new Promise((ok) => { window.__skipDraw = false; let n = 0; const f = () => (++n < 4 ? requestAnimationFrame(f) : ok()); requestAnimationFrame(f); }));
+    await page.screenshot({ path: path.join(outDir, `${name}.${flag('jpeg') ? 'jpg' : 'png'}`), ...(flag('jpeg') ? { type: 'jpeg', quality: 80 } : {}), timeout: Math.max(timeout, 120000) }); // software WebGL on a busy PC is slow
+    if (flag('skipdraw')) await ev(() => { window.__skipDraw = true; });
     if (flag('perf')) {
       // čas snímku přes skutečnou smyčku hry (requestAnimationFrame), 3 s; 25. percentil, aby jiné programy
       // na stejném počítači (krátké výkyvy) měření tolik nerozhazovaly
@@ -336,6 +347,7 @@ for (const [name, setup] of Object.entries(VIEWS)) {
     console.log(`shot  ${name}${perf[name] ? `  ${perf[name]} ms/frame` : ''}`);
   } catch (e) {
     console.log(`FAIL  ${name}: ${String(e.message || e).split('\n')[0]}`);
+    await ev(() => { const g = window.game; if (g.player.vehicle) g.exitVehicle?.(); }).catch(() => {}); // a failed view must not leave the next ones sitting in a vehicle
   }
 }
 if (flag('perf')) fs.writeFileSync(path.join(outDir, 'perf.json'), JSON.stringify({ gpu, look, quality, msPerFrame: perf }, null, 2));
