@@ -106,7 +106,17 @@ export function buildVoxTextures(T = 128) {
         const sh = rock.f2[i] - rock.f1[i], ridge = sm(1.6 * S, 0.2 * S, sh), v = 0.6 + n1[i] * 0.45 + ridge * 0.6;
         return [44 * v, 28 * v, 66 * v, 0.5 + Math.min(sh, 14 * S) / (14 * S) * 0.4, 0.1 + ridge * 0.2, 0, 0];
       }
-      default: return oreAt(i, x, y, ORES[name]) || stone(i);
+      default: {
+        const o = ORES[name], g = oreAt(i, x, y, o);
+        if (g || !o) return g || stone(i);
+        // hornina kolem zrn: trochu do barvy rudy a tmavší, k okrajům dlaždice ještě tmavší – rudný blok se čte
+        // jako jeden blok (co vykopat), ne jako konfety rozházené po stěně
+        const e = Math.min(x, y, T - 1 - x, T - 1 - y) / T, frame = 0.8 + 0.2 * sm(0, 0.09, e);
+        const host = [0, 1, 2].map((j) => (124 + j * 4) * 0.8 + o.color[j] * 0.2 * 0.85);
+        const st = stone(i, host);
+        st[0] *= frame; st[1] *= frame; st[2] *= frame;
+        return st;
+      }
     }
   };
 
