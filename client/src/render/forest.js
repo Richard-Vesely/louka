@@ -74,12 +74,15 @@ const LEAF_R2 = (FX.leafCards + 30) ** 2; // lístky dostanou stromy o kus dál,
 const OAK_BLOBS = [[0, 1.3, 0, 2.1], [1.3, 0.5, 0.3, 1.5], [-1.1, 0.6, -0.6, 1.5], [0.2, 0.5, -1.3, 1.4], [-0.4, 2.3, 0.3, 1.3]];
 let forestKey = '';
 
+// zelenožlutý nádech lístků listnáčů (lineárně; textura lístků je šedá), třešeň ho nemá
+const LEAF_TINT = new THREE.Color(0.79, 1, 0.57), WHITE = new THREE.Color(1, 1, 1);
 export function rebuildForest(px, pz, force = false) {
   const key = Math.floor(px / 24) + ',' + Math.floor(pz / 24);
   if (key === forestKey && !force) return;
   forestKey = key;
   forestTrees.length = forestRocks.length = forestColliders.length = 0;
   let nt = 0, nb = 0, nc = 0, nr = 0, nl = 0;
+  let leafTint = LEAF_TINT;
   for (const p of proxies.values()) p.count = 0;
   for (const b of [trunks, blobsFar, blobsNear, cones, leaves, needles, rocks]) b?.n.fill(0);
   const add = (b, sec) => { const m = b.meshes[sec], i = b.n[sec]; if (i >= m.instanceMatrix.count) return; m.setMatrixAt(i, dummy.matrix); b.n[sec]++; return i; };
@@ -102,7 +105,7 @@ export function rebuildForest(px, pz, force = false) {
       if (cards === leaves) dummy.scale.multiplyScalar(1.04);
       dummy.updateMatrix();
       const j = add(cards, sec);
-      if (j !== undefined) { nl++; cards.meshes[sec].setColorAt(j, cards === leaves ? leafCol.copy(color).offsetHSL(0.01, 0.02, 0.03) : leafCol.copy(color).offsetHSL(0, 0.04, 0.05)); }
+      if (j !== undefined) { nl++; cards.meshes[sec].setColorAt(j, cards === leaves ? leafCol.copy(color).offsetHSL(0.01, 0.02, 0.03).multiply(leafTint) : leafCol.copy(color).offsetHSL(0, 0.04, 0.05)); }
     }
   };
   const R2 = TREE_RADIUS * TREE_RADIUS;
@@ -114,6 +117,7 @@ export function rebuildForest(px, pz, force = false) {
       t.y = y;
       forestTrees.push(t);
       const K = t.kind, thick = TREE_THICK[K] || 1;
+      leafTint = K === 'cherry' ? WHITE : LEAF_TINT;
       const trunkCol = t.mark ? tmpColor.setRGB(0.55, 0.8, 1.5) : K === 'cactus' ? tmpColor.setRGB(0.55, 1.7 + t.v * 0.3, 0.5) : K === 'mushroom' ? tmpColor.setRGB(2.3, 2.2, 1.95)
         : K === 'cherry' ? tmpColor.setHSL(0.02, 0.3, 0.42) : K === 'dead' || K === 'deadbush' ? tmpColor.setHSL(0.08, 0.1, 0.38) : K === 'acacia' ? tmpColor.setHSL(0.06, 0.15, 0.55) : tmpColor.setHSL(0.08, 0.25, 0.75 + t.v * 0.25);
       put(trunks, nt++, t.x, y, t.z, t.s * thick, t.trunkH, t.s * thick, t.rot, trunkCol);
@@ -142,7 +146,7 @@ export function rebuildForest(px, pz, force = false) {
         for (const [ox, oy, oz, r] of OAK_BLOBS) {
           const bx = (ox * c - oz * s) * t.s * big, bz = (ox * s + oz * c) * t.s * big;
           put(blobsFar, nb++, t.x + bx, y + t.trunkH + oy * t.s, t.z + bz, r * t.s * big, r * t.s * big, r * t.s * big, t.rot + ox,
-            K === 'cherry' ? tmpColor.setHSL(0.93 + t.v * 0.03, 0.75, 0.58 + t.v * 0.08 + oy * 0.02) : tmpColor.setHSL(0.3 + t.v * 0.04, 0.6, 0.12 + t.v * 0.05));
+            K === 'cherry' ? tmpColor.setHSL(0.975 + t.v * 0.015, 0.72, 0.66 + t.v * 0.06 + oy * 0.02) : tmpColor.setHSL(0.3 + t.v * 0.04, 0.6, 0.12 + t.v * 0.05));
         }
       } else if (t.pine) {
         for (let i = 0; i < 4; i++) {

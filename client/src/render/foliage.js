@@ -134,17 +134,18 @@ function alphaTexture(draw, fill) {
   t.needsUpdate = true;
   return t;
 }
-// Lístky: hustý trs listů s žilkou, světlejší a tmavší
+// Lístky: hustý trs listů s žilkou, světlejší a tmavší. Šedé (bez barvy): zelený nádech dostanou listnáče
+// barvou instance (LEAF_TINT v forest.js), třešeň zůstane růžová a nezhnědne
 export const leafTexture = () => alphaTexture((g, r) => {
   for (let i = 0; i < 95; i++) {
     const x = 10 + r() * 108, y = 10 + r() * 108, a = r() * Math.PI * 2, l = 5 + r() * 7;
     const v = 170 + r() * 70;
-    g.fillStyle = `rgb(${v * 0.9 | 0},${v | 0},${v * 0.78 | 0})`;
+    g.fillStyle = `rgb(${v | 0},${v | 0},${v | 0})`;
     g.beginPath(); g.ellipse(x, y, l, l * 0.45, a, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = `rgba(90,110,70,0.5)`; g.lineWidth = 0.7;
+    g.strokeStyle = `rgba(100,100,100,0.5)`; g.lineWidth = 0.7;
     g.beginPath(); g.moveTo(x - Math.cos(a) * l * 0.8, y - Math.sin(a) * l * 0.8); g.lineTo(x + Math.cos(a) * l * 0.8, y + Math.sin(a) * l * 0.8); g.stroke();
   }
-}, [192, 210, 165]);
+}, [205, 205, 205]);
 // Větvička s jehličím: hlavní stonek po délce karty (v = 0 u kmene, 1 na konci), krátké jehličí do stran, ke konci kratší
 export const needleTexture = () => alphaTexture((g, r) => {
   const stem = (x0, y0, x1, y1, len, w) => {
