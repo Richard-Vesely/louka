@@ -62,14 +62,15 @@ export function buildVoxTextures(T = 128) {
     const v = facet * (0.7 + 0.3 * rim) * (0.92 + hash2(x, y) * 0.16);
     return [c[0] * v, c[1] * v, c[2] * v, rockH[i] * 0.75 + sm(0, 0.3, k) * (0.12 + k * (o.crystal ? 0.3 : 0.18)), o.alt && c === o.alt ? 0.8 : o.rough, o.alt && c === o.alt ? 0 : o.metal, o.glow ? Math.min(1, 0.35 + k * 1.2) : 0];
   };
+  // zrna jsou velká a hustá (jako v Minecraftu), aby se rudný blok poznal i z dálky a nevypadal jako konfety
   const ORES = {
-    coal: { share: 0.42, size: 6, color: [34, 33, 36], rough: 0.35, metal: 0 },
-    iron: { share: 0.38, size: 5, color: [200, 146, 104], rough: 0.42, metal: 0.55 },
-    crystal: { share: 0.5, size: 8, crystal: true, color: [56, 214, 250], rough: 0.08, metal: 0, glow: true },
-    markorite: { share: 0.5, size: 8, crystal: true, color: [228, 58, 220], rough: 0.08, metal: 0, glow: true },
-    copper: { share: 0.36, size: 5, color: [222, 122, 66], alt: [84, 176, 138], rough: 0.35, metal: 0.85 },
-    gold: { share: 0.38, size: 5, color: [255, 206, 72], rough: 0.22, metal: 1 },
-    quartz: { share: 0.5, size: 8, crystal: true, color: [242, 240, 252], rough: 0.12, metal: 0 },
+    coal: { share: 0.55, size: 10, color: [34, 33, 36], rough: 0.35, metal: 0 },
+    iron: { share: 0.52, size: 9, color: [200, 146, 104], rough: 0.42, metal: 0.55 },
+    crystal: { share: 0.6, size: 12, crystal: true, color: [56, 214, 250], rough: 0.08, metal: 0, glow: true },
+    markorite: { share: 0.6, size: 12, crystal: true, color: [228, 58, 220], rough: 0.08, metal: 0, glow: true },
+    copper: { share: 0.5, size: 9, color: [222, 122, 66], alt: [84, 176, 138], rough: 0.35, metal: 0.85 },
+    gold: { share: 0.52, size: 9, color: [255, 206, 72], rough: 0.22, metal: 1 },
+    quartz: { share: 0.6, size: 12, crystal: true, color: [242, 240, 252], rough: 0.12, metal: 0 },
   };
 
   const tile = (name, x, y, i) => {
@@ -106,17 +107,7 @@ export function buildVoxTextures(T = 128) {
         const sh = rock.f2[i] - rock.f1[i], ridge = sm(1.6 * S, 0.2 * S, sh), v = 0.6 + n1[i] * 0.45 + ridge * 0.6;
         return [44 * v, 28 * v, 66 * v, 0.5 + Math.min(sh, 14 * S) / (14 * S) * 0.4, 0.1 + ridge * 0.2, 0, 0];
       }
-      default: {
-        const o = ORES[name], g = oreAt(i, x, y, o);
-        if (g || !o) return g || stone(i);
-        // hornina kolem zrn: trochu do barvy rudy a tmavší, k okrajům dlaždice ještě tmavší – rudný blok se čte
-        // jako jeden blok (co vykopat), ne jako konfety rozházené po stěně
-        const e = Math.min(x, y, T - 1 - x, T - 1 - y) / T, frame = 0.8 + 0.2 * sm(0, 0.09, e);
-        const host = [0, 1, 2].map((j) => (124 + j * 4) * 0.8 + o.color[j] * 0.2 * 0.85);
-        const st = stone(i, host);
-        st[0] *= frame; st[1] *= frame; st[2] *= frame;
-        return st;
-      }
+      default: return oreAt(i, x, y, ORES[name]) || stone(i);
     }
   };
 

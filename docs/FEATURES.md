@@ -90,8 +90,7 @@ When you add or change a feature, update this file in the same pull request.
   No digging within 10.5 m of a shrine.
   - **Look**: 128 px textures made by code (64 px on *nízká*), one layer per block type in a texture array (no colour
     bleeding at a distance): natural rock with chipped ledges and thin cracks in a cool grey, dirt with pebbles, every
-    ore on the same stone, tinted a little toward the ore colour and darker toward the block edge, so an ore block
-    reads as one block to mine. Each pixel also has relief (normal map, softer with distance, *střední* and
+    ore on the same stone as plain stone, with big, dense grains so an ore block reads from afar. Each pixel also has relief (normal map, softer with distance, *střední* and
     *vysoká*), roughness, metal and glow: gold, copper and iron nuggets shine like metal and glint; **crystal and
     markorite glow only in their shards**, pulse gently and sparkle, and **light the cave walls around them** (cyan or
     violet, up to ~3 blocks). Block edges are slightly darker so every block reads, also in caves.
