@@ -6,6 +6,9 @@ import path from 'node:path';
 
 export const ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'];
 
+/** Slow machine (CPU shared with other work): PLAYTEST_SLOW=3 makes the long waits three times longer. */
+export const SLOW = Math.max(1, Number(process.env.PLAYTEST_SLOW) || 1);
+
 /** Starts Chromium (CHROME_PATH overrides Playwright's own browser). */
 export const launch = () => chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, args: ARGS });
 
@@ -65,6 +68,7 @@ function fakePointerLockScript() {
 /** Opens a new browser context + page, collects console errors. */
 export async function openPage(browser, url, { label = '', viewport = { width: 1100, height: 680 }, clear = true, ignore = [] } = {}) {
   const ctx = await browser.newContext({ viewport });
+  if (SLOW > 1) ctx.setDefaultTimeout(30000 * SLOW);
   await ctx.addInitScript(skipDrawScript);
   await ctx.addInitScript(fakePointerLockScript);
   // PLAYTEST_QUALITY=low (CI): méně trávy a stromů, ať je software WebGL na pomalém stroji rychlejší
@@ -84,6 +88,7 @@ export async function openPage(browser, url, { label = '', viewport = { width: 1
 
 /** Waits for the game module and installs the helper object `T` in the page. */
 export async function waitGame(page, timeout = 120000) {
+  timeout *= SLOW;
   await page.waitForFunction(() => window.gameStarted === true, null, { timeout, polling: 100 });
   await page.evaluate(() => {
     const g = window.game;

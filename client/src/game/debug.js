@@ -36,7 +36,7 @@ import { addItem, countItem, findRecipe, inv } from '../player/inventory.js';
 import { collidesBlocks, creative, input, keys, lockPointer, openCostume, player, setCreative, toggleGuide, unlockPointer } from '../player/player.js';
 import { damagePlayer } from '../player/survival.js';
 import { pickTarget } from '../player/targeting.js';
-import { rebuildBlocks } from '../render/blocks.js';
+import { rebuildBlocks, specials } from '../render/blocks.js';
 import { crackStage } from '../render/crack.js';
 import { underground } from '../render/daylight.js';
 import { forestRocks, forestTrees } from '../render/forest.js';
@@ -85,7 +85,7 @@ function spawnOnLake(type = 'motorboat') {
 // Pro ladění v konzoli prohlížeče.
 export const game = window.game = {
   testMode: false, tick, input, keys, player, inv, ui, fires, ICONS, addItem, countItem, RECIPES, mobs, spawnMob, blocks, rebuildBlocks, forestTrees, forestRocks,
-  slotClick, takeResult, fillRecipe, fillCooking, invTricks, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V,
+  slotClick, takeResult, fillRecipe, fillCooking, invTricks, findRecipe, cutGrass, getVox, setVox, topY, columnDug, voxChunks, V, specials,
   get underground() { return underground; }, armor, armorPoints, chests, damagePlayer, SHRINES, usePortal, teleport, ruinsNear, ruinsBuilt, ITEMS,
   get portalActive() { return portalActive; }, get dining() { return dining; }, canDine, tableItems, useTable, sitOn, useRod, fishing, waterAt, pondOf, pondLevel, startEating, groundItems, spawnGroundItem, dropHeld, stoves, crops, KITCHEN, startCooking, updateCrops, spawners, structuresNear, STRUCTS, toggleGuide, fullSet, buildStructure, setCreative, get creative() { return creative; }, cellFree,
   NET, others, worldState, saveGame, renderer, pc, openPC, closePC, pcPower, openApp, papers, pcDisks, paperSpots, openDoc, closeDoc, useDocs, newPaper, printJob, ensureDoc, vehicles, spawnVehicle, enterVehicle, exitVehicle, CAR, PLANE, planeHits, power, nets, netStats, rebuildNets, toggleSwitch, furnaces, smeltResult, RECIPE_CATS, terrainH, groundHeight, biomeAt, biomeWeights, volcanoOf, teleport, blockMeta, BLOCKS, SHAPES, useItem, collidesBlocks, TOUCH, QUALITY, GFX, lockPointer, unlockPointer, breakTarget, placeBlock, throwItem, hitMob, pickTarget, setTime: (t) => setDay(t), get target() { return target; }, mineState, crackStage, wearHeld, renderHotbar, openInventory, closeInventory, startDining, DINE_STYLE, scene, camera, buildFoodInto, takeBite, LK, FX, post, weather, setWeather, vis,

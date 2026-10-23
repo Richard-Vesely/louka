@@ -5,7 +5,7 @@ import { ITEMS } from '../../../shared/data/index.js';
 import { stackModels } from '../../../shared/inventory.js';
 import { on } from '../../../shared/events.js';
 import { NET } from '../../../shared/net/net.js';
-import { DROP_DELAY, THROW_DELAY, groundItems, spawnGroundItem, updateGroundItems } from '../../../shared/sim/ground-items.js';
+import { THROW_DELAY, groundItems, popGroundItem, spawnGroundItem, updateGroundItems } from '../../../shared/sim/ground-items.js';
 import { PH } from '../../../shared/world/constants.js';
 import { Sound } from '../audio/sound.js';
 import { uiSound } from '../audio/ui-sound.js';
@@ -105,12 +105,8 @@ export function throwItem(id, n, w = 0) {
   uiSound.toss();
   feed(id, `−${n} ${ITEMS[id].name}`);
 }
-/** Vytěžený blok (nebo obsah rozbité truhly) vyskočí jako malý předmět s náhodným poskokem (x, y, z = střed místa). */
-export function popItem(id, n, x, y, z, w = 0) {
-  if (!ITEMS[id] || !(n > 0)) return;
-  const a = Math.random() * Math.PI * 2, sp = 0.3 + Math.random() * 0.8, r = () => (Math.random() - 0.5) * 0.5;
-  spawnGroundItem(id, n, { x: x + r(), y: y + r() * 0.5, z: z + r() }, { x: Math.cos(a) * sp, y: 3 + Math.random() * 1.2, z: Math.sin(a) * sp }, DROP_DELAY, undefined, w);
-}
+/** Vytěžený blok (nebo obsah rozbité truhly) vyskočí jako malý předmět s náhodným poskokem (pravidlo v shared/sim/ground-items.js). */
+export const popItem = popGroundItem;
 /**
  * Kam padá, co vytěžíš: drop(id, n) = vytěžený blok (v kreativním režimu nic, jako v Minecraftu),
  * contents(slot) = obsah rozbité truhly, pece nebo stolu (vypadne vždycky, i s opotřebením nástroje).

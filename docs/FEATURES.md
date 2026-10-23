@@ -258,6 +258,22 @@ When you add or change a feature, update this file in the same pull request.
   **Jantarový neon** (glass + torch), **Fialový neon** (glass + raw markorite).
   **Stairs and slabs** (two slabs make a full block), bars, railings, rotation from where you look. Pillar jumping
   (place under your feet).
+- **Torches** (*Pochodeň*, coal or charcoal + stick = 8, fibre + stick = 4; works in the backpack grid) work like
+  Minecraft's: clicking the top of a block stands a torch on it, clicking a side hangs it on the wall, its base at the
+  wall and leaning away from it by 22.5°. Never on the ceiling: clicking the bottom of a block (or any spot where a torch
+  can't go) tries the next direction you look along (a wall in front, else the floor); if nothing holds it:
+  *Pochodeň potřebuje pevný blok pod sebou nebo vedle sebe* (under pond water: *Pod vodou pochodeň nehoří*). Torches
+  stand on full blocks, glass, upper slabs, panes, bars and railings, the furnace and the ground; walls must be a full
+  block face (not slabs, stairs, chests or machines). When the block holding a torch goes away (mined, dug out, removed by
+  another player), the torch **pops off and drops as an item** (decided by whoever holds the world). No collision, it breaks
+  instantly with anything, and its thin hit box lets you mine the wall behind it. Bright warm light that flickers, a
+  teardrop flame with a glowing head, embers and thin smoke. **Fire light is baked into the cave walls** (torches,
+  lanterns and campfires; up to 13 blocks, fading with distance, rock between the flame and a wall stops it,
+  gently flickering), so a cave with 30+ torches is fully lit with no extra cost per frame; only the nearest few fires
+  get real-time lights (3 / 4 / 6 by Grafika), and every torch has a soft warm halo around its flame (it fades out up
+  close, where the real light is), so walls built from blocks glow around far torches too. Old saves: a torch from
+  before learns once whether it stands or hangs on the wall next to it. Not in the game, so not done: water flow and
+  lava (they would wash a torch away), melting snow and ice, falling sand.
 - **Block materials**: every block family has its own physical material (`client/src/render/materials.js`): stone is
   rough, polished stone and marble are glossy, metal blocks reflect the sky, glass is clear but keeps its reflections,
   bricks have recessed mortar, planks grooves and nails, metal blocks seams, rivets and brushed streaks. On *střední*
@@ -278,7 +294,7 @@ When you add or change a feature, update this file in the same pull request.
   and left edges (`client/src/ui/icon-style.js`; 3D block icons and items in hand stay as they are). Animals have big Hytale eyes
   (white, coloured iris, pupil, highlight) turned half forward and a 15–20 % bigger head; the Markoman is a purple knight hero.
 
-*Kód:* block textures `client/src/render/textures.js` (helpers `texgen.js`), materials `client/src/render/materials.js`, 3D icons `client/src/render/icon-render.js`, tool rules (durability, mining speed, attack charge, repair) `shared/tools.js`, wear on this screen `client/src/player/durability.js`,
+*Kód:* torches `shared/world/torch.js` (rules), `client/src/render/torch-model.js` (model), `client/src/render/torch-light.js` (baked light), block textures `client/src/render/textures.js` (helpers `texgen.js`), materials `client/src/render/materials.js`, 3D icons `client/src/render/icon-render.js`, tool rules (durability, mining speed, attack charge, repair) `shared/tools.js`, wear on this screen `client/src/player/durability.js`,
 cracks `client/src/render/crack.js`, chips and crit stars `client/src/render/chips.js`, tool and combat sounds `client/src/audio/tool-sounds.js`,
 mining and placing `client/src/player/interaction.js` + `targeting.js`, backpack `client/src/player/inventory.js`, inventory window and crafting `client/src/ui/inventory-ui.js` (search box `book-search.js`, tricks `inv-tricks.js`, tooltips `item-tooltip.js`, slots and hotbar `slots.js`, look `client/src/styles/inventory.css`, UI sounds `client/src/audio/ui-sound.js`), inventory rules `shared/inventory.js`, data `shared/data/` (items, blocks, recipes), dropped items `shared/sim/ground-items.js` + `client/src/world/ground-items.js`, spikes and spawners `shared/sim/mobs.js`.
 

@@ -27,8 +27,9 @@ const WORKER = new URL('./world-worker.js', import.meta.url);
  * @param {number} [o.tickHz] kolikrát za sekundu běží svět
  * @param {number} [o.saveEveryMs] jak často ukládat (výchozí 30 s)
  * @param {string} [o.adminPassword] heslo stránky /admin (prázdné = stránka vypnutá)
+ * @param {number} [o.silentMs] po jak dlouhém tichu se spojení zavře (výchozí 30 s)
  */
-export async function startServer({ port = 8787, password = '', dataDir = null, staticDir = null, maxPlayers = 8, worlds, allowCreative = false, tickHz = 20, saveEveryMs = 30_000, adminPassword = '', log = console.log } = {}) {
+export async function startServer({ port = 8787, password = '', dataDir = null, staticDir = null, maxPlayers = 8, worlds, allowCreative = false, tickHz = 20, saveEveryMs = 30_000, adminPassword = '', silentMs = 30_000, log = console.log } = {}) {
   worlds ||= [{ id: 'svet', name: 'Hlavní svět', creative: allowCreative, pvp: false }];
   if (dataDir) migrateOldLayout(dataDir, worlds[0].id, log);
   const profiles = createProfiles(profilesFile(dataDir), { log });
@@ -44,7 +45,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
       w.worker = worker;
       worker.on('message', (m) => {
         switch (m.t) {
-          case 'send': { const ws = w.sockets.get(m.cid); if (ws?.readyState === ws.OPEN) ws.send(m.raw); break; }
+          case 'send': { const ws = w.sockets.get(m.cid); if (ws && ws.readyState === ws.OPEN) ws.send(m.raw); break; } // ws chybí: hráč už odešel (třeba přihlášení odjinud)
           case 'close': w.sockets.get(m.cid)?.close(); break;
           case 'stats': w.stats = m; w.players = m.players; break;
           case 'log': log(`[${w.id}] ${m.text}`); break;
@@ -163,7 +164,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
   const heartbeat = setInterval(() => {
     const now = Date.now();
     for (const ws of wss.clients) {
-      if (now - ws.seen > 30_000) { log(`Spojení neodpovídá ${Math.round((now - ws.seen) / 1000)} s, zavírám ho.`); ws.terminate(); continue; }
+      if (now - ws.seen > silentMs) { log(`Spojení neodpovídá ${Math.round((now - ws.seen) / 1000)} s, zavírám ho.`); ws.terminate(); continue; }
       ws.ping();
     }
   }, 5000);
