@@ -128,22 +128,27 @@ try {
     return !!S.ctx;
   });
   await A.evaluate(() => { const g = window.game; window.T.tp(14, 48, g.groundHeight(14, 48)); g.player.yaw = 0; });
-  await sleep(500);
   await A.evaluate(() => { window.game.blocks.set('16,3,46', 'planks'); window.game.keys.add('KeyW'); });
-  await sleep(1500);
+  // obě hry krokujeme ručně: stránka na pozadí má od prohlížeče přibrzděné snímky, kroky by pak někdy nezazněly
+  for (let i = 0; i < 16; i++) {
+    await A.evaluate(() => window.T.step(2, 0.05));
+    await sleep(80);
+    await B.evaluate(() => window.T.step(2, 0.05));
+  }
   await A.evaluate(() => window.game.keys.delete('KeyW'));
-  await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); } });
+  await B.evaluate(() => { const g = window.game, m = g.mobs.find((x) => !x.dead); if (m) { window.T.tp(m.pos.x + 2, m.pos.z, m.pos.y); g.mobs.forEach((x) => (x._snd = 0.01)); window.T.step(4, 0.05); } });
   check('sound: a joined player hears others build and walk, and the animals', heard && await until(B, () => window.__heard.place > 0 && window.__heard.step > 0 && window.__heard.mob > 0, null, 8000), await B.evaluate(() => JSON.stringify(window.__heard)));
 
   // pochodně: Ája pověsí pochodeň na zeď a jednu postaví na blok; Bára zeď zboří, server pochodeň shodí jako předmět
-  await A.evaluate(() => { const g = window.game; g.blocks.set('8,40,30', 'cobble'); g.blockMeta.set('8,40,31', 4); g.blocks.set('8,40,31', 'torch'); g.blocks.set('9,40,30', 'cobble'); g.blockMeta.set('9,41,30', 1); g.blocks.set('9,41,30', 'torch'); });
-  check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1));
+  await A.evaluate(() => { const g = window.game; g.blocks.set('8,40,30', 'cobble'); g.blockMeta.set('8,40,31', 4); g.blocks.set('8,40,31', 'torch'); g.blocks.set('9,40,30', 'cobble'); g.blockMeta.set('9,41,30', 1); g.blocks.set('9,41,30', 'torch'); window.T.step(1, 0.0001); });
+  // hru krokujeme i v podmínce: stránka na pozadí má přibrzděné snímky, změny by se pak neodeslaly ani nepřestavěly
+  check('torch: a wall torch from Ája hangs on the wall at Bára', await until(B, () => { window.T.step(1, 0.0001); return window.game.blockMeta.get('8,40,31') === 4 && window.game.specials.get('8,40,31')?.tm === 4 && window.game.specials.get('9,41,30')?.tm === 1; }));
   // každý ze dvou hráčů si zapamatuje, že k němu dorazila vypadlá pochodeň (mohl ji mezitím někdo sebrat)
   const seenTorch = () => { const g = window.game, push = g.groundItems.push; window.__torchItem = null; g.groundItems.push = function (...a) { for (const it of a) if (it.id === 'torch') window.__torchItem = { n: it.n, y: +it.pos.y.toFixed(1) }; return push.apply(this, a); }; };
   await A.evaluate(seenTorch); await B.evaluate(seenTorch);
-  await B.evaluate(() => { window.game.blocks.delete('8,40,30'); });
+  await B.evaluate(() => { window.game.blocks.delete('8,40,30'); window.T.step(1, 0.0001); });
   const torchState = () => { const g = window.game; return { has: g.blocks.has('8,40,31'), meta: g.blockMeta.get('8,40,31') ?? null, wall: g.blocks.get('8,40,30') ?? null, sp: g.specials.has('8,40,31'), item: window.__torchItem, items: g.groundItems.filter((x) => x.id === 'torch').map((x) => [x.n, +x.pos.y.toFixed(1)]) }; };
-  const torchGone = () => !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31') && window.__torchItem?.n === 1;
+  const torchGone = () => { window.T.step(1, 0.0001); return !window.game.blocks.has('8,40,31') && !window.game.specials.has('8,40,31') && window.__torchItem?.n === 1; };
   // Ája se tu jen ptá (evaluate): její stránka už může být dlouho na pozadí a prohlížeč jí pak brzdí časovače (waitForFunction)
   const torchOk = await until(B, torchGone);
   let torchA = false;
