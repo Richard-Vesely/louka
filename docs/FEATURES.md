@@ -548,3 +548,9 @@ In vehicles the touch screen adds *Brzda, Převod, Nitro, Klakson/Zvonek/Houkač
 Phones and tablets: joystick + buttons (*Těžit, Použít, Skok, Běh, Batoh, Výroba, Pohled…*), landscape only.
 
 *Kód:* keyboard and mouse `client/src/player/player.js`, touch `client/src/ui/touch.js`, settings `client/src/menu/settings.js`.
+
+## 13. Usage statistics (OFF)
+Scaffolding only: aggregate PostHog events for a few inventory window actions. It is **switched off** (empty key, opt-in `false`)
+and **collects nothing**. Activation is prohibited until a privacy review; see [ANALYTICS.md](ANALYTICS.md).
+
+*Kód:* `client/src/ui/analytics.js`, calls in `client/src/ui/inventory-ui.js`, tests `tests/unit/analytics.test.mjs`.
