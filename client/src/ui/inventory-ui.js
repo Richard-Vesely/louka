@@ -21,6 +21,7 @@ import { enterVehicle, renderCarUI } from '../vehicles/car.js';
 import { garageClick, renderGarageUI } from '../vehicles/garage.js';
 import { throwItem } from '../world/ground-items.js';
 import { crafted } from '../world/world-state.js';
+import { countBucket, track } from './analytics.js';
 import { $ } from './dom.js';
 import { feed, toast } from './hud.js';
 import { btnOf, fitInventory, shiftOf } from './touch.js';
@@ -314,6 +315,7 @@ export function takeResult(shift) {
     made++;
   } while (shift && made < 64 && currentResult() === r);
   if (made) { if (r.repair) toolSound('repair'); else Sound.craft(); }
+  if (made) track('item_crafted', { kind: r.repair ? 'repair' : 'craft', amount: countBucket(r.n * made) });
   if (shift && made) feed(r.out, `+${made * r.n} ${ITEMS[r.out].name}`);
   if (shift && currentResult() === r && made < 64) toast('Batoh je plný');
   refreshUI();
@@ -327,8 +329,8 @@ function returnGrid() {
   for (let i = 0; i < ui.craft.length; i++) if (ui.craft[i]) { const s = ui.craft[i]; ui.craft[i] = null; giveOrDrop(s.id, s.n, s.w); }
 }
 export function fillRecipe(r, shift) {
-  if (r.adv && ui.mode !== 'adv') { toast('Tento recept potřebuje dílnu (pokročilý pracovní stůl)'); return; }
-  if (r.w > ui.size || r.h > ui.size) { toast('Tento recept potřebuje pracovní stůl'); return; }
+  if (r.adv && ui.mode !== 'adv') { track('recipe_book_used', { result: 'needs_workshop' }); toast('Tento recept potřebuje dílnu (pokročilý pracovní stůl)'); return; }
+  if (r.w > ui.size || r.h > ui.size) { track('recipe_book_used', { result: 'needs_bench' }); toast('Tento recept potřebuje pracovní stůl'); return; }
   returnGrid();
   lastRecipe = r;
   const need = recipeNeeds(r);
@@ -339,6 +341,7 @@ export function fillRecipe(r, shift) {
   if (times < 1) {
     ui.ghost = Array(9).fill(null);
     r.pat.forEach((row, y) => row.forEach((id, x) => { ui.ghost[y * ui.size + x] = id; }));
+    track('recipe_book_used', { result: 'missing_items' });
     toast('Chybí ti suroviny');
     return refreshUI();
   }
@@ -347,6 +350,7 @@ export function fillRecipe(r, shift) {
     removeItem(id, times);
     ui.craft[y * ui.size + x] = { id, n: times };
   }));
+  track('recipe_book_used', { result: 'filled' });
   refreshUI();
 }
 export function fillCooking(id) {
@@ -413,6 +417,7 @@ export function openInventory(mode = 'inv', fireKey = null) {
   unlockPointer();
   invEl.style.display = 'grid';
   renderInventory();
+  track('inventory_opened', { mode });
 }
 export function closeInventory() {
   returnGrid();
@@ -425,7 +430,7 @@ export function closeInventory() {
   renderHotbar();
   lockPointer();
 }
-$('modeBtn').addEventListener('click', () => setCreative(!creative));
+$('modeBtn').addEventListener('click', () => { setCreative(!creative); track('creative_toggled', { to: creative ? 'on' : 'off' }); });
 $('newWorld').addEventListener('click', () => {
   if (!confirm('Opravdu začít v novém světě? Současný postup bude smazán.')) return;
   setResetting(true);

@@ -75,6 +75,8 @@ export async function openPage(browser, url, { label = '', viewport = { width: 1
   if (process.env.PLAYTEST_QUALITY) await ctx.addInitScript((q) => { try { const p = JSON.parse(localStorage.getItem('rise-nastaveni') || '{}'); if (!p.quality) localStorage.setItem('rise-nastaveni', JSON.stringify({ ...p, quality: q })); } catch {} }, process.env.PLAYTEST_QUALITY);
   const page = await ctx.newPage();
   page.errors = [];
+  // Analytika musí být v testech vypnutá: každý pokus o spojení s posthog.com (i *.posthog.com) se zablokuje a test spadne
+  await ctx.route(/^[a-z]+:\/\/([^/?#]*\.)?posthog\.com([/:?#]|$)/i, (r) => { page.errors.push(`${label}PostHog request blocked: ${r.request().url()}`); return r.abort(); });
   const skip = (t) => ignore.some((re) => re.test(t));
   page.on('console', (m) => { if (m.type() === 'error' && !skip(m.text())) page.errors.push(`${label}${m.text()}`); });
   page.on('pageerror', (e) => { if (!skip(String(e))) page.errors.push(`${label}${e}`); });
