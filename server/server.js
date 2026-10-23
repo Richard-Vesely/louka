@@ -45,7 +45,7 @@ export async function startServer({ port = 8787, password = '', dataDir = null, 
       w.worker = worker;
       worker.on('message', (m) => {
         switch (m.t) {
-          case 'send': { const ws = w.sockets.get(m.cid); if (ws?.readyState === ws.OPEN) ws.send(m.raw); break; }
+          case 'send': { const ws = w.sockets.get(m.cid); if (ws && ws.readyState === ws.OPEN) ws.send(m.raw); break; } // ws chybí: hráč už odešel (třeba přihlášení odjinud)
           case 'close': w.sockets.get(m.cid)?.close(); break;
           case 'stats': w.stats = m; w.players = m.players; break;
           case 'log': log(`[${w.id}] ${m.text}`); break;
