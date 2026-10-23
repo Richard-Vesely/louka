@@ -6,13 +6,13 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { launch, checker, openPage, waitGame, shot, sleep } from './lib.mjs';
+import { launch, checker, openPage, waitGame, shot, sleep, SLOW } from './lib.mjs';
 
 const out = process.argv[2] || 'playtest-server';
 const { check, results, failed } = checker('server: ');
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'louka-mp-'));
 function startServer(pass = 'kroužek') {
-  const child = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT: '0', DATA_DIR: dataDir, ROOM_PASSWORD: pass, SAVE_SECONDS: '1' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT: '0', DATA_DIR: dataDir, ROOM_PASSWORD: pass, SAVE_SECONDS: '1', SILENT_SECONDS: String(30 * SLOW) }, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = '';
   return new Promise((ok, fail) => {
     const t = setTimeout(() => fail(new Error('server did not start: ' + log)), 20000);
@@ -22,7 +22,7 @@ function startServer(pass = 'kroužek') {
   });
 }
 const stop = (s) => new Promise((ok) => { if (s.child.exitCode !== null || s.child.signalCode) return ok(); s.child.stopping = true; s.child.on('exit', ok); s.child.kill(); });
-const until = async (page, fn, arg, timeout = 15000) => { try { await page.waitForFunction(fn, arg, { timeout, polling: 100 }); return true; } catch { return false; } };
+const until = async (page, fn, arg, timeout = 15000) => { try { await page.waitForFunction(fn, arg, { timeout: timeout * SLOW, polling: 100 }); return true; } catch { return false; } };
 
 let srv = await startServer();
 const browser = await launch();
