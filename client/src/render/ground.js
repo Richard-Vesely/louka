@@ -140,7 +140,8 @@ const groundMat = new THREE.ShaderMaterial({
         vec3 skyC = uAmbient * vec3(0.95, 1.02, 1.12) * 0.75 + vec3(0.9, 0.45, 0.3) * uTwilight * 0.2;
         if (uEnvOn > 0.5) skyC = mix(skyC, textureCubeUV(uEnv, normalize(vec3(R.x, max(R.y, 0.02), R.z)), 0.08).rgb * 0.85 * mix(1.0, 0.35, uNight), 0.85);
         float spec = pow(max(dot(R, uSunDir), 0.0), 180.0) * shadow;
-        lit = mix(lit, mix(lit * 0.35, skyC, 0.25 + 0.75 * F), pud) + (uSunColor * spec * 2.0 * (1.0 - 0.9 * uRain)) * max(pud, wet * 0.25);
+        // odraz je tlumený (blátivá voda, tmavé okolí): při plném odrazu šedé oblohy vypadaly louže jako bílé fleky sněhu
+        lit = mix(lit, mix(lit * 0.35, skyC * 0.62, 0.2 + 0.6 * F), pud) + (uSunColor * spec * 2.0 * (1.0 - 0.9 * uRain)) * max(pud, wet * 0.25);
         lit += skyC * F * wet * 0.08;
       }
       // Láva v kráteru sopky svítí sama (pulzuje)
