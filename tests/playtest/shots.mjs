@@ -305,6 +305,7 @@ for (const [name, setup] of Object.entries(VIEWS)) {
     console.log(`shot  ${name}${perf[name] ? `  ${perf[name]} ms/frame` : ''}`);
   } catch (e) {
     console.log(`FAIL  ${name}: ${String(e.message || e).split('\n')[0]}`);
+    await ev(() => { const g = window.game; if (g.player.vehicle) g.exitVehicle?.(); }).catch(() => {}); // a failed view must not leave the next ones sitting in a vehicle
   }
 }
 if (flag('perf')) fs.writeFileSync(path.join(outDir, 'perf.json'), JSON.stringify({ gpu, look, quality, msPerFrame: perf }, null, 2));
